@@ -1,3 +1,5 @@
+use shexml_to_rml_tfg::view;
+
 fn main() {
-    println!("Hello, world!");
+    view::main_view::input_shexml_file("documents.shexml");
 }
