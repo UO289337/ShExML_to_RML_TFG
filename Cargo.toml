@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 tinyfiledialogs = "3.9"
+winnow = "0.7.4"
