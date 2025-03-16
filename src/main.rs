@@ -1,5 +1,5 @@
-use shexml_to_rml_tfg::view;
+use shexml_to_rml_tfg::controller;
 
 fn main() {
-    view::main_view::input_shexml_file("documents.shexml");
+    controller::compiler_controller::run();
 }

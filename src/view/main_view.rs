@@ -1,13 +1,20 @@
 use tinyfiledialogs;
+use std::fs;
+use std::io::Error;
+use std::path::Path;
 
-pub fn input_shexml_file(filename: &str) {
-    let mut shexml_file: String = "".to_string();
-    let error_msg;
+pub fn input_shexml_file() -> Result<String, Error> {
+    loop {
+        if let Some(file) = tinyfiledialogs::open_file_dialog("Select a ShExML file", "document.shexml", None) {
+            let path = Path::new(&file);
 
-    match tinyfiledialogs::open_file_dialog("Selecciona un archivo", filename, None) {
-        Some(file) => shexml_file = file,
-        None => error_msg = "El fichero debe encontrarse en la ruta especificada",
+            if path.extension().and_then(|ext| ext.to_str()) == Some("shexml") {
+                return fs::read_to_string(file);
+            } else {
+                eprintln!("Error: The selected file does not have the '.shexml' extension, try again.");
+            }
+        } else {
+            eprintln!("Select a file");
+        }
     }
-
-    println!("Open file {:?}", shexml_file);
 }
