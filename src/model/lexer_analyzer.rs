@@ -1,10 +1,12 @@
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
-use winnow::token::{literal, take_while};
-use winnow::combinator::{alt, preceded};
+use winnow::token::{take_while, take, literal};
+use winnow::combinator::{alt, delimited};
 
 #[derive(Debug, PartialEq)]
 enum TokenType {
+    PREFIX,
+    SOURCE,
     IDENT,
     URI,
 }
@@ -15,40 +17,58 @@ pub struct Token {
     token_type: TokenType,
 }
 
+fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal("PREFIX").parse_next(input)?;
+
+    Ok(Token { 
+        lexeme:"PREFIX".to_string(), 
+        token_type: TokenType::PREFIX,
+    })
+}
+
+fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal("SOURCE").parse_next(input)?;
+
+    Ok(Token { 
+        lexeme:"SOURCE".to_string(), 
+        token_type: TokenType::SOURCE,
+    })
+} 
+
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    take_while(1.., |c: char| c.is_alphabetic() || c == '_')
-        .map(|s: &str| Token {
-            lexeme: s.to_string(), 
-            token_type: TokenType::IDENT,
-        })
-        .parse_next(input)
+    let ident = take_while(1.., |c: char| c.is_alphabetic() || c == '_')
+        .parse_next(input)?;
+
+    Ok(Token {
+        lexeme: ident.to_string(), 
+        token_type: TokenType::IDENT, 
+    })
 }
 
 fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    preceded(
-        alt((literal("http://"), literal("https://"))), 
-        take_while(1.., |c: char| c.is_ascii()),  
-    )
-    .map(|s: &str| Token {
-        lexeme: s.to_string(),
+    let uri = delimited('<', take_while(1.., |c: char| c != '>'), '>')
+        .parse_next(input)?;
+
+    Ok(Token {
+        lexeme: uri.to_string(),
         token_type: TokenType::URI,
     })
-    .parse_next(input)
 }
 
 pub fn lexer(input: &mut &str) -> Result<Vec<Token>, ErrMode<ContextError>> {
     let mut tokens = Vec::new();
 
     while !input.is_empty() {
-        let _: Result<&str, ErrMode<ContextError>> = take_while(1.., char::is_whitespace).parse_next(input); // Se ignoran los espacios
-        match alt((uri, identifier)).parse_next(input) {
+        match alt((prefix, source, uri, identifier)).parse_next(input) {
             Ok(token) => tokens.push(token),
+            // Si no es ningún token, se pasa
             Err(ErrMode::Backtrack(_)) => {
-                eprintln!("Error: Token no reconocido en '{}'", input);
-                return Err(ErrMode::Backtrack(ContextError::default()));
+                take_while(1, |c: char| c.is_ascii()).parse_next(input)?;
+                continue;
             }
             Err(e) => return Err(e),
         }
+        let _: Result<&str, ErrMode<ContextError>> = take_while(1.., char::is_whitespace).parse_next(input); // Se ignoran los espacios
     }
 
     Ok(tokens)
