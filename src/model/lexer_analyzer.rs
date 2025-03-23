@@ -1,6 +1,6 @@
 use winnow::error::{ContextError, ErrMode};
 use winnow::prelude::*;
-use winnow::token::{take_while, take, literal};
+use winnow::token::{take_while, literal};
 use winnow::combinator::{alt, delimited};
 
 #[derive(Debug, PartialEq)]
