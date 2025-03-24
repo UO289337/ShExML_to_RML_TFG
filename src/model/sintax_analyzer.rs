@@ -8,7 +8,7 @@ pub fn prefix_node(tokens: Vec<Token>) {
 }
 
 pub fn grammar(tokens: Vec<Token>) {
-    let ast_root = ASTNode::new(ASTNodeType::Program, " ".to_string());
+    let ast_root = ASTNode::Program(ProgramASTNode::new());
     let mut ast_tree = ASTTree::new(ast_root);
     let mut tokens_iter = tokens.iter();
 

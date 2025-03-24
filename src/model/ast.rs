@@ -4,12 +4,6 @@ pub struct ASTTree {
     root: ASTNode,
 }
 
-pub enum ASTNodeType {
-    Program,
-    Pefix,
-    Source,
-}
-
 impl ASTTree {
     pub fn new(root: ASTNode) -> Self {
         ASTTree { 
@@ -22,22 +16,68 @@ impl ASTTree {
     }
 }
 
-pub struct ASTNode {
-    node_type: ASTNodeType,
-    children: RefCell<Vec<ASTNode>>,
-    data: String,
+pub trait ASTNodeTrait {
+    fn add_child(&self, child: ASTNode);
 }
 
-impl ASTNode {
-    pub fn new(node_type: ASTNodeType, data: String) -> Self {
-        ASTNode { 
-            node_type, 
-            children: RefCell::new(Vec::new()), 
-            data,
+pub enum ASTNode {
+    Program(ProgramASTNode),
+    Prefix(PrefixASTNode),
+    Source(SourceASTNode),
+}
+
+pub struct ProgramASTNode {
+    children: RefCell<Vec<ASTNode>>,
+}
+
+impl ProgramASTNode {
+    pub fn new() -> ProgramASTNode {
+        ProgramASTNode { 
+            children: RefCell::new(Vec::new()) 
         }
     }
+}
 
-    pub fn add_child(&mut self, child: ASTNode) {
+pub struct PrefixASTNode {
+    children: RefCell<Vec<ASTNode>>,
+    identifier: String,
+    uri: String,
+}
+
+impl ASTNodeTrait for PrefixASTNode {
+    fn add_child(&self, child: ASTNode) {
         self.children.borrow_mut().push(child);
+    }
+}
+
+impl PrefixASTNode {
+    pub fn new(identifier: String, uri: String) -> PrefixASTNode {
+        PrefixASTNode {
+            children: RefCell::new(Vec::new()),
+            identifier,
+            uri,
+        }
+    }
+}
+
+pub struct SourceASTNode {
+    children: RefCell<Vec<ASTNode>>,
+    identifier: String,
+    uri: String,
+}
+
+impl ASTNodeTrait for SourceASTNode {
+    fn add_child(&self, child: ASTNode) {
+        self.children.borrow_mut().push(child);
+    }
+}
+
+impl SourceASTNode {
+    pub fn new(identifier: String, uri: String) -> SourceASTNode {
+        SourceASTNode {
+            children: RefCell::new(Vec::new()),
+            identifier,
+            uri,
+        }
     }
 }
