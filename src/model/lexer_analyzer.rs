@@ -3,56 +3,30 @@ use winnow::prelude::*;
 use winnow::token::{take_while, literal};
 use winnow::combinator::{alt, delimited};
 
-#[derive(Debug, PartialEq)]
-enum TokenType {
-    PREFIX,
-    SOURCE,
-    IDENT,
-    URI,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct Token {
-    lexeme: String,
-    token_type: TokenType,
-}
+use super::token::*;
 
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal("PREFIX").parse_next(input)?;
-
-    Ok(Token { 
-        lexeme:"PREFIX".to_string(), 
-        token_type: TokenType::PREFIX,
-    })
+    Ok(Token::new("PREFIX".to_string(), TokenType::PREFIX))
 }
 
 fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal("SOURCE").parse_next(input)?;
-
-    Ok(Token { 
-        lexeme:"SOURCE".to_string(), 
-        token_type: TokenType::SOURCE,
-    })
+    Ok(Token::new("SOURCE".to_string(), TokenType::SOURCE))
 } 
 
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let ident = take_while(1.., |c: char| c.is_alphabetic() || c == '_')
         .parse_next(input)?;
 
-    Ok(Token {
-        lexeme: ident.to_string(), 
-        token_type: TokenType::IDENT, 
-    })
+    Ok(Token::new(ident.to_string(), TokenType::IDENT))
 }
 
 fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let uri = delimited('<', take_while(1.., |c: char| c != '>'), '>')
         .parse_next(input)?;
 
-    Ok(Token {
-        lexeme: uri.to_string(),
-        token_type: TokenType::URI,
-    })
+    Ok(Token::new(uri.to_string(), TokenType::URI))
 }
 
 pub fn lexer(input: &mut &str) -> Result<Vec<Token>, ErrMode<ContextError>> {

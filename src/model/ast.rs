@@ -21,18 +21,24 @@ pub trait ASTNodeTrait {
 }
 
 pub enum ASTNode {
-    Program(ProgramASTNode),
+    File(FileASTNode),
     Prefix(PrefixASTNode),
     Source(SourceASTNode),
 }
 
-pub struct ProgramASTNode {
+pub struct FileASTNode {
     children: RefCell<Vec<ASTNode>>,
 }
 
-impl ProgramASTNode {
-    pub fn new() -> ProgramASTNode {
-        ProgramASTNode { 
+impl ASTNodeTrait for FileASTNode {
+    fn add_child(&self, child: ASTNode) {
+        self.children.borrow_mut().push(child);
+    }
+}
+
+impl FileASTNode {
+    pub fn new() -> Self {
+        FileASTNode { 
             children: RefCell::new(Vec::new()) 
         }
     }
@@ -51,7 +57,7 @@ impl ASTNodeTrait for PrefixASTNode {
 }
 
 impl PrefixASTNode {
-    pub fn new(identifier: String, uri: String) -> PrefixASTNode {
+    pub fn new(identifier: String, uri: String) -> Self {
         PrefixASTNode {
             children: RefCell::new(Vec::new()),
             identifier,
@@ -73,7 +79,7 @@ impl ASTNodeTrait for SourceASTNode {
 }
 
 impl SourceASTNode {
-    pub fn new(identifier: String, uri: String) -> SourceASTNode {
+    pub fn new(identifier: String, uri: String) -> Self {
         SourceASTNode {
             children: RefCell::new(Vec::new()),
             identifier,
