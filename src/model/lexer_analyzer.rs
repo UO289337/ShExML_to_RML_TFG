@@ -10,6 +10,11 @@ fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new("PREFIX".to_string(), TokenType::PREFIX))
 }
 
+fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(":").parse_next(input)?;
+    Ok(Token::new(":".to_string(), TokenType::COLON))
+}
+
 fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal("SOURCE").parse_next(input)?;
     Ok(Token::new("SOURCE".to_string(), TokenType::SOURCE))
@@ -31,10 +36,15 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 
 pub fn lexer(input: &mut &str) -> Result<Vec<Token>, ErrMode<ContextError>> {
     let mut tokens = Vec::new();
+    let mut num_line = 1;
 
     while !input.is_empty() {
-        match alt((prefix, source, uri, identifier)).parse_next(input) {
-            Ok(token) => tokens.push(token),
+        match alt((colon, prefix, source, uri, identifier)).parse_next(input) {
+            Ok(mut token) => {
+                token.set_num_line(num_line);
+                tokens.push(token);
+            }
+
             // Si no es ningún token, se pasa
             Err(ErrMode::Backtrack(_)) => {
                 take_while(1, |c: char| c.is_ascii()).parse_next(input)?;
@@ -42,8 +52,10 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, ErrMode<ContextError>> {
             }
             Err(e) => return Err(e),
         }
+        num_line += 1;
         let _: Result<&str, ErrMode<ContextError>> = take_while(1.., char::is_whitespace).parse_next(input); // Se ignoran los espacios
     }
 
+    tokens.push(Token::create_eof_token());
     Ok(tokens)
 }
