@@ -3,7 +3,7 @@ use chumsky::prelude::*;
 
 use crate::model::token::*;
 
-use super::sintax_error::ParserError;
+use super::parser_error::ParserError;
 use super::token::TokenType;
 use super::AST::ASTNode;
 

@@ -3,7 +3,7 @@ use winnow::prelude::*;
 use winnow::token::{take_while, literal};
 use winnow::combinator::{alt, delimited};
 
-use super::sintax_error::ParserError;
+use super::parser_error::ParserError;
 use super::token::*;
 
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
@@ -38,7 +38,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
     let mut tokens = Vec::new();
     let mut num_line = 1;
-    let mut errors: Vec<ParserError> = Vec::new();
+    let mut errors: Vec<ErrMode<ContextError>> = Vec::new();
 
 
     while !input.is_empty() {
@@ -50,20 +50,36 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 
             // Si no es ningún token, se pasa
             Err(ErrMode::Backtrack(_)) => {
-                // let error_token = take_while(1, |c: char| c.is_ascii()).parse_next(input)?;
-                //errors.push(ParserError::new(error_token.to_string()));
+                if let Err(e) = take_while(1, |c: char| c.is_ascii()).parse_next(input) {
+                    errors.push(e);
+                }
                 continue;
             }
             Err(e) => panic!("{}", e),
         }
-        num_line += 1;
-        let _: Result<&str, ErrMode<ContextError>> = take_while(1.., char::is_whitespace).parse_next(input); // Se ignoran los espacios
+
+        let new_line: Result<&str, ErrMode<ContextError>> = take_while(1.., |c: char| c == '\n' || c == '\r').parse_next(input); // Se ignoran los espacios
+        if new_line.is_ok() {
+            num_line += 1;
+        }   
+
+        let _: Result<&str, ErrMode<ContextError>> = take_while(1.., |c: char| c.is_whitespace() || c == '\t').parse_next(input); // Se ignoran los espacios
     }
 
     if errors.is_empty() {
         tokens.push(Token::create_eof_token());
         Ok(tokens)
     } else {
-        Err(errors)
+        convert_to_parser_errors(errors)
     }
+}
+
+fn convert_to_parser_errors(errors: Vec<ErrMode<ContextError>>) -> Result<Vec<Token>, Vec<ParserError>> {
+    let mut parser_errors: Vec<ParserError> = Vec::new();
+
+    for error in errors {
+        parser_errors.push(ParserError::new(error.to_string()));
+    }
+        
+    Err(parser_errors)
 }
