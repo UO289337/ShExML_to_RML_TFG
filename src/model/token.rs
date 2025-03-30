@@ -24,10 +24,6 @@ impl Token {
         }
     }
 
-    pub fn get_num_line(&self) -> u16 {
-        self.num_line
-    }
-
     pub fn set_num_line(&mut self, new_line: u16) {
         self.num_line = new_line;
     }
