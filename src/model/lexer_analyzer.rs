@@ -38,7 +38,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
     let mut tokens = Vec::new();
     let mut num_line = 1;
-    let mut errors: Vec<ErrMode<ContextError>> = Vec::new();
+    let mut errors: Vec<ParserError> = Vec::new();
 
 
     while !input.is_empty() {
@@ -50,8 +50,9 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 
             // Si no es ningún token, se pasa
             Err(ErrMode::Backtrack(_)) => {
-                if let Err(e) = take_while(1, |c: char| c.is_ascii()).parse_next(input) {
-                    errors.push(e);
+                let token_error: Result<&str, ErrMode<ContextError>> = take_while(1, |c: char| c.is_ascii()).parse_next(input);
+                if token_error.is_ok() {
+                    errors.push(ParserError::new(format!("Error léxico: '{}'; en la línea {}", token_error.unwrap().to_string(), num_line)));
                 }
                 continue;
             }
@@ -70,16 +71,6 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
         tokens.push(Token::create_eof_token());
         Ok(tokens)
     } else {
-        convert_to_parser_errors(errors)
+        Err(errors)
     }
-}
-
-fn convert_to_parser_errors(errors: Vec<ErrMode<ContextError>>) -> Result<Vec<Token>, Vec<ParserError>> {
-    let mut parser_errors: Vec<ParserError> = Vec::new();
-
-    for error in errors {
-        parser_errors.push(ParserError::new(error.to_string()));
-    }
-        
-    Err(parser_errors)
 }
