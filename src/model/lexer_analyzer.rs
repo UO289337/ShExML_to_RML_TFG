@@ -40,6 +40,7 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
     let mut num_line = 1;
     let mut errors: Vec<ParserError> = Vec::new();
 
+
     while !input.is_empty() {
         match alt((colon, prefix, source, uri, identifier)).parse_next(input) {
             Ok(mut token) => {
@@ -49,7 +50,7 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 
             // Si no es ningún token, se pasa
             Err(ErrMode::Backtrack(_)) => {
-                let error_token = take_while(1, |c: char| c.is_ascii()).parse_next(input)?;
+                // let error_token = take_while(1, |c: char| c.is_ascii()).parse_next(input)?;
                 //errors.push(ParserError::new(error_token.to_string()));
                 continue;
             }
