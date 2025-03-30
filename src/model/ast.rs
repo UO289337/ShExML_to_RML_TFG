@@ -1,6 +1,9 @@
 #[derive(Debug)]
 pub enum ASTNode {
-    File(),
+    File {
+        prefixes: Vec<ASTNode>,
+        sources: Vec<ASTNode>,
+    },
     Prefix {
         identifier: String,
         uri: String,

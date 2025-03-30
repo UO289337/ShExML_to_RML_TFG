@@ -3,6 +3,7 @@ use winnow::prelude::*;
 use winnow::token::{take_while, literal};
 use winnow::combinator::{alt, delimited};
 
+use super::sintax_error::ParserError;
 use super::token::*;
 
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
@@ -34,9 +35,10 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(uri.to_string(), TokenType::URI))
 }
 
-pub fn lexer(input: &mut &str) -> Result<Vec<Token>, ErrMode<ContextError>> {
+pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
     let mut tokens = Vec::new();
     let mut num_line = 1;
+    let mut errors: Vec<ParserError> = Vec::new();
 
     while !input.is_empty() {
         match alt((colon, prefix, source, uri, identifier)).parse_next(input) {
@@ -47,15 +49,20 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, ErrMode<ContextError>> {
 
             // Si no es ningún token, se pasa
             Err(ErrMode::Backtrack(_)) => {
-                take_while(1, |c: char| c.is_ascii()).parse_next(input)?;
+                let error_token = take_while(1, |c: char| c.is_ascii()).parse_next(input)?;
+                //errors.push(ParserError::new(error_token.to_string()));
                 continue;
             }
-            Err(e) => return Err(e),
+            Err(e) => panic!("{}", e),
         }
         num_line += 1;
         let _: Result<&str, ErrMode<ContextError>> = take_while(1.., char::is_whitespace).parse_next(input); // Se ignoran los espacios
     }
 
-    tokens.push(Token::create_eof_token());
-    Ok(tokens)
+    if errors.is_empty() {
+        tokens.push(Token::create_eof_token());
+        Ok(tokens)
+    } else {
+        Err(errors)
+    }
 }
