@@ -1,16 +1,27 @@
+use chumsky::error::SimpleReason;
+
 use crate::view;
 use crate::model;
 
 pub fn run() {
     let file_content = view::main_view::input();
 
-    let lexer_analysis_result = match model::lexer_analyzer::lexer(&mut file_content.unwrap().as_str()) {
+    match model::lexer_analyzer::lexer(&mut file_content.unwrap().as_str()) {
         Ok(tokens) => {
-            /* for token in tokens {
-                println!("{:?}", token);
-            } */
-
-            model::sintax_analyzer::parser(tokens);
+            match model::sintax_analyzer::parser(tokens) {
+                Ok(node) => {
+                    println!("{:?}", node);
+                }
+                Err(e) => {
+                    for err in e {
+                        let err_message = match err.reason() {
+                            SimpleReason::Custom(msg) => msg,
+                            _ => "Error desconocido",
+                        };
+                        eprintln!("Error durante el análisis sintáctico: {:?}", err_message);
+                    }
+                }
+            }
         }
         Err(parser_errors) => {
             for error in parser_errors {

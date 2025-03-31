@@ -81,16 +81,12 @@ fn source_parser() -> impl Parser<Token, Vec<ASTNode>, Error = Simple<Token>> {
         .collect()
 }
 
-pub fn parser(tokens: Vec<Token>) {
+pub fn parser(tokens: Vec<Token>) -> Result<ASTNode, Vec<Simple<Token>>> {
     let file_parser = file_parser();
     let parsed = file_parser.parse(tokens);
 
     match parsed {
-        Ok(prefix_node) => {
-            println!("Nodo AST: {:?}", prefix_node);
-        }
-        Err(e) => {
-            println!("Error: {:?}", e);
-        }
+        Ok(node) => Ok(node),
+        Err(e) => Err(e),
     }
 }
