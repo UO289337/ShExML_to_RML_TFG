@@ -10,7 +10,7 @@ pub fn run() {
         Ok(tokens) => {
             match model::sintax_analyzer::parser(tokens) {
                 Ok(node) => {
-                    println!("{:?}", node);
+                    model::rml_generator::rml_generator(node);
                 }
                 Err(e) => {
                     for err in e {

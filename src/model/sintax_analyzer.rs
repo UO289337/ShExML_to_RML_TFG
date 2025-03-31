@@ -4,7 +4,7 @@ use chumsky::prelude::*;
 use crate::model::token::*;
 
 use super::token::TokenType;
-use super::AST::ASTNode;
+use super::ast::ASTNode;
 
 fn file_parser() -> impl Parser<Token, ASTNode, Error = Simple<Token>> {
     prefix_parser()
