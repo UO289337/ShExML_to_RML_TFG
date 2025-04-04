@@ -1,28 +1,24 @@
-use super::ast::ASTNode;
 use std::fs;
 use std::io::prelude::*;
 
+use crate::model::visitor::{Generator, Visitor};
+
+use super::ast::FileASTNode;
+
 const RML_FILE_NAME: &str = "generated.rml";
+const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";
 
-pub fn rml_generator(node: ASTNode) {
-    if let ASTNode::File { prefixes, sources } = &node {      
-        let mut rml_file = fs::File::create(RML_FILE_NAME).unwrap();
+pub fn rml_generator(node: FileASTNode) {
+    let mut generator = Generator;
+    let mut rml_file = fs::File::create(RML_FILE_NAME).unwrap();
 
-        for prefix in prefixes {
-            if let ASTNode::Prefix { identifier, uri } = &prefix {
-                writeln!(rml_file, "@prefix {}:   <{}> .", identifier, uri);
-            }
-        }
+    // Contenido general
+    writeln!(rml_file, "@prefix rml:      <http://semweb.mmlab.be/ns/rml#> .").expect(ERR_MESSAGE);
+    writeln!(rml_file, "@prefix rr:       <http://www.w3.org/ns/r2rml#> .").expect(ERR_MESSAGE);
+    writeln!(rml_file, "@prefix d2rq:     <http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#> .").expect(ERR_MESSAGE);
+    writeln!(rml_file, "@prefix ql:       <http://semweb.mmlab.be/ns/ql#> .").expect(ERR_MESSAGE);
+    writeln!(rml_file, "@prefix map:      <http://mapping.example.com/> .").expect(ERR_MESSAGE);
 
-        writeln!(rml_file, "@prefix schema:   <http://schema.org/> .");
-        writeln!(rml_file, "@prefix rml:      <http://semweb.mmlab.be/ns/rml#> .");
-        writeln!(rml_file, "@prefix rr:       <http://www.w3.org/ns/r2rml#> .");
-        writeln!(rml_file, "@prefix d2rq:     <http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#> .");
-        writeln!(rml_file, "@prefix ql:       <http://semweb.mmlab.be/ns/ql#> .");
-        writeln!(rml_file, "@prefix map:      <http://mapping.example.com/> .");
-
-        for source in sources {
-            println!("{:?}", source);
-        }
-    }
+    // Contenido del fichero Shexml
+    writeln!(rml_file, "{}", generator.visit_file(node)).expect(ERR_MESSAGE);
 }

@@ -3,29 +3,21 @@ use chumsky::prelude::*;
 
 use crate::model::token::*;
 
+use super::ast::*;
 use super::token::TokenType;
-use super::ast::ASTNode;
 
-fn file_parser() -> impl Parser<Token, ASTNode, Error = Simple<Token>> {
+fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
     prefix_parser()
-        .chain(source_parser())
-        .map(|parsed| {
-            let mut prefixes: Vec<ASTNode>= Vec::new();
-            let mut sources: Vec<ASTNode> = Vec::new();
-
-            for node in parsed {
-                match node {
-                    ASTNode::Prefix { .. } => prefixes.push(node),
-                    ASTNode::Source { .. } => sources.push(node),
-                    _ => (),
-                }
+        .then(source_parser())
+        .map(|(prefixes, sources)| {
+            FileASTNode {
+                prefixes,
+                sources,
             }
-
-            ASTNode::File { prefixes, sources }
         })
 }
 
-fn prefix_parser() -> impl Parser<Token, Vec<ASTNode>, Error = Simple<Token>> {
+fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Token>> {
     let prefix = filter(|token: &Token| token.token_type == TokenType::PREFIX)
         .map(|token| token.clone());
     
@@ -46,7 +38,7 @@ fn prefix_parser() -> impl Parser<Token, Vec<ASTNode>, Error = Simple<Token>> {
         .then(colon)             
         .then(uri)              
         .map(|(((_, ident), _), uri)| {
-            ASTNode::Prefix {
+            PrefixASTNode {
                 identifier: ident.lexeme.clone(),
                 uri: uri.lexeme.clone(),
             }
@@ -55,7 +47,7 @@ fn prefix_parser() -> impl Parser<Token, Vec<ASTNode>, Error = Simple<Token>> {
         .collect()
 }
 
-fn source_parser() -> impl Parser<Token, Vec<ASTNode>, Error = Simple<Token>> {
+fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {
     let source = filter(|token: &Token| token.token_type == TokenType::SOURCE)
         .map(|token| token.clone());
     
@@ -71,7 +63,7 @@ fn source_parser() -> impl Parser<Token, Vec<ASTNode>, Error = Simple<Token>> {
         .then(identifier)        
         .then(uri)        
         .map(|((_, ident), uri)| {
-            ASTNode::Source {
+            SourceASTNode {
                 identifier: ident.lexeme.clone(),
                 uri: uri.lexeme.clone(),
             }
@@ -81,7 +73,7 @@ fn source_parser() -> impl Parser<Token, Vec<ASTNode>, Error = Simple<Token>> {
         .collect()
 }
 
-pub fn parser(tokens: Vec<Token>) -> Result<ASTNode, Vec<Simple<Token>>> {
+pub fn parser(tokens: Vec<Token>) -> Result<FileASTNode, Vec<Simple<Token>>> {
     let file_parser = file_parser();
     let parsed = file_parser.parse(tokens);
 

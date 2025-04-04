@@ -1,9 +1,9 @@
-@prefix example:   <http://example.com/> .
-@prefix dbr:   <http://dbpedia.org/resource/> .
-@prefix schema:   <http://schema.org/> .
-@prefix schema:   <http://schema.org/> .
 @prefix rml:      <http://semweb.mmlab.be/ns/rml#> .
 @prefix rr:       <http://www.w3.org/ns/r2rml#> .
 @prefix d2rq:     <http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#> .
 @prefix ql:       <http://semweb.mmlab.be/ns/ql#> .
 @prefix map:      <http://mapping.example.com/> .
+@prefix example:     <http://example.com/> .
+@prefix dbr:     <http://dbpedia.org/resource/> .
+@prefix schema:     <http://schema.org/> .
+
