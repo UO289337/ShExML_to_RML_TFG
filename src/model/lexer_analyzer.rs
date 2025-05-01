@@ -9,18 +9,18 @@ use super::parser_error::ParserError;
 use super::token::*;
 
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal("PREFIX").parse_next(input)?;
-    Ok(Token::new("PREFIX".to_string(), TokenType::PREFIX))
+    let _ = literal(PREFIX).parse_next(input)?;
+    Ok(Token::new(PREFIX.to_string(), TokenType::PREFIX))
 }
 
 fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal(":").parse_next(input)?;
-    Ok(Token::new(":".to_string(), TokenType::COLON))
+    let _ = literal(COLON).parse_next(input)?;
+    Ok(Token::new(COLON.to_string(), TokenType::COLON))
 }
 
 fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal("SOURCE").parse_next(input)?;
-    Ok(Token::new("SOURCE".to_string(), TokenType::SOURCE))
+    let _ = literal(SOURCE).parse_next(input)?;
+    Ok(Token::new(SOURCE.to_string(), TokenType::SOURCE))
 } 
 
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {

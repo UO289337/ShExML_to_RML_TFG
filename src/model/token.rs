@@ -8,6 +8,13 @@ pub enum TokenType {
     EOF,
 }
 
+pub const PREFIX:&str = "PREFIX";
+pub const SOURCE:&str = "SOURCE";
+pub const IDENT:&str = "IDENT";
+pub const URI:&str = "URI";
+pub const COLON:&str = ":";
+pub const EOF:&str = " ";
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
     pub lexeme: String,
