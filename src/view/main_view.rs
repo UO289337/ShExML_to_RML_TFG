@@ -18,16 +18,19 @@ pub fn input() -> Option<String> {
 
 fn input_shexml_file() -> Result<String, Error> {
     if let Some(file) = tinyfiledialogs::open_file_dialog("Select a ShExML file", "document.shexml", None) {
-        let path = Path::new(&file);
-
-        if path.extension().and_then(|ext| ext.to_str()) == Some("shexml") {
-            return fs::read_to_string(file);
-        } else {
-            return Err(Error::new(ErrorKind::InvalidInput, "El fichero seleccionado no tiene la extensión '.shexml'"));
-
-        }
+        check_file_extension(&file)
     } else {
-        return Err(Error::new(ErrorKind::Interrupted, "Ningún fichero seleccionado, saliendo..."));
+        Err(Error::new(ErrorKind::Interrupted, "Ningún fichero seleccionado, saliendo..."))
+    }
+}
+
+fn check_file_extension(file: &String) -> Result<String, Error> {
+    let path = Path::new(&file);
+
+    if path.extension().and_then(|ext| ext.to_str()) == Some("shexml") {
+        fs::read_to_string(file)
+    } else {
+        Err(Error::new(ErrorKind::InvalidInput, "El fichero seleccionado no tiene la extensión '.shexml'"))
     }
 }
 

@@ -1,5 +1,3 @@
-// Utilizar Box<T> siempre que se quiera utilizar recursividad, por ejemplo: Add(Box<Expr>, Box<Expr>)
-
 #[derive(Debug)]
 pub struct FileASTNode {
     pub prefixes: Vec<PrefixASTNode>,

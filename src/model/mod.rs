@@ -1,7 +1,7 @@
 pub mod lexer_analyzer;
 pub mod sintax_analyzer;
 pub mod rml_generator;
+pub mod token;
+pub mod parser_error;
 mod ast;
 mod visitor;
-mod token;
-mod parser_error;
