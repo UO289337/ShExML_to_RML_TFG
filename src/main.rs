@@ -1,3 +1,5 @@
+use shexml_to_rml_tfg::controller;
+
 fn main() {
-    println!("Hello, world!");
+    controller::compiler_controller::run();
 }
