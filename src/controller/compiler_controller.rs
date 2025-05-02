@@ -28,7 +28,6 @@ pub fn run_lexer_analyzer() {
 /// Ejecuta el analizador sintáctico del compilador
 /// 
 /// # Argumentos
-/// 
 /// * `tokens` - El vector de tokens resultado del analizador léxico
 fn run_sintax_analyzer(tokens: Vec<Token>) {
     match model::sintax_analyzer::parser(tokens) {
@@ -45,7 +44,6 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 /// Muestra los errores léxicos encontrados al realizar el análisis léxico
 /// 
 /// # Argumentos
-/// 
 /// * `lexer_errors` - Un vector de ParserError que contiene los errores léxicos encontrados
 fn show_lexer_errors(lexer_errors: Vec<ParserError>) {
     for error in lexer_errors {
@@ -56,7 +54,6 @@ fn show_lexer_errors(lexer_errors: Vec<ParserError>) {
 /// Muestra los errores sintácticos encontrados al realizar el análisis sintáctico
 /// 
 /// # Argumentos
-/// 
 /// * `sintax_errors` - Un vector de Simple<Token>, de la biblioteca chumsky, que contiene los errores sintácticos encontrados
 fn show_sintax_errors(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) {
     for error in sintax_errors {

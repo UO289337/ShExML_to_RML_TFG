@@ -22,6 +22,9 @@ impl ParserError {
     /// 
     /// # Argumentos
     /// * `message` - Mensaje del error
+    /// 
+    /// # Retorna
+    /// A si mismo
     pub fn new(message: String) -> Self {
         ParserError {
             message

@@ -23,8 +23,11 @@ pub fn input() -> Option<String> {
 
 /// Abre un diálogo del sistema para que el usuario indique el fichero ShExML de entrada
 /// 
+/// # Retorna
+/// El contenido del fichero
+/// 
 /// # Errores
-/// * `[Error]` - Error en caso de que no se seleccione ningún fichero
+/// Devuelve un `[Error]` en el caso de que no se seleccione ningún fichero
 fn input_shexml_file() -> Result<String, Error> {
     if let Some(file) = tinyfiledialogs::open_file_dialog("Selecciona un fichero ShExML", "document.shexml", None) {
         check_file_extension(&file)
@@ -37,6 +40,12 @@ fn input_shexml_file() -> Result<String, Error> {
 /// 
 /// # Argumentos
 /// * `file` - El fichero de entrada ShExML indicado por el usuario
+/// 
+/// # Retorna
+/// El contenido del fichero
+/// 
+/// # Errores
+/// Devuelve un `[Error]` en el caso de que la extensión del fichero seleccionado no sea .shexml
 fn check_file_extension(file: &String) -> Result<String, Error> {
     let path = Path::new(&file);
 
@@ -51,6 +60,9 @@ fn check_file_extension(file: &String) -> Result<String, Error> {
 /// 
 /// # Argumentos
 /// * `file_content` - El contenido del fichero ShExML de entrada seleccionado por el usuario
+/// 
+/// # Retorna
+/// Un `[Option<String>]` con el contenido del fichero
 fn check_input(file_content: Option<String>) -> Option<String> {
     if file_content.is_some() {
         file_content

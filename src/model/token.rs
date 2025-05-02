@@ -62,6 +62,9 @@ impl Token {
     /// Crea un token de tipo EOF y lo devuelve
     /// 
     /// Debido a que se trata de un token especial, se crea en una función con el lexema vacío
+    /// 
+    /// # Retorna
+    /// A si mismo
     pub fn create_eof_token() -> Self {
         Token { lexeme: " ".to_string(), 
             token_type: TokenType::EOF, 

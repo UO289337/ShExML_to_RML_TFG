@@ -17,8 +17,11 @@ use super::token::TokenType;
 /// 
 /// Realiza el parseo de los tokens de los prefijos y de las fuentes para poder crear el nodo File, que es el nodo raíz del AST
 /// 
+/// # Retorna
+/// Un nodo File del AST
+/// 
 /// # Errores
-/// * `Simple<Token>` - Un error que puede ocurrir durante el parseo de los tokens
+/// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
     prefix_parser()
         .then(source_parser())
@@ -34,8 +37,11 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
 /// 
 /// Realiza el parseo de los tokens para detectar la secuencia: PREFIX IDENT: URI
 /// 
+/// # Retorna
+/// Un nodo Prefix del AST
+/// 
 /// # Errores
-/// * `Simple<Token>` - Un error que puede ocurrir durante el parseo de los tokens
+/// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Token>> {
     prefix_detector()
         .then(identifier_detector(PREFIX.to_string()))        
@@ -55,8 +61,11 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 /// 
 /// Realiza el parseo de los tokens para detectar la secuencia: SOURCE IDENT: URI
 /// 
+/// # Retorna
+/// Un nodo Source del AST
+/// 
 /// # Errores
-/// * `Simple<Token>` - Un error que puede ocurrir durante el parseo de los tokens
+/// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {    
     source_detector()
         .then(identifier_detector(SOURCE.to_string()))        
@@ -75,12 +84,24 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
 // Detectors
 
 /// Detecta el token PREFIX en los tokens
+/// 
+/// # Retorna
+/// Un token de tipo Prefix si el token actual es de dicho tipo
+/// 
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Prefix
 fn prefix_detector() -> Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token> {
     filter(|token: &Token| token.token_type == TokenType::PREFIX)
         .map(|token| token.clone())
 }
 
 /// Detecta el token SOURCE en los tokens
+/// 
+/// # Retorna
+/// Un token de tipo Source si el token actual es de dicho tipo
+/// 
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Source
 fn source_detector() -> Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token> {
     filter(|token: &Token| token.token_type == TokenType::SOURCE)
         .map(|token| token.clone())
@@ -90,6 +111,12 @@ fn source_detector() -> Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl
 /// 
 /// # Argumentos
 /// * `previous_token` - El token previo al identificador, que puede ser un PREFIX o un SOURCE
+/// 
+/// # Retorna
+/// Un token de tipo Ident si el token actual es de dicho tipo
+/// 
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Ident
 fn identifier_detector(previous_token: String) -> MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>> {
     filter(|token: &Token| token.token_type == TokenType::IDENT)
         .map(|token| token.clone())
@@ -97,6 +124,12 @@ fn identifier_detector(previous_token: String) -> MapErr<Map<Filter<impl Fn(&Tok
 }
 
 /// Detecta el token URI en los tokens
+/// 
+/// # Retorna
+/// Un token de tipo Uri si el token actual es de dicho tipo
+/// 
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Uri
 fn uri_detector() -> MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>> {
     filter(|token: &Token| token.token_type == TokenType::URI)
         .map(|token| token.clone())
@@ -104,6 +137,12 @@ fn uri_detector() -> MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, 
 }
 
 /// Detecta el token ':' en los tokens
+/// 
+/// # Retorna
+/// Un token de tipo : si el token actual es de dicho tipo
+/// 
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo :
 fn colon_detector() -> MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>> {
     filter(|token: &Token| token.token_type == TokenType::COLON)
         .map(|token| token.clone())
@@ -116,6 +155,9 @@ fn colon_detector() -> MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>
 /// 
 /// # Argumentos
 /// * `tokens` - El vector de tokens resultado del análisis léxico
+/// 
+/// # Retorna
+/// Un nodo File del AST que será el nodo raíz de este
 /// 
 /// # Errores
 /// * `[Vec<Simple<Token>>]` - Un vector con los errores que pueden aparecer al realizar el análisis sintáctico

@@ -19,6 +19,9 @@ impl Visitor<String> for Generator {
     /// # Argumentos
     /// * `self` - El propio generador
     /// * `file_node` - El nodo File del AST
+    /// 
+    /// # Retorna
+    /// Una cadena con el contenido del fichero RML
     fn visit_file(&mut self, file_node: FileASTNode) -> String {
         let mut file_generation = String::new();
         for prefix in file_node.prefixes {
@@ -34,6 +37,9 @@ impl Visitor<String> for Generator {
     /// # Argumentos
     /// * `self` - El propio generador
     /// * `prefix_node` - El nodo Prefix del AST
+    /// 
+    /// # Retorna
+    /// Una cadena con el formato RML equivalente del prefix de ShExML
     fn visit_prefix(&mut self, prefix_node: PrefixASTNode) -> String {
         let mut prefix_generation = String::new();
         prefix_generation.push_str(format!("{}:     ", prefix_node.identifier).as_str());

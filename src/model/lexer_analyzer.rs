@@ -18,8 +18,11 @@ use super::token::*;
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 /// 
+/// # Retorna
+/// Un token Prefix
+/// 
 /// # Errores
-/// * `ErrMode<ContextError>` - En el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(PREFIX).parse_next(input)?;
     Ok(Token::new(PREFIX.to_string(), TokenType::PREFIX))
@@ -32,8 +35,11 @@ fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 /// 
+/// # Retorna
+/// Un token :
+/// 
 /// # Errores
-/// * `ErrMode<ContextError>` - En el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(COLON).parse_next(input)?;
     Ok(Token::new(COLON.to_string(), TokenType::COLON))
@@ -46,8 +52,11 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 /// 
+/// # Retorna
+/// Un token Source
+/// 
 /// # Errores
-/// * `ErrMode<ContextError>` - En el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(SOURCE).parse_next(input)?;
     Ok(Token::new(SOURCE.to_string(), TokenType::SOURCE))
@@ -60,8 +69,11 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 /// 
+/// # Retorna
+/// Un token identificador
+/// 
 /// # Errores
-/// * `ErrMode<ContextError>` - En el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let ident = take_while(1.., |c: char| c.is_alphabetic() || c == '_')
         .parse_next(input)?;
@@ -76,8 +88,11 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 /// 
+/// # Retorna
+/// Un token URI
+/// 
 /// # Errores
-/// * `ErrMode<ContextError>` - En el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let uri = delimited('<', take_while(1.., |c: char| c != '>'), '>')
         .parse_next(input)?;
@@ -92,8 +107,11 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Argumentos
 /// * `input` - La entrada del fichero
 /// 
+/// # Retorna
+/// Un vector con los tokens detectados
+/// 
 /// # Errores
-/// * `Vec<ParserError>` - Un vector con los errores detectados por el analizador léxico
+/// Devuelve un `[Vec<ParserError>]` con los errores detectados por el analizador léxico
 pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
     let mut tokens = Vec::new();
     let mut errors: Vec<ParserError> = Vec::new();
@@ -110,6 +128,12 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 /// # Argumentos
 /// * `tokens` - El vector de tokens resultado del análisis léxico
 /// * `errors` - El vector de errores léxicos detectados
+/// 
+/// # Retorna
+/// El vector de tokens si no hay errores
+/// 
+/// # Errores
+/// Devuelve un `[Vec<ParserError>]` El vector de errores detectados en el análisis léxico
 fn end_lexer(mut tokens: Vec<Token>, errors: Vec<ParserError>) -> Result<Vec<Token>, Vec<ParserError>> {
     if errors.is_empty() {
         tokens.push(Token::create_eof_token());
