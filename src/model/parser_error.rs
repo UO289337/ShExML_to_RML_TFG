@@ -3,7 +3,7 @@
 use std::fmt;
 
 /// Estructura del ParserError
-/// 
+///
 /// Unicamente contiene el mensaje de error
 #[derive(Debug, Clone)]
 pub struct ParserError {
@@ -19,15 +19,13 @@ impl fmt::Display for ParserError {
 
 impl ParserError {
     /// Crea un ParserError y lo devuelve
-    /// 
+    ///
     /// # Argumentos
     /// * `message` - Mensaje del error
-    /// 
+    ///
     /// # Retorna
     /// A si mismo
     pub fn new(message: String) -> Self {
-        ParserError {
-            message
-        }
+        ParserError { message }
     }
 }

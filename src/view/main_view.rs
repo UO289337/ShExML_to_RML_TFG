@@ -1,11 +1,11 @@
 //! Módulo de la vista
-//! 
+//!
 //! Es la vista principal del compilador, la cual utiliza el usuario para indicar el fichero ShExML de entrada
 
-use tinyfiledialogs::{self, message_box_ok};
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
+use tinyfiledialogs::{self, message_box_ok};
 
 /// Permite al usuario indicar el fichero ShExML de entrada
 pub fn input() -> Option<String> {
@@ -22,28 +22,33 @@ pub fn input() -> Option<String> {
 }
 
 /// Abre un diálogo del sistema para que el usuario indique el fichero ShExML de entrada
-/// 
+///
 /// # Retorna
 /// El contenido del fichero
-/// 
+///
 /// # Errores
 /// Devuelve un `[Error]` en el caso de que no se seleccione ningún fichero
 fn input_shexml_file() -> Result<String, Error> {
-    if let Some(file) = tinyfiledialogs::open_file_dialog("Selecciona un fichero ShExML", "document.shexml", None) {
+    if let Some(file) =
+        tinyfiledialogs::open_file_dialog("Selecciona un fichero ShExML", "document.shexml", None)
+    {
         check_file_extension(&file)
     } else {
-        Err(Error::new(ErrorKind::Interrupted, "Ningún fichero seleccionado, saliendo..."))
+        Err(Error::new(
+            ErrorKind::Interrupted,
+            "Ningún fichero seleccionado, saliendo...",
+        ))
     }
 }
 
 /// Comprueba que la extensión del fichero seleccionado por el usuario sea .shexml
-/// 
+///
 /// # Argumentos
 /// * `file` - El fichero de entrada ShExML indicado por el usuario
-/// 
+///
 /// # Retorna
 /// El contenido del fichero
-/// 
+///
 /// # Errores
 /// Devuelve un `[Error]` en el caso de que la extensión del fichero seleccionado no sea .shexml
 fn check_file_extension(file: &String) -> Result<String, Error> {
@@ -52,15 +57,18 @@ fn check_file_extension(file: &String) -> Result<String, Error> {
     if path.extension().and_then(|ext| ext.to_str()) == Some("shexml") {
         fs::read_to_string(file)
     } else {
-        Err(Error::new(ErrorKind::InvalidInput, "El fichero seleccionado no tiene la extensión '.shexml'"))
+        Err(Error::new(
+            ErrorKind::InvalidInput,
+            "El fichero seleccionado no tiene la extensión '.shexml'",
+        ))
     }
 }
 
 /// Comprueba que el fichero ShExML no esté vacío
-/// 
+///
 /// # Argumentos
 /// * `file_content` - El contenido del fichero ShExML de entrada seleccionado por el usuario
-/// 
+///
 /// # Retorna
 /// Un `[Option<String>]` con el contenido del fichero
 fn check_input(file_content: Option<String>) -> Option<String> {

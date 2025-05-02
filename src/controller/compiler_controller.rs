@@ -1,15 +1,15 @@
 //! Módulo del controlador
-//! 
+//!
 //! Módulo intermediario entre el modelo y la vista
 //! Su función principal radica en enviar la entrada del usuario de la vista al modelo y de coordinar las distintas fases del compilador: analizador léxico,
 //! sintáctico y generación.
 
 use chumsky::error::SimpleReason;
 
-use crate::view;
 use crate::model;
-use crate::model::token::Token;
 use crate::model::parser_error::ParserError;
+use crate::model::token::Token;
+use crate::view;
 
 /// Ejecuta el analizador léxico del compilador
 pub fn run_lexer_analyzer() {
@@ -21,12 +21,12 @@ pub fn run_lexer_analyzer() {
         }
         Err(parser_errors) => {
             show_lexer_errors(parser_errors);
-        },
+        }
     };
 }
 
 /// Ejecuta el analizador sintáctico del compilador
-/// 
+///
 /// # Argumentos
 /// * `tokens` - El vector de tokens resultado del analizador léxico
 fn run_sintax_analyzer(tokens: Vec<Token>) {
@@ -42,7 +42,7 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 }
 
 /// Muestra los errores léxicos encontrados al realizar el análisis léxico
-/// 
+///
 /// # Argumentos
 /// * `lexer_errors` - Un vector de ParserError que contiene los errores léxicos encontrados
 fn show_lexer_errors(lexer_errors: Vec<ParserError>) {
@@ -52,7 +52,7 @@ fn show_lexer_errors(lexer_errors: Vec<ParserError>) {
 }
 
 /// Muestra los errores sintácticos encontrados al realizar el análisis sintáctico
-/// 
+///
 /// # Argumentos
 /// * `sintax_errors` - Un vector de Simple<Token>, de la biblioteca chumsky, que contiene los errores sintácticos encontrados
 fn show_sintax_errors(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) {
