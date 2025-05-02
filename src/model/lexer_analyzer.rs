@@ -4,12 +4,14 @@
 //! También puede indicar errores léxicos en el que caso de que encuentre algún lexema en la entrada que no esté incluido en la especificación ShExML
 
 use winnow::combinator::{alt, delimited};
-use winnow::error::{ContextError, ErrMode};
+use winnow::error::{AddContext, ContextError, ErrMode, StrContext};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
 
 use super::parser_error::ParserError;
 use super::token::*;
+
+use regex::Regex;
 
 /// Encuentra el token PREFIX en la entrada
 ///
@@ -94,6 +96,12 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let uri = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let re_uri = Regex::new(r"^[a-zA-Z][a-zA-Z0-9+.-]*://[^\s<>]+$").unwrap();
+    
+    if !re_uri.is_match(uri) {
+        let error = &ContextError::new().add_context(&"Formato incorrecto", &uri.checkpoint(), StrContext::Label("URI inválida"));
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
 
     Ok(Token::new(uri.to_string(), TokenType::URI))
 }
@@ -202,5 +210,116 @@ fn match_alternatives(
             }
         }
         Err(e) => panic!("{}", e),
+    }
+}
+
+// Test
+
+#[cfg(test)]
+mod lexer_tests {
+    use super::*;
+
+    #[test]
+    fn test_prefix() {
+        let expected = Token::new(PREFIX.to_string(), TokenType::PREFIX);
+
+        // Ok test
+        let actual = prefix(&mut "PREFIX");
+        assert_eq!(expected, actual.unwrap());
+
+        // Fail test
+        let actual = prefix(&mut "PRFIX");
+        check_error(actual);
+    }
+
+    #[test]
+    fn test_colon() {
+        let expected = Token::new(COLON.to_string(), TokenType::COLON);
+
+        // Ok test
+        let actual = colon(&mut ":");
+        assert_eq!(expected, actual.unwrap());
+
+        // Fail test
+        let actual = colon(&mut ";");
+        check_error(actual);
+    }
+
+    #[test]
+    fn test_source() {
+        let expected = Token::new(SOURCE.to_string(), TokenType::SOURCE);
+
+        // Ok test
+        let actual = source(&mut "SOURCE");
+        assert_eq!(expected, actual.unwrap());
+
+        // Fail test
+        let actual = source(&mut "SOUR");
+        check_error(actual);
+    }
+
+    #[test]
+    fn test_identifier() {
+        // Ok test
+        let expected = Token::new("ident".to_string(), TokenType::IDENT);
+        let actual = identifier(&mut "ident");
+        assert_eq!(expected, actual.unwrap());
+
+        // Ok test
+        let expected = Token::new("ident_valid".to_string(), TokenType::IDENT);
+        let actual = identifier(&mut "ident_valid");
+        assert_eq!(expected, actual.unwrap());
+
+         // Ok test
+        let expected = Token::new("_ident_valid".to_string(), TokenType::IDENT);
+        let actual = identifier(&mut "_ident_valid");
+        assert_eq!(expected, actual.unwrap());
+
+        // Fail test
+        let actual = identifier(&mut "123ident_invalid");
+        check_error(actual);
+    }
+
+    #[test]
+    fn test_uri() {
+        // Ok test
+        let expected = Token::new("https://ejemplo.com".to_string(), TokenType::URI);
+        let actual = uri(&mut "<https://ejemplo.com>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Ok test
+        let expected = Token::new("http://ejemplo.com".to_string(), TokenType::URI);
+        let actual = uri(&mut "<http://ejemplo.com>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Ok test
+        let expected = Token::new("https://ejemplo.com/".to_string(), TokenType::URI);
+        let actual = uri(&mut "<https://ejemplo.com/>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Fail test
+        let actual = uri(&mut "<https://ejemplo.com");
+        check_error(actual);
+
+        // Fail test
+        let actual = uri(&mut "https://ejemplo.com>");
+        check_error(actual);
+
+        // Fail test
+        let actual = uri(&mut "https://ejemplo.com");
+        check_error(actual);
+
+        // Fail test
+        let actual = uri(&mut "<https:ejemplo.com>");
+        check_error(actual);
+    }
+
+    fn check_error(actual: Result<Token, ErrMode<ContextError>>) {
+        match actual {
+            Err(ErrMode::Backtrack(ContextError { .. })) => {
+                println!("Error esperado")
+            }
+            other => panic!("Esperaba ErrMode::Backtrack con ContextError, pero se obtuvo: {:?}", other),
+        }
     }
 }

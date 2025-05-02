@@ -5,5 +5,6 @@ edition = "2021"
 
 [dependencies]
 chumsky = "0.9.3"
+regex = "1.11.1"
 tinyfiledialogs = "3.9"
 winnow = "0.7.4"
