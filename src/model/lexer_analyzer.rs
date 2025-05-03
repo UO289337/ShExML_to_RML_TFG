@@ -225,46 +225,55 @@ mod lexer_tests {
     // En los tests el número de línea de los tokens es 0 porque todavía no se le asigna
 
     #[test]
-    fn test_prefix() {
+    fn test_prefix_ok() {
         let expected = TestTokens::prefix_test_token(0);
 
         // Ok test
         let actual = prefix(&mut "PREFIX");
         assert_eq!(expected, actual.unwrap());
+    }
 
+    #[test]
+    fn test_prefix_fail() {
         // Fail test
         let actual = prefix(&mut "PRFIX");
         check_error(actual);
     }
 
     #[test]
-    fn test_colon() {
+    fn test_colon_ok() {
         let expected = TestTokens::colon_test_token(0);
 
         // Ok test
         let actual = colon(&mut ":");
         assert_eq!(expected, actual.unwrap());
+    }
 
+    #[test]
+    fn test_colon_fail() {
         // Fail test
         let actual = colon(&mut ";");
         check_error(actual);
     }
 
     #[test]
-    fn test_source() {
+    fn test_source_ok() {
         let expected = TestTokens::source_test_token(0);
 
         // Ok test
         let actual = source(&mut "SOURCE");
         assert_eq!(expected, actual.unwrap());
+    }
 
+    #[test]
+    fn test_source_fail() {
         // Fail test
         let actual = source(&mut "SOUR");
         check_error(actual);
     }
 
     #[test]
-    fn test_identifier() {
+    fn test_identifier_ok() {
         // Ok test
         let expected = TestTokens::ident_test_token("ident",0);
         let actual = identifier(&mut "ident");
@@ -279,14 +288,17 @@ mod lexer_tests {
         let expected = TestTokens::ident_test_token("_ident_valid", 0);
         let actual = identifier(&mut "_ident_valid");
         assert_eq!(expected, actual.unwrap());
+    }
 
+    #[test]
+    fn test_identifier_fail() {
         // Fail test
         let actual = identifier(&mut "123ident_invalid");
         check_error(actual);
     }
 
     #[test]
-    fn test_uri() {
+    fn test_uri_ok() {
         // Ok test
         let expected = TestTokens::uri_test_token("https://ejemplo.com",0);
         let actual = uri(&mut "<https://ejemplo.com>");
@@ -301,7 +313,10 @@ mod lexer_tests {
         let expected = TestTokens::uri_test_token("https://ejemplo.com/", 0);
         let actual = uri(&mut "<https://ejemplo.com/>");
         assert_eq!(expected, actual.unwrap());
+    }
 
+    #[test]
+    fn test_uri_fail() {
         // Fail test
         let actual = uri(&mut "<https://ejemplo.com");
         check_error(actual);
@@ -320,7 +335,7 @@ mod lexer_tests {
     }
 
     #[test]
-    fn test_lexer() {
+    fn test_lexer_ok() {
         // Ok test
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
@@ -330,7 +345,10 @@ mod lexer_tests {
             TestTokens::uri_test_token("https://shexml.herminiogarcia.com/files/films.xml", 2), TestTokens::eof_test_token(2)];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);
+    }
 
+    #[test]
+    fn test_lexer_fail() {
         // Fail test
         let mut input = "PREFIX example123: <http://example.com/>
             SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";

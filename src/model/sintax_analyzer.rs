@@ -231,65 +231,80 @@ mod sintax_detectors_tests {
     use super::*;
 
     #[test]
-    fn test_prefix_detector() {
+    fn test_prefix_detector_ok() {
         let expected_token = TestTokens::prefix_test_token(1);
 
         // Ok test
         let actual = prefix_detector().parse(vec![expected_token.clone()]);
         assert_eq!(expected_token, actual.unwrap());
+    }
 
+    #[test]
+    fn test_prefix_detector_fail() {
         // Fail test
         let actual = prefix_detector().parse(vec![TestTokens::colon_test_token(1)]);
         check_error(actual);
     }
 
     #[test]
-    fn test_source_detector() {
+    fn test_source_detector_ok() {
         let expected_token = TestTokens::source_test_token(1);
 
         // Ok test
         let actual = source_detector().parse(vec![expected_token.clone()]);
         assert_eq!(expected_token, actual.unwrap());
+    }
 
+    #[test]
+    fn test_source_detector_fail() {
         // Fail test
         let actual = source_detector().parse(vec![TestTokens::colon_test_token(1)]);
         check_error(actual);
     }
 
     #[test]
-    fn test_identifier_detector() {
+    fn test_identifier_detector_ok() {
         let expected_token = TestTokens::ident_test_token("ident", 1);
 
         // Ok test
         let actual = identifier_detector("PREFIX".to_string()).parse(vec![expected_token.clone()]);
         assert_eq!(expected_token, actual.unwrap());
+    }
 
+    #[test]
+    fn test_identifier_detector_fail() {
         // Fail test
         let actual = identifier_detector("SOURCE".to_string()).parse(vec![TestTokens::colon_test_token(1)]);
         check_error(actual);
     }
 
     #[test]
-    fn test_uri_detector() {
+    fn test_uri_detector_ok() {
         let expected_token = TestTokens::uri_test_token("https://ejemplo.com", 1);
 
         // Ok test
         let actual = uri_detector().parse(vec![expected_token.clone()]);
         assert_eq!(expected_token, actual.unwrap());
+    }
 
+    #[test]
+    fn test_uri_detector_fail() {
         // Fail test
         let actual = uri_detector().parse(vec![TestTokens::colon_test_token(1)]);
         check_error(actual);
     }
 
     #[test]
-    fn test_colon_detector() {
+    fn test_colon_detector_ok() {
         let expected_token = TestTokens::colon_test_token(1);
 
         // Ok test
         let actual = colon_detector().parse(vec![expected_token.clone()]);
         assert_eq!(expected_token, actual.unwrap());
+    }
 
+    #[test]
+    fn test_colon_detector_fail() {
         // Fail test
         let actual = colon_detector().parse(vec![TestTokens::ident_test_token("ident", 1)]);
         check_error(actual);
@@ -307,7 +322,7 @@ mod sintax_tests {
     use super::*;
 
     #[test]
-    fn test_prefix_parser() {
+    fn test_prefix_parser_ok() {
         let mut tokens_vector = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("ident", 1), 
             TestTokens::colon_test_token(1), TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
 
@@ -335,7 +350,10 @@ mod sintax_tests {
         let expected_vector = vec![expected, expected2];
         let actual = prefix_parser().parse(tokens_vector);
         assert_eq!(expected_vector, actual.unwrap());
+    }
 
+    #[test]
+    fn test_prefix_parser_fail() {
         // Fail test
         let fail_tokens_vector = vec![TestTokens::ident_test_token("ident", 1), 
             TestTokens::colon_test_token(1), TestTokens::uri_test_token("https://ejemplo.com", 1),
@@ -364,7 +382,7 @@ mod sintax_tests {
     }
 
     #[test]
-    fn test_source_parser() {
+    fn test_source_parser_ok() {
         let mut tokens_vector = vec![TestTokens::source_test_token(1), TestTokens::ident_test_token("ident", 1), 
             TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
 
@@ -391,7 +409,10 @@ mod sintax_tests {
         let expected_vector = vec![expected, expected2];
         let actual = source_parser().parse(tokens_vector);
         assert_eq!(expected_vector, actual.unwrap());
+    }
 
+    #[test]
+    fn test_source_parser_fail() {
         // Fail test
         let fail_tokens_vector = vec![TestTokens::ident_test_token("ident", 1), 
             TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
@@ -412,7 +433,7 @@ mod sintax_tests {
     }
 
     #[test]
-    fn test_file_parser() {
+    fn test_file_parser_ok() {
         // Ok test
         let tokens_vector = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("ident", 1), 
             TestTokens::colon_test_token(1), TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::source_test_token(1), 
@@ -430,7 +451,10 @@ mod sintax_tests {
         };
         let actual = file_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
+    }
 
+    #[test]
+    fn test_file_parser_fail() {
         // Fail test
         let tokens_vector = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("ident", 1), 
             TestTokens::colon_test_token(1), TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
