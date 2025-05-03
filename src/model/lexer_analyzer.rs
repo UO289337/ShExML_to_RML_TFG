@@ -134,6 +134,7 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 /// # Argumentos
 /// * `tokens` - El vector de tokens resultado del análisis léxico
 /// * `errors` - El vector de errores léxicos detectados
+/// * `num_line` - El último número de línea
 ///
 /// # Retorna
 /// El vector de tokens si no hay errores
@@ -159,6 +160,9 @@ fn end_lexer(
 /// * `input` - La entrada del fichero
 /// * `tokens` - El vector que contendrá los tokens detectados
 /// * `errors` - El vector que contendrá los errores léxicos detectados
+/// 
+/// # Retorna
+/// El último número de línea
 fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<ParserError>) -> u16 {
     let mut num_line = 1;
 
@@ -218,53 +222,61 @@ fn match_alternatives(
 
 // Tests
 
+/// Módulo de los tests del analizador léxico
+/// 
+/// Contiene los tests que se encargan de probar que se detectan todos los tokens válidos y se descartan los inválidos
+/// Los tests se hacen tanto a nivel de tokens individuales como a nivel de tokens en conjunto
 #[cfg(test)]
 mod lexer_tests {
     use super::*;
 
     // En los tests el número de línea de los tokens es 0 porque todavía no se le asigna
 
+    /// Comprueba que se detecta el token PREFIX
+    #[doc(hidden)]
     #[test]
     fn test_prefix_ok() {
         let expected = TestTokens::prefix_test_token(0);
-
-        // Ok test
         let actual = prefix(&mut "PREFIX");
         assert_eq!(expected, actual.unwrap());
     }
 
+    /// Comprueba que no se detecta como token aquellas cadenas que no sean PREFIX
+    #[doc(hidden)]
     #[test]
     fn test_prefix_fail() {
-        // Fail test
         let actual = prefix(&mut "PRFIX");
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token :
+    #[doc(hidden)]
     #[test]
     fn test_colon_ok() {
         let expected = TestTokens::colon_test_token(0);
-
-        // Ok test
         let actual = colon(&mut ":");
         assert_eq!(expected, actual.unwrap());
     }
 
+    /// Comprueba que no se detecta como token : aquellas cadenas que no lo sean
+    #[doc(hidden)]
     #[test]
     fn test_colon_fail() {
-        // Fail test
         let actual = colon(&mut ";");
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token SOURCE
+    #[doc(hidden)]
     #[test]
     fn test_source_ok() {
         let expected = TestTokens::source_test_token(0);
-
-        // Ok test
         let actual = source(&mut "SOURCE");
         assert_eq!(expected, actual.unwrap());
     }
 
+    /// Comprueba que no se detecta como token SOURCE aquellas cadenas que no lo sean
+    #[doc(hidden)]
     #[test]
     fn test_source_fail() {
         // Fail test
@@ -272,71 +284,84 @@ mod lexer_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token IDENT; los identificadores
+    #[doc(hidden)]
     #[test]
     fn test_identifier_ok() {
-        // Ok test
+        // Test con identificador sin _
         let expected = TestTokens::ident_test_token("ident",0);
         let actual = identifier(&mut "ident");
         assert_eq!(expected, actual.unwrap());
 
-        // Ok test
+        // Test con identificador con _ entre 2 secuencias de caracteres
         let expected = TestTokens::ident_test_token("ident_valid",0);
         let actual = identifier(&mut "ident_valid");
         assert_eq!(expected, actual.unwrap());
 
-         // Ok test
+        // Test con identificador con _ al principio del identificador
         let expected = TestTokens::ident_test_token("_ident_valid", 0);
         let actual = identifier(&mut "_ident_valid");
         assert_eq!(expected, actual.unwrap());
+
+        // Test con identificador con _ al final del identificador
+        let expected = TestTokens::ident_test_token("ident_valid_", 0);
+        let actual = identifier(&mut "ident_valid_");
+        assert_eq!(expected, actual.unwrap());
     }
 
+    /// Comprueba que no se detecta como token IDENT aquellas cadenas que no lo sean
+    #[doc(hidden)]
     #[test]
     fn test_identifier_fail() {
-        // Fail test
         let actual = identifier(&mut "123ident_invalid");
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token URI
+    #[doc(hidden)]
     #[test]
     fn test_uri_ok() {
-        // Ok test
+        // Test con URI con el protocolo HTTPS
         let expected = TestTokens::uri_test_token("https://ejemplo.com",0);
         let actual = uri(&mut "<https://ejemplo.com>");
         assert_eq!(expected, actual.unwrap());
 
-        // Ok test
+        // Test con URI con el protocolo HTTP
         let expected = TestTokens::uri_test_token("http://ejemplo.com", 0);
         let actual = uri(&mut "<http://ejemplo.com>");
         assert_eq!(expected, actual.unwrap());
 
-        // Ok test
+        // Test con URI acabada en /
         let expected = TestTokens::uri_test_token("https://ejemplo.com/", 0);
         let actual = uri(&mut "<https://ejemplo.com/>");
         assert_eq!(expected, actual.unwrap());
     }
 
+    /// Comprueba que no se detecta como token uri aquellas cadenas que no lo sean
+    #[doc(hidden)]
     #[test]
     fn test_uri_fail() {
-        // Fail test
+        // Test con > faltante al final de la URI
         let actual = uri(&mut "<https://ejemplo.com");
         check_error(actual);
 
-        // Fail test
+        // Test con < faltante al comienzo de la URI
         let actual = uri(&mut "https://ejemplo.com>");
         check_error(actual);
 
-        // Fail test
+        // Test con < y > faltantes
         let actual = uri(&mut "https://ejemplo.com");
         check_error(actual);
 
-        // Fail test
+        // Test con una URI incorrecta
         let actual = uri(&mut "<https:ejemplo.com>");
         check_error(actual);
     }
 
+    /// Comprueba que se detectan múltiples tokens distintos
+    #[doc(hidden)]
     #[test]
     fn test_lexer_ok() {
-        // Ok test
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
 
@@ -347,21 +372,27 @@ mod lexer_tests {
         assert_eq!(expected, actual);
     }
 
+    /// Comprueba que se detectan errores si, entre múltiples tokens, hay alguna cadena con algún error
+    #[doc(hidden)]
     #[test]
     fn test_lexer_fail() {
-        // Fail test
+        // Test con un error en el identificador de PREFIX
         let mut input = "PREFIX example123: <http://example.com/>
             SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
 
-        // Fail test
+        // Test con un error en la URI de SOURCE
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
     }
 
+    /// Comprueba que el resultado actual del test es un error
+    /// 
+    /// # Argumentos
+    /// * `actual` - Un Result con el error esperado
     fn check_error(actual: Result<Token, ErrMode<ContextError>>) {
         assert!(actual.is_err(), "Se esperaba un error, pero se obtuvo: {:?}", actual);
     }
