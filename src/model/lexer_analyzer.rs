@@ -213,15 +213,17 @@ fn match_alternatives(
     }
 }
 
-// Test
+// Tests
 
 #[cfg(test)]
 mod lexer_tests {
     use super::*;
 
+    // En los tests el número de línea de los tokens es 0 porque todavía no se le asigna
+
     #[test]
     fn test_prefix() {
-        let expected = Token::new(PREFIX.to_string(), TokenType::PREFIX);
+        let expected = TestTokens::prefix_test_token(0);
 
         // Ok test
         let actual = prefix(&mut "PREFIX");
@@ -234,7 +236,7 @@ mod lexer_tests {
 
     #[test]
     fn test_colon() {
-        let expected = Token::new(COLON.to_string(), TokenType::COLON);
+        let expected = TestTokens::colon_test_token(0);
 
         // Ok test
         let actual = colon(&mut ":");
@@ -247,7 +249,7 @@ mod lexer_tests {
 
     #[test]
     fn test_source() {
-        let expected = Token::new(SOURCE.to_string(), TokenType::SOURCE);
+        let expected = TestTokens::source_test_token(0);
 
         // Ok test
         let actual = source(&mut "SOURCE");
@@ -261,17 +263,17 @@ mod lexer_tests {
     #[test]
     fn test_identifier() {
         // Ok test
-        let expected = Token::new("ident".to_string(), TokenType::IDENT);
+        let expected = TestTokens::ident_test_token("ident",0);
         let actual = identifier(&mut "ident");
         assert_eq!(expected, actual.unwrap());
 
         // Ok test
-        let expected = Token::new("ident_valid".to_string(), TokenType::IDENT);
+        let expected = TestTokens::ident_test_token("ident_valid",0);
         let actual = identifier(&mut "ident_valid");
         assert_eq!(expected, actual.unwrap());
 
          // Ok test
-        let expected = Token::new("_ident_valid".to_string(), TokenType::IDENT);
+        let expected = TestTokens::ident_test_token("_ident_valid", 0);
         let actual = identifier(&mut "_ident_valid");
         assert_eq!(expected, actual.unwrap());
 
@@ -283,17 +285,17 @@ mod lexer_tests {
     #[test]
     fn test_uri() {
         // Ok test
-        let expected = Token::new("https://ejemplo.com".to_string(), TokenType::URI);
+        let expected = TestTokens::uri_test_token("https://ejemplo.com",0);
         let actual = uri(&mut "<https://ejemplo.com>");
         assert_eq!(expected, actual.unwrap());
 
         // Ok test
-        let expected = Token::new("http://ejemplo.com".to_string(), TokenType::URI);
+        let expected = TestTokens::uri_test_token("http://ejemplo.com", 0);
         let actual = uri(&mut "<http://ejemplo.com>");
         assert_eq!(expected, actual.unwrap());
 
         // Ok test
-        let expected = Token::new("https://ejemplo.com/".to_string(), TokenType::URI);
+        let expected = TestTokens::uri_test_token("https://ejemplo.com/", 0);
         let actual = uri(&mut "<https://ejemplo.com/>");
         assert_eq!(expected, actual.unwrap());
 
@@ -315,11 +317,6 @@ mod lexer_tests {
     }
 
     fn check_error(actual: Result<Token, ErrMode<ContextError>>) {
-        match actual {
-            Err(ErrMode::Backtrack(ContextError { .. })) => {
-                println!("Error esperado")
-            }
-            other => panic!("Esperaba ErrMode::Backtrack con ContextError, pero se obtuvo: {:?}", other),
-        }
+        assert!(actual.is_err(), "Se esperaba un error, pero se obtuvo: {:?}", actual);
     }
 }
