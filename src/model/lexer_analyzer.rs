@@ -122,9 +122,9 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
     let mut tokens = Vec::new();
     let mut errors: Vec<ParserError> = Vec::new();
 
-    look_over_input(input, &mut tokens, &mut errors);
+    let num_line = look_over_input(input, &mut tokens, &mut errors);
 
-    end_lexer(tokens, errors)
+    end_lexer(tokens, errors, num_line)
 }
 
 /// Finaliza el análisis léxico
@@ -143,9 +143,10 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 fn end_lexer(
     mut tokens: Vec<Token>,
     errors: Vec<ParserError>,
+    num_line: u16
 ) -> Result<Vec<Token>, Vec<ParserError>> {
     if errors.is_empty() {
-        tokens.push(Token::create_eof_token());
+        tokens.push(Token::create_eof_token(num_line));
         Ok(tokens)
     } else {
         Err(errors)
@@ -158,7 +159,7 @@ fn end_lexer(
 /// * `input` - La entrada del fichero
 /// * `tokens` - El vector que contendrá los tokens detectados
 /// * `errors` - El vector que contendrá los errores léxicos detectados
-fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<ParserError>) {
+fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<ParserError>) -> u16 {
     let mut num_line = 1;
 
     while !input.is_empty() {
@@ -174,6 +175,8 @@ fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<P
             take_while(1.., |c: char| c.is_whitespace() || c == '\t').parse_next(input);
         // Se ignoran los espacios
     }
+
+    num_line
 }
 
 /// Busca entre las distintas alternativas de tokens
@@ -314,6 +317,31 @@ mod lexer_tests {
         // Fail test
         let actual = uri(&mut "<https:ejemplo.com>");
         check_error(actual);
+    }
+
+    #[test]
+    fn test_lexer() {
+        // Ok test
+        let mut input = "PREFIX example: <http://example.com/>
+            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
+
+        let expected: Vec<Token> = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("example", 1), TestTokens::colon_test_token(1),
+            TestTokens::uri_test_token("http://example.com/", 1), TestTokens::source_test_token(2), TestTokens::ident_test_token("films_xml_file", 2),
+            TestTokens::uri_test_token("https://shexml.herminiogarcia.com/files/films.xml", 2), TestTokens::eof_test_token(2)];
+        let actual = lexer(&mut input).unwrap();
+        assert_eq!(expected, actual);
+
+        // Fail test
+        let mut input = "PREFIX example123: <http://example.com/>
+            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
+        let actual = lexer(&mut input);
+        assert!(actual.is_err());
+
+        // Fail test
+        let mut input = "PREFIX example: <http://example.com/>
+            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml";
+        let actual = lexer(&mut input);
+        assert!(actual.is_err());
     }
 
     fn check_error(actual: Result<Token, ErrMode<ContextError>>) {

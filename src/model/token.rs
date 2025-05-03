@@ -65,11 +65,11 @@ impl Token {
     ///
     /// # Retorna
     /// A si mismo
-    pub fn create_eof_token() -> Self {
+    pub fn create_eof_token(num_line: u16) -> Self {
         Token {
             lexeme: " ".to_string(),
             token_type: TokenType::EOF,
-            num_line: 0,
+            num_line: num_line,
         }
     }
 }
@@ -108,8 +108,7 @@ impl TestTokens {
     }
 
     pub fn eof_test_token(num_line: u16) -> Token {
-        let mut token = Token::create_eof_token();
-        token.set_num_line(num_line);
+        let token = Token::create_eof_token(num_line);
         token
     }
 }
