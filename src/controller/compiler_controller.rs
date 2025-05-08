@@ -47,7 +47,7 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 /// * `lexer_errors` - Un vector de ParserError que contiene los errores léxicos encontrados
 fn show_lexer_errors(lexer_errors: Vec<ParserError>) {
     for error in lexer_errors {
-        eprintln!("Error léxico: {:?}", error)
+        eprintln!("{}", error);
     }
 }
 
@@ -61,6 +61,6 @@ fn show_sintax_errors(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) {
             SimpleReason::Custom(msg) => msg,
             _ => "Error desconocido",
         };
-        eprintln!("Error durante el análisis sintáctico: {:?}", err_message);
+        eprintln!("Error durante el análisis sintáctico: {}", err_message);
     }
 }
