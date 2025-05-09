@@ -24,5 +24,5 @@ pub struct PrefixASTNode {
 #[derive(Debug, PartialEq)]
 pub struct SourceASTNode {
     pub identifier: String,
-    pub uri: String,
+    pub file_path: String,
 }

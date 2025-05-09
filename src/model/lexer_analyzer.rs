@@ -84,7 +84,7 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 
 /// Encuentra un token URI en la entrada
 ///
-/// Acepta como entrada cualquier cadena de caracteres entre < y >
+/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular de URIs
 ///
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
@@ -104,6 +104,44 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     }
 
     Ok(Token::new(uri.to_string(), TokenType::URI))
+}
+
+/// Encuentra un token FILEPATH en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
+/// * Ficheros CSV con un path en remoto o en local
+/// * Bases de datos con una URL JDBC
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token FILEPATH
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let file_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let re_file_path = Regex::new(r"(?ix)
+            (
+                file://[/\\][^ \n\r\t]+\.csv
+                |
+                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])*[\w\-.\\\/*]+\.csv
+                |
+                jdbc:[\w]+://[^ \n\r\t]+
+                |
+                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv
+            )
+        "
+        ).unwrap();
+    
+    if !re_file_path.is_match(file_path) {
+        let error = &ContextError::new()
+            .add_context(&"Formato incorrecto", &file_path.checkpoint(), StrContext::Label("Path o URI del fichero CSV o base de datos inválida"));
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    Ok(Token::new(file_path.to_string(), TokenType::FILEPATH))
 }
 
 /// Realiza el análisis léxico de la entrada
@@ -198,7 +236,7 @@ fn match_alternatives(
     num_line: u16,
     errors: &mut Vec<ParserError>,
 ) {
-    match alt((colon, prefix, source, uri, identifier)).parse_next(input) {
+    match alt((colon, prefix, source, file_path, uri, identifier)).parse_next(input) {
         Ok(mut token) => {
             token.set_num_line(num_line);
             tokens.push(token);
@@ -355,6 +393,77 @@ mod lexer_tests {
 
         // Test con una URI incorrecta
         let actual = uri(&mut "<https:ejemplo.com>");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token FILEPATH
+    #[doc(hidden)]
+    #[test]
+    fn test_file_path_ok() {
+        // Test con FILEPATH con un fichero CSV en remoto
+        let expected = TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv",0);
+        let actual = file_path(&mut "<https://ejemplo.com/fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con FILEPATH con un fichero CSV en local con ruta relativa
+        let expected = TestTokens::file_path_test_token("ejemplo/fichero.csv", 0);
+        let actual = file_path(&mut "<ejemplo/fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con FILEPATH con un fichero CSV en local con ruta absoluta con file
+        let expected = TestTokens::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
+        let actual = file_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con FILEPATH con un fichero CSV en local con ruta absoluta sin file
+        let expected = TestTokens::file_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
+        let actual = file_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con FILEPATH con una base de datos
+        let expected = TestTokens::file_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
+        let actual = file_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que no se detecta como token file_path aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn test_file_path_fail() {
+        // Test con > faltante al final del FILEPATH
+        let actual = file_path(&mut "<https://ejemplo.com");
+        check_error(actual);
+
+        // Test con < faltante al final del FILEPATH
+        let actual = file_path(&mut "https://ejemplo.com>");
+        check_error(actual);
+
+        // Test con < y > faltantes 
+        let actual = file_path(&mut "https://ejemplo.com");
+        check_error(actual);
+
+        // Test con una URI incorrecta
+        let actual = file_path(&mut "<https:ejemplo.com>");
+        check_error(actual);
+
+        // Test con un path absoluto con file incorrecto
+        let actual = file_path(&mut "<file//>");
+        check_error(actual);
+
+        // Test con un path absoluto sin file incorrecto
+        let actual = file_path(&mut "<//..>");
+        check_error(actual);
+
+        // Test con un path relativo incorrecto
+        let actual = file_path(&mut "<ejemplo/>");
+        check_error(actual);
+
+        // Test con un tipo de fichero incorrecto
+        let actual = file_path(&mut "<ejemplo/fichero.txt>");
+        check_error(actual);
+
+        // Test con una JBDC URL incorrecta
+        let actual = file_path(&mut "<jdbc:/localhost:3306/db>");
         check_error(actual);
     }
 

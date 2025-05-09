@@ -63,10 +63,10 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {
     source_detector()
         .then(identifier_detector(SOURCE.to_string()))
-        .then(uri_detector())
-        .map(|((_, ident), uri)| SourceASTNode {
+        .then(file_path_detector())
+        .map(|((_, ident), file_path)| SourceASTNode {
             identifier: ident.lexeme.clone(),
-            uri: uri.lexeme.clone(),
+            file_path: file_path.lexeme.clone(),
         })
         .repeated()
         .at_least(1)
@@ -172,6 +172,30 @@ fn uri_detector() -> MapErr<
                 token.span(),
                 format!(
                     "Se esperaba una URI después del identificador en la línea {}",
+                    token.found().map(|t| t.num_line).unwrap()
+                ),
+            )
+        })
+}
+
+/// Detecta el token FILEPATH en los tokens
+///
+/// # Retorna
+/// Un token de tipo File path si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo File path
+fn file_path_detector() -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+    > {
+    filter(|token: &Token| token.token_type == TokenType::FILEPATH)
+        .map(|token| token.clone())
+        .map_err(|token: Simple<Token>| {
+            Simple::custom(
+                token.span(),
+                format!(
+                    "Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea {}",
                     token.found().map(|t| t.num_line).unwrap()
                 ),
             )
@@ -402,12 +426,12 @@ mod sintax_tests {
     #[test]
     fn test_source_parser_ok() {
         let mut tokens_vector = vec![TestTokens::source_test_token(1), TestTokens::ident_test_token("ident", 1), 
-            TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
+            TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
 
         // Test con un solo SOURCE
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
-            uri: "https://ejemplo.com".to_string(),
+            file_path: "https://ejemplo.com/fichero.csv".to_string(),
         };
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -416,12 +440,12 @@ mod sintax_tests {
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestTokens::source_test_token(2));
         tokens_vector.push(TestTokens::ident_test_token("ident2", 2));
-        tokens_vector.push(TestTokens::uri_test_token("https://ejemplo2.com", 2));
+        tokens_vector.push(TestTokens::file_path_test_token("https://ejemplo2.com/fichero.csv", 2));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = SourceASTNode {
             identifier: "ident2".to_string(),
-            uri: "https://ejemplo2.com".to_string(),
+            file_path: "https://ejemplo2.com/fichero.csv".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];
@@ -435,21 +459,21 @@ mod sintax_tests {
     fn test_source_parser_fail() {
         // Test con el token SOURCE faltante
         let fail_tokens_vector = vec![TestTokens::ident_test_token("ident", 1), 
-            TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
+            TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
 
         // Test con el token IDENT (identificador) faltante
         let fail_tokens_vector = vec![TestTokens::source_test_token(1), 
-            TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
+            TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(actual, "Se esperaba un identificador después de SOURCE en la línea 1");
 
-        // Test con el token URI faltante
+        // Test con el token FILEPATH faltante
         let fail_tokens_vector = vec![TestTokens::source_test_token(1), TestTokens::ident_test_token("ident", 1),
         TestTokens::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba una URI después del identificador en la línea 1");
+        check_error::<SourceASTNode>(actual, "Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea 1");
     }
 
     /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST
@@ -458,7 +482,7 @@ mod sintax_tests {
     fn test_file_parser_ok() {
         let tokens_vector = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("ident", 1), 
             TestTokens::colon_test_token(1), TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::source_test_token(1), 
-            TestTokens::ident_test_token("ident", 1), TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::eof_test_token(1)];
+            TestTokens::ident_test_token("ident", 1), TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
 
         let expected = FileASTNode {
             prefixes: vec![PrefixASTNode {
@@ -467,7 +491,7 @@ mod sintax_tests {
             }],
             sources: vec![SourceASTNode {
                 identifier: "ident".to_string(),
-                uri: "https://ejemplo.com".to_string(),
+                file_path: "https://ejemplo.com/fichero.csv".to_string(),
             }],
         };
         let actual = file_parser().parse(tokens_vector.clone());

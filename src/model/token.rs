@@ -9,6 +9,7 @@ pub enum TokenType {
     SOURCE,
     IDENT,
     URI,
+    FILEPATH,
     COLON,
     EOF,
 }
@@ -17,6 +18,7 @@ pub const PREFIX: &str = "PREFIX";
 pub const SOURCE: &str = "SOURCE";
 pub const IDENT: &str = "IDENT";
 pub const URI: &str = "URI";
+pub const FILE_PATH: &str = "FILE_PATH";
 pub const COLON: &str = ":";
 pub const EOF: &str = " ";
 
@@ -103,6 +105,12 @@ impl TestTokens {
 
     pub fn uri_test_token(uri: &str, num_line: u16) -> Token {
         let mut token = Token::new(uri.to_string(), TokenType::URI);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn file_path_test_token(file_path: &str, num_line: u16) -> Token {
+        let mut token = Token::new(file_path.to_string(), TokenType::FILEPATH);
         token.set_num_line(num_line);
         token
     }
