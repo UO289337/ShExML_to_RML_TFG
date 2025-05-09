@@ -178,18 +178,18 @@ fn uri_detector() -> MapErr<
         })
 }
 
-/// Detecta el token FILEPATH en los tokens
+/// Detecta el token SOURCEPATH en los tokens
 ///
 /// # Retorna
-/// Un token de tipo File path si el token actual es de dicho tipo
+/// Un token de tipo Source path si el token actual es de dicho tipo
 ///
 /// # Errores
-/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo File path
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Source path
 fn file_path_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
     > {
-    filter(|token: &Token| token.token_type == TokenType::FILEPATH)
+    filter(|token: &Token| token.token_type == TokenType::SOURCEPATH)
         .map(|token| token.clone())
         .map_err(|token: Simple<Token>| {
             Simple::custom(
@@ -426,7 +426,7 @@ mod sintax_tests {
     #[test]
     fn test_source_parser_ok() {
         let mut tokens_vector = vec![TestTokens::source_test_token(1), TestTokens::ident_test_token("ident", 1), 
-            TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
+            TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
 
         // Test con un solo SOURCE
         let expected = SourceASTNode {
@@ -440,7 +440,7 @@ mod sintax_tests {
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestTokens::source_test_token(2));
         tokens_vector.push(TestTokens::ident_test_token("ident2", 2));
-        tokens_vector.push(TestTokens::file_path_test_token("https://ejemplo2.com/fichero.csv", 2));
+        tokens_vector.push(TestTokens::source_path_test_token("https://ejemplo2.com/fichero.csv", 2));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = SourceASTNode {
@@ -459,17 +459,17 @@ mod sintax_tests {
     fn test_source_parser_fail() {
         // Test con el token SOURCE faltante
         let fail_tokens_vector = vec![TestTokens::ident_test_token("ident", 1), 
-            TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
+            TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
 
         // Test con el token IDENT (identificador) faltante
         let fail_tokens_vector = vec![TestTokens::source_test_token(1), 
-            TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
+            TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(actual, "Se esperaba un identificador después de SOURCE en la línea 1");
 
-        // Test con el token FILEPATH faltante
+        // Test con el token SOURCEPATH faltante
         let fail_tokens_vector = vec![TestTokens::source_test_token(1), TestTokens::ident_test_token("ident", 1),
         TestTokens::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
@@ -482,7 +482,7 @@ mod sintax_tests {
     fn test_file_parser_ok() {
         let tokens_vector = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("ident", 1), 
             TestTokens::colon_test_token(1), TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::source_test_token(1), 
-            TestTokens::ident_test_token("ident", 1), TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
+            TestTokens::ident_test_token("ident", 1), TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
 
         let expected = FileASTNode {
             prefixes: vec![PrefixASTNode {

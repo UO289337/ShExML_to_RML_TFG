@@ -64,6 +64,23 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(SOURCE.to_string(), TokenType::SOURCE))
 }
 
+/// Encuentra el token QUERY en la entrada
+///
+/// Acepta la entrada 'QUERY'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Query
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(QUERY).parse_next(input)?;
+    Ok(Token::new(QUERY.to_string(), TokenType::QUERY))
+}
+
 /// Encuentra un token identificador en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '_'
@@ -106,7 +123,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(uri.to_string(), TokenType::URI))
 }
 
-/// Encuentra un token FILEPATH en la entrada
+/// Encuentra un token SOURCEPATH en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
 /// * Ficheros CSV con un path en remoto o en local
@@ -116,32 +133,71 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
-/// Un token FILEPATH
+/// Un token SOURCEPATH
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
-fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let file_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
-    let re_file_path = Regex::new(r"(?ix)
-            (
-                file://[/\\][^ \n\r\t]+\.csv
-                |
-                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])*[\w\-.\\\/*]+\.csv
-                |
-                jdbc:[\w]+://[^ \n\r\t]+
-                |
-                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv
-            )
-        "
+fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let source_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let re_source_path = Regex::new(r"(?ix)
+        (
+            https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv
+            |
+            jdbc:[\w]+://[^\s\r\n\t]+
+            |
+            file://[/\\][^ \n\r\t]+\.csv
+            |
+            (?:\.{0,2}[\\/])?(?:[^:\s\\/\r\n\t]+[\\/])*[^:\s\\/\r\n\t]+\.csv
+        )"
         ).unwrap();
     
-    if !re_file_path.is_match(file_path) {
+    if !re_source_path.is_match(source_path) {
         let error = &ContextError::new()
-            .add_context(&"Formato incorrecto", &file_path.checkpoint(), StrContext::Label("Path o URI del fichero CSV o base de datos inválida"));
+            .add_context(&"Formato incorrecto", &source_path.checkpoint(), StrContext::Label("Path o URI del fichero CSV o base de datos inválida"));
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    Ok(Token::new(file_path.to_string(), TokenType::FILEPATH))
+    Ok(Token::new(source_path.to_string(), TokenType::SOURCEPATH))
+}
+
+/// Encuentra un token QUERYDEFINITION en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
+/// * Consultas SQL literales o en ficheros externos .sql
+/// * Consultas externas SPARQL en ficheros externos .sparql
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token QUERYDEFINITION
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let query_definition = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let re_query_definition = Regex::new(r"(?ix)
+            (?:                                  
+            |
+            file://[/\\]?[^\s\r\n]+\.(?:sparql|sql)   # Ficheros .sparql y .sql
+            |
+            (\.{0,2}[\\/])?(?:[\w\-.]+[\\/])*[\w\-.]+\.(?:sparql|sql)  # rutas locales .sparql y .sql
+            |
+            (?i)                             
+            \bSELECT\b.+?(?:\bFROM\b|\bWHERE\b|\bGROUP\s+BY\b|\bORDER\s+BY\b) # SQL
+            |
+            https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.(?:sparql|sql)  # URLs remotas a ficheros .sparql y .sql
+        )
+        "
+        ).unwrap();
+    
+    if !re_query_definition.is_match(query_definition) {
+        let error = &ContextError::new()
+            .add_context(&"Formato incorrecto", &query_definition.checkpoint(), StrContext::Label("Consulta SQL o path a fichero inválido"));
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    Ok(Token::new(query_definition.to_string(), TokenType::QUERYDEFINITION))
 }
 
 /// Realiza el análisis léxico de la entrada
@@ -236,7 +292,7 @@ fn match_alternatives(
     num_line: u16,
     errors: &mut Vec<ParserError>,
 ) {
-    match alt((colon, prefix, source, file_path, uri, identifier)).parse_next(input) {
+    match alt((colon, prefix, source, query, source_path, query_definition, uri, identifier)).parse_next(input) {
         Ok(mut token) => {
             token.set_num_line(num_line);
             tokens.push(token);
@@ -396,74 +452,145 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token FILEPATH
+    /// Comprueba que se detecta el token SOURCEPATH
     #[doc(hidden)]
     #[test]
-    fn test_file_path_ok() {
-        // Test con FILEPATH con un fichero CSV en remoto
-        let expected = TestTokens::file_path_test_token("https://ejemplo.com/fichero.csv",0);
-        let actual = file_path(&mut "<https://ejemplo.com/fichero.csv>");
+    fn test_source_path_ok() {
+        // Test con SOURCEPATH con un fichero CSV en remoto
+        let expected = TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv",0);
+        let actual = source_path(&mut "<https://ejemplo.com/fichero.csv>");
         assert_eq!(expected, actual.unwrap());
 
-        // Test con FILEPATH con un fichero CSV en local con ruta relativa
-        let expected = TestTokens::file_path_test_token("ejemplo/fichero.csv", 0);
-        let actual = file_path(&mut "<ejemplo/fichero.csv>");
+        // Test con SOURCEPATH con un fichero CSV en local con ruta relativa
+        let expected = TestTokens::source_path_test_token("ejemplo/fichero.csv", 0);
+        let actual = source_path(&mut "<ejemplo/fichero.csv>");
         assert_eq!(expected, actual.unwrap());
 
-        // Test con FILEPATH con un fichero CSV en local con ruta absoluta con file
-        let expected = TestTokens::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
-        let actual = file_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
+        // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta con file
+        let expected = TestTokens::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
+        let actual = source_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
         assert_eq!(expected, actual.unwrap());
 
-        // Test con FILEPATH con un fichero CSV en local con ruta absoluta sin file
-        let expected = TestTokens::file_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
-        let actual = file_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
+        // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta sin file
+        let expected = TestTokens::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
+        let actual = source_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
         assert_eq!(expected, actual.unwrap());
 
-        // Test con FILEPATH con una base de datos
-        let expected = TestTokens::file_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
-        let actual = file_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
+        // Test con SOURCEPATH con una base de datos
+        let expected = TestTokens::source_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
+        let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
         assert_eq!(expected, actual.unwrap());
     }
 
-    /// Comprueba que no se detecta como token file_path aquellas cadenas que no lo sean
+    /// Comprueba que no se detecta como token source_path aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
-    fn test_file_path_fail() {
-        // Test con > faltante al final del FILEPATH
-        let actual = file_path(&mut "<https://ejemplo.com");
+    fn test_source_path_fail() {
+        // Test con > faltante al final del SOURCEPATH
+        let actual = source_path(&mut "<https://ejemplo.com");
         check_error(actual);
 
-        // Test con < faltante al final del FILEPATH
-        let actual = file_path(&mut "https://ejemplo.com>");
+        // Test con < faltante al final del SOURCEPATH
+        let actual = source_path(&mut "https://ejemplo.com>");
         check_error(actual);
 
         // Test con < y > faltantes 
-        let actual = file_path(&mut "https://ejemplo.com");
+        let actual = source_path(&mut "https://ejemplo.com");
         check_error(actual);
 
         // Test con una URI incorrecta
-        let actual = file_path(&mut "<https:ejemplo.com>");
+        let actual = source_path(&mut "<https:ejemplo.com/fichero.csv>");
         check_error(actual);
 
         // Test con un path absoluto con file incorrecto
-        let actual = file_path(&mut "<file//>");
+        let actual = source_path(&mut "<file//>");
         check_error(actual);
 
         // Test con un path absoluto sin file incorrecto
-        let actual = file_path(&mut "<//..>");
+        let actual = source_path(&mut "<//..>");
         check_error(actual);
 
         // Test con un path relativo incorrecto
-        let actual = file_path(&mut "<ejemplo/>");
+        let actual = source_path(&mut "<ejemplo/>");
         check_error(actual);
 
         // Test con un tipo de fichero incorrecto
-        let actual = file_path(&mut "<ejemplo/fichero.txt>");
+        let actual = source_path(&mut "<ejemplo/fichero.txt>");
         check_error(actual);
 
         // Test con una JBDC URL incorrecta
-        let actual = file_path(&mut "<jdbc:/localhost:3306/db>");
+        let actual = source_path(&mut "<jdbc:/localhost:3306/db>");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION
+    #[doc(hidden)]
+    #[test]
+    fn test_query_definition_ok() {
+        // Test con QUERYDEFINITION con un fichero .sql en remoto
+        let expected = TestTokens::query_definition_test_token("https://ejemplo.com/fichero.sql",0);
+        let actual = query_definition(&mut "<https://ejemplo.com/fichero.sql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con un fichero .sparql en local con ruta relativa
+        let expected = TestTokens::query_definition_test_token("ejemplo/fichero.sparql", 0);
+        let actual = query_definition(&mut "<ejemplo/fichero.sparql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con un fichero .sql en local con ruta absoluta con file
+        let expected = TestTokens::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sql", 0);
+        let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con un fichero .sparql en local con ruta absoluta sin file
+        let expected = TestTokens::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sparql", 0);
+        let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sparql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con una consulta SQL
+        let expected = TestTokens::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
+        let actual = query_definition(&mut "<SELECT * FROM tabla WHERE id = '1'>");
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que no se detecta como token query_definition aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn test_query_definition_fail() {
+        // Test con > faltante al final del QUERYDEFINITION
+        let actual = query_definition(&mut "<https://ejemplo.com");
+        check_error(actual);
+
+        // Test con < faltante al final del QUERYDEFINITION
+        let actual = query_definition(&mut "https://ejemplo.com>");
+        check_error(actual);
+
+        // Test con < y > faltantes 
+        let actual = query_definition(&mut "https://ejemplo.com");
+        check_error(actual);
+
+        // Test con una URL incorrecta
+        let actual = query_definition(&mut "<https:ejemplo.com/fichero.sparql>");
+        check_error(actual);
+
+        // Test con un path absoluto con file incorrecto
+        let actual = query_definition(&mut "<file//>");
+        check_error(actual);
+
+        // Test con un path absoluto sin file incorrecto
+        let actual = query_definition(&mut "<//..>");
+        check_error(actual);
+
+        // Test con un path relativo incorrecto
+        let actual = query_definition(&mut "<ejemplo/>");
+        check_error(actual);
+
+        // Test con un tipo de fichero incorrecto
+        let actual = query_definition(&mut "<ejemplo/fichero.csv>");
+        check_error(actual);
+
+        // Test con una consulta SQL incorrecta
+        let actual = query_definition(&mut "<SELECT FROM tabla>");
         check_error(actual);
     }
 

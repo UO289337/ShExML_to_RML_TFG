@@ -7,18 +7,18 @@
 pub enum TokenType {
     PREFIX,
     SOURCE,
+    QUERY,
     IDENT,
     URI,
-    FILEPATH,
+    SOURCEPATH,
+    QUERYDEFINITION,
     COLON,
     EOF,
 }
 
 pub const PREFIX: &str = "PREFIX";
 pub const SOURCE: &str = "SOURCE";
-pub const IDENT: &str = "IDENT";
-pub const URI: &str = "URI";
-pub const FILE_PATH: &str = "FILE_PATH";
+pub const QUERY: &str = "QUERY";
 pub const COLON: &str = ":";
 pub const EOF: &str = " ";
 
@@ -91,6 +91,12 @@ impl TestTokens {
         token
     }
 
+    pub fn query_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(QUERY.to_string(), TokenType::QUERY);
+        token.set_num_line(num_line);
+        token
+    }
+
     pub fn colon_test_token(num_line: u16) -> Token {
         let mut token = Token::new(COLON.to_string(), TokenType::COLON);
         token.set_num_line(num_line);
@@ -109,8 +115,14 @@ impl TestTokens {
         token
     }
 
-    pub fn file_path_test_token(file_path: &str, num_line: u16) -> Token {
-        let mut token = Token::new(file_path.to_string(), TokenType::FILEPATH);
+    pub fn source_path_test_token(file_path: &str, num_line: u16) -> Token {
+        let mut token = Token::new(file_path.to_string(), TokenType::SOURCEPATH);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn query_definition_test_token(query_definition: &str, num_line: u16) -> Token {
+        let mut token = Token::new(query_definition.to_string(), TokenType::QUERYDEFINITION);
         token.set_num_line(num_line);
         token
     }
