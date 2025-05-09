@@ -25,7 +25,14 @@ use super::token::TokenType;
 fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
     prefix_parser()
         .then(source_parser())
-        .map(|(prefixes, sources)| FileASTNode { prefixes, sources })
+        .then(query_parser())
+        .map(|((prefixes, sources), queries)| {
+            if queries.is_empty() {
+                FileASTNode { prefixes, sources, queries: None}
+            } else {
+                FileASTNode { prefixes, sources, queries: Some(queries)}
+            }
+        })
 }
 
 /// Parsea los tokens para generar el nodo Prefix del AST
@@ -53,7 +60,7 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 
 /// Parsea los tokens para generar el nodo Source del AST
 ///
-/// Realiza el parseo de los tokens para detectar la secuencia: SOURCE IDENT: URI
+/// Realiza el parseo de los tokens para detectar la secuencia: SOURCE IDENT SOURCEPATH
 ///
 /// # Retorna
 /// Un nodo Source del AST
@@ -63,10 +70,32 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {
     source_detector()
         .then(identifier_detector(SOURCE.to_string()))
-        .then(file_path_detector())
-        .map(|((_, ident), file_path)| SourceASTNode {
+        .then(source_path_detector())
+        .map(|((_, ident), source_path)| SourceASTNode {
             identifier: ident.lexeme.clone(),
-            file_path: file_path.lexeme.clone(),
+            source_path: source_path.lexeme.clone(),
+        })
+        .repeated()
+        .at_least(1)
+        .collect()
+}
+
+/// Parsea los tokens para generar el nodo Query del AST
+///
+/// Realiza el parseo de los tokens para detectar la secuencia: QUERY IDENT QUERYDEFINITION
+///
+/// # Retorna
+/// Un nodo Query del AST
+///
+/// # Errores
+/// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
+fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>> {
+    query_detector()
+        .then(identifier_detector(SOURCE.to_string()))
+        .then(query_definition_detector())
+        .map(|((_, ident), query_definition)| QueryASTNode {
+            identifier: ident.lexeme.clone(),
+            query_definition: query_definition.lexeme.clone(),
         })
         .repeated()
         .at_least(1)
@@ -119,6 +148,31 @@ fn source_detector(
                 token.span(),
                 format!(
                     "Se esperaba un SOURCE en la línea {}",
+                    token.found().map(|t| t.num_line).unwrap()
+                ),
+            )
+        })
+}
+
+/// Detecta el token QUERY en los tokens
+///
+/// # Retorna
+/// Un token de tipo Query si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Source
+fn query_detector(
+    ) -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+    > {
+    filter(|token: &Token| token.token_type == TokenType::QUERY)
+        .map(|token| token.clone())
+        .map_err(move |token: Simple<Token>| {
+            Simple::custom(
+                token.span(),
+                format!(
+                    "Se esperaba un QUERY en la línea {}",
                     token.found().map(|t| t.num_line).unwrap()
                 ),
             )
@@ -178,6 +232,30 @@ fn uri_detector() -> MapErr<
         })
 }
 
+/// Detecta el token QUERYDEFINITION en los tokens
+///
+/// # Retorna
+/// Un token de tipo Query definition si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Uri
+fn query_definition_detector() -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
+    filter(|token: &Token| token.token_type == TokenType::QUERYDEFINITION)
+        .map(|token| token.clone())
+        .map_err(|token: Simple<Token>| {
+            Simple::custom(
+                token.span(),
+                format!(
+                    "Se esperaba una consulta SQL o un path o URL a un fichero .sql o .sparql después del identificador en la línea {}",
+                    token.found().map(|t| t.num_line).unwrap()
+                ),
+            )
+        })
+}
+
 /// Detecta el token SOURCEPATH en los tokens
 ///
 /// # Retorna
@@ -185,7 +263,7 @@ fn uri_detector() -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Source path
-fn file_path_detector() -> MapErr<
+fn source_path_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
     > {
@@ -431,7 +509,7 @@ mod sintax_tests {
         // Test con un solo SOURCE
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
-            file_path: "https://ejemplo.com/fichero.csv".to_string(),
+            source_path: "https://ejemplo.com/fichero.csv".to_string(),
         };
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -445,7 +523,7 @@ mod sintax_tests {
 
         let expected2 = SourceASTNode {
             identifier: "ident2".to_string(),
-            file_path: "https://ejemplo2.com/fichero.csv".to_string(),
+            source_path: "https://ejemplo2.com/fichero.csv".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];
@@ -480,19 +558,25 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn test_file_parser_ok() {
-        let tokens_vector = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("ident", 1), 
-            TestTokens::colon_test_token(1), TestTokens::uri_test_token("https://ejemplo.com", 1), TestTokens::source_test_token(1), 
-            TestTokens::ident_test_token("ident", 1), TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestTokens::eof_test_token(1)];
+        let tokens_vector = vec![
+            TestTokens::prefix_test_token(1), TestTokens::ident_test_token("example", 1), TestTokens::colon_test_token(1), TestTokens::uri_test_token("http://example.com/", 1), 
+            TestTokens::source_test_token(2), TestTokens::ident_test_token("films_csv_file", 2), TestTokens::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
+            TestTokens::query_test_token(3), TestTokens::ident_test_token("query_sql", 3), TestTokens::query_definition_test_token("SELECT * FROM example;", 3),
+            TestTokens::eof_test_token(3)];
 
         let expected = FileASTNode {
             prefixes: vec![PrefixASTNode {
-                identifier: "ident".to_string(),
-                uri: "https://ejemplo.com".to_string(),
+                identifier: "example".to_string(),
+                uri: "https://ejemplo.com/".to_string(),
             }],
             sources: vec![SourceASTNode {
-                identifier: "ident".to_string(),
-                file_path: "https://ejemplo.com/fichero.csv".to_string(),
+                identifier: "films_csv_file".to_string(),
+                source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
+            queries: Some(vec![QueryASTNode {
+                identifier: "query_sql".to_string(),
+                query_definition: "SELECT * FROM example;".to_string(),
+            }]),
         };
         let actual = file_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());

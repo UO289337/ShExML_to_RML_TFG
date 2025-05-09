@@ -139,16 +139,19 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let source_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
-    let re_source_path = Regex::new(r"(?ix)
-        (
-            https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv
-            |
-            jdbc:[\w]+://[^\s\r\n\t]+
-            |
-            file://[/\\][^ \n\r\t]+\.csv
-            |
-            (?:\.{0,2}[\\/])?(?:[^:\s\\/\r\n\t]+[\\/])*[^:\s\\/\r\n\t]+\.csv
-        )"
+    let re_source_path = Regex::new(r"(?ix)                    
+            ^(
+                file://[/\\][^ \n\r\t]+\.csv    # Ficheros
+                |
+                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.csv    # rutas absolutas
+                |
+                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])*[\w\-.\\\/*]+\.csv     # rutas locales
+                |
+                jdbc:[\w]+://[^ \n\r\t]+    # JBDC URLs
+                |
+                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv    # URLs remotas a ficheros
+            )$
+            "
         ).unwrap();
     
     if !re_source_path.is_match(source_path) {
@@ -175,19 +178,20 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let query_definition = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let mut query_definition = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
     let re_query_definition = Regex::new(r"(?ix)
-            (?:                                  
-            |
-            file://[/\\]?[^\s\r\n]+\.(?:sparql|sql)   # Ficheros .sparql y .sql
-            |
-            (\.{0,2}[\\/])?(?:[\w\-.]+[\\/])*[\w\-.]+\.(?:sparql|sql)  # rutas locales .sparql y .sql
-            |
-            (?i)                             
-            \bSELECT\b.+?(?:\bFROM\b|\bWHERE\b|\bGROUP\s+BY\b|\bORDER\s+BY\b) # SQL
-            |
-            https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.(?:sparql|sql)  # URLs remotas a ficheros .sparql y .sql
-        )
+            ^(?:                                  
+                |
+                file://[/\\]?[^\s\r\n]+\.(?:sparql|sql)   # Ficheros .sparql y .sql
+                |
+                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.(?:sparql|sql) # rutas absolutas 
+                |
+                (\.{0,2}[\\/])?(?:[\w\-.]+[\\/])*[\w\-.]+\.(?:sparql|sql)  # rutas locales
+                |                            
+                sql:\s*\bSELECT\b\s+.+?\bFROM\b\s+.+?(?:\bWHERE\b\s+.+?)?(?:\bGROUP\s+BY\b\s+.+?)?(?:\bORDER\s+BY\b\s+.+?)?    # SQL
+                |
+                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.(?:sparql|sql)  # URLs remotas a ficheros
+            )$
         "
         ).unwrap();
     
@@ -195,6 +199,10 @@ fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         let error = &ContextError::new()
             .add_context(&"Formato incorrecto", &query_definition.checkpoint(), StrContext::Label("Consulta SQL o path a fichero inválido"));
         return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    if query_definition.starts_with("sql:") {
+        query_definition = query_definition.strip_prefix("sql:").unwrap_or(query_definition).trim_start()
     }
 
     Ok(Token::new(query_definition.to_string(), TokenType::QUERYDEFINITION))
@@ -515,7 +523,7 @@ mod lexer_tests {
         check_error(actual);
 
         // Test con un tipo de fichero incorrecto
-        let actual = source_path(&mut "<ejemplo/fichero.txt>");
+        let actual = source_path(&mut "<ejemplo/fichero.xml>");
         check_error(actual);
 
         // Test con una JBDC URL incorrecta
@@ -549,7 +557,7 @@ mod lexer_tests {
 
         // Test con QUERYDEFINITION con una consulta SQL
         let expected = TestTokens::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
-        let actual = query_definition(&mut "<SELECT * FROM tabla WHERE id = '1'>");
+        let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'>");
         assert_eq!(expected, actual.unwrap());
     }
 
@@ -590,7 +598,11 @@ mod lexer_tests {
         check_error(actual);
 
         // Test con una consulta SQL incorrecta
-        let actual = query_definition(&mut "<SELECT FROM tabla>");
+        let actual = query_definition(&mut "<sql: SELECT FROM tabla>");
+        check_error(actual);
+
+        // Test con una consulta SQL sin :sql
+        let actual = query_definition(&mut "<SELECT * FROM tabla>");
         check_error(actual);
     }
 
@@ -599,11 +611,14 @@ mod lexer_tests {
     #[test]
     fn test_lexer_ok() {
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
 
-        let expected: Vec<Token> = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("example", 1), TestTokens::colon_test_token(1),
-            TestTokens::uri_test_token("http://example.com/", 1), TestTokens::source_test_token(2), TestTokens::ident_test_token("films_xml_file", 2),
-            TestTokens::uri_test_token("https://shexml.herminiogarcia.com/files/films.xml", 2), TestTokens::eof_test_token(2)];
+        let expected: Vec<Token> = vec![
+            TestTokens::prefix_test_token(1), TestTokens::ident_test_token("example", 1), TestTokens::colon_test_token(1), TestTokens::uri_test_token("http://example.com/", 1), 
+            TestTokens::source_test_token(2), TestTokens::ident_test_token("films_csv_file", 2), TestTokens::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
+            TestTokens::query_test_token(3), TestTokens::ident_test_token("query_sql", 3), TestTokens::query_definition_test_token("SELECT * FROM example;", 3),
+            TestTokens::eof_test_token(3)];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);
     }
@@ -614,13 +629,22 @@ mod lexer_tests {
     fn test_lexer_fail() {
         // Test con un error en el identificador de PREFIX
         let mut input = "PREFIX example123: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
 
-        // Test con un error en la URI de SOURCE
+        // Test con un error en el path de SOURCE
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml";
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
+            QUERY query_sql <sql: SELECT * FROM example;>";
+        let actual = lexer(&mut input);
+        assert!(actual.is_err());
+
+        // Test con un error en QUERY
+        let mut input = "PREFIX example: <http://example.com/>
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
+            QUERY query_sql SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
     }
