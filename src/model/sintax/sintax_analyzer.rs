@@ -8,10 +8,10 @@ use chumsky::prelude::*;
 use chumsky::primitive::*;
 use chumsky::Parser;
 
-use crate::model::token::*;
+use crate::model::lexer::token::*;
 
-use super::ast::*;
-use super::token::TokenType;
+use super::super::ast::*;
+use super::super::lexer::token::TokenType;
 
 /// Parsea los tokens para generar el nodo File del AST
 ///
