@@ -340,7 +340,7 @@ mod lexer_tests {
     fn test_prefix_ok() {
         let expected = TestTokens::prefix_test_token(0);
         let actual = prefix(&mut "PREFIX");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token aquellas cadenas que no sean PREFIX
@@ -357,7 +357,7 @@ mod lexer_tests {
     fn test_colon_ok() {
         let expected = TestTokens::colon_test_token(0);
         let actual = colon(&mut ":");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token : aquellas cadenas que no lo sean
@@ -374,7 +374,7 @@ mod lexer_tests {
     fn test_source_ok() {
         let expected = TestTokens::source_test_token(0);
         let actual = source(&mut "SOURCE");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token SOURCE aquellas cadenas que no lo sean
@@ -393,22 +393,22 @@ mod lexer_tests {
         // Test con identificador sin _
         let expected = TestTokens::ident_test_token("ident",0);
         let actual = identifier(&mut "ident");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con identificador con _ entre 2 secuencias de caracteres
         let expected = TestTokens::ident_test_token("ident_valid",0);
         let actual = identifier(&mut "ident_valid");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con identificador con _ al principio del identificador
         let expected = TestTokens::ident_test_token("_ident_valid", 0);
         let actual = identifier(&mut "_ident_valid");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con identificador con _ al final del identificador
         let expected = TestTokens::ident_test_token("ident_valid_", 0);
         let actual = identifier(&mut "ident_valid_");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token IDENT aquellas cadenas que no lo sean
@@ -426,17 +426,17 @@ mod lexer_tests {
         // Test con URI con el protocolo HTTPS
         let expected = TestTokens::uri_test_token("https://ejemplo.com",0);
         let actual = uri(&mut "<https://ejemplo.com>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con URI con el protocolo HTTP
         let expected = TestTokens::uri_test_token("http://ejemplo.com", 0);
         let actual = uri(&mut "<http://ejemplo.com>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con URI acabada en /
         let expected = TestTokens::uri_test_token("https://ejemplo.com/", 0);
         let actual = uri(&mut "<https://ejemplo.com/>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token uri aquellas cadenas que no lo sean
@@ -467,27 +467,27 @@ mod lexer_tests {
         // Test con SOURCEPATH con un fichero CSV en remoto
         let expected = TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv",0);
         let actual = source_path(&mut "<https://ejemplo.com/fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con SOURCEPATH con un fichero CSV en local con ruta relativa
         let expected = TestTokens::source_path_test_token("ejemplo/fichero.csv", 0);
         let actual = source_path(&mut "<ejemplo/fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta con file
         let expected = TestTokens::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
         let actual = source_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta sin file
         let expected = TestTokens::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
         let actual = source_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con SOURCEPATH con una base de datos
         let expected = TestTokens::source_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
         let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token source_path aquellas cadenas que no lo sean
@@ -538,27 +538,27 @@ mod lexer_tests {
         // Test con QUERYDEFINITION con un fichero .sql en remoto
         let expected = TestTokens::query_definition_test_token("https://ejemplo.com/fichero.sql",0);
         let actual = query_definition(&mut "<https://ejemplo.com/fichero.sql>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con QUERYDEFINITION con un fichero .sparql en local con ruta relativa
         let expected = TestTokens::query_definition_test_token("ejemplo/fichero.sparql", 0);
         let actual = query_definition(&mut "<ejemplo/fichero.sparql>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con QUERYDEFINITION con un fichero .sql en local con ruta absoluta con file
         let expected = TestTokens::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sql", 0);
         let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sql>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con QUERYDEFINITION con un fichero .sparql en local con ruta absoluta sin file
         let expected = TestTokens::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sparql", 0);
         let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sparql>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
 
         // Test con QUERYDEFINITION con una consulta SQL
         let expected = TestTokens::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
         let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token query_definition aquellas cadenas que no lo sean
@@ -647,6 +647,15 @@ mod lexer_tests {
             QUERY query_sql SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
+    }
+
+    /// Comprueba que el resultado actual del test es igual al esperado
+    /// 
+    /// # Argumentos
+    /// * `expected` - El token esperado
+    /// * `actual` - El token real
+    fn check_ok(expected: Token, actual: Result<Token, ErrMode<ContextError>>) {
+        assert_eq!(expected, actual.unwrap());
     }
 
     /// Comprueba que el resultado actual del test es un error

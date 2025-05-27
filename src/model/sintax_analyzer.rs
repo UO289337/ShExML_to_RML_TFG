@@ -278,7 +278,7 @@ mod sintax_detectors_tests {
     fn test_prefix_detector_ok() {
         let expected_token = TestTokens::prefix_test_token(1);
         let actual = prefix_detector().parse(vec![expected_token.clone()]);
-        assert_eq!(expected_token, actual.unwrap());
+        check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se detectan como tokens PREFIX aquellos que lo son
@@ -295,7 +295,7 @@ mod sintax_detectors_tests {
     fn test_source_detector_ok() {
         let expected_token = TestTokens::source_test_token(1);
         let actual = source_detector().parse(vec![expected_token.clone()]);
-        assert_eq!(expected_token, actual.unwrap());
+        check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se detectan como tokens SOURCE aquellos que lo son
@@ -312,7 +312,7 @@ mod sintax_detectors_tests {
     fn test_query_detector_ok() {
         let expected_token = TestTokens::query_test_token(1);
         let actual = query_detector().parse(vec![expected_token.clone()]);
-        assert_eq!(expected_token, actual.unwrap());
+        check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se detectan como tokens QUERY aquellos que lo son
@@ -329,7 +329,7 @@ mod sintax_detectors_tests {
     fn test_identifier_detector_ok() {
         let expected_token = TestTokens::ident_test_token("ident", 1);
         let actual = identifier_detector("PREFIX".to_string()).parse(vec![expected_token.clone()]);
-        assert_eq!(expected_token, actual.unwrap());
+        check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se detectan como tokens IDENT aquellos que lo son
@@ -346,7 +346,7 @@ mod sintax_detectors_tests {
     fn test_uri_detector_ok() {
         let expected_token = TestTokens::uri_test_token("https://ejemplo.com", 1);
         let actual = uri_detector().parse(vec![expected_token.clone()]);
-        assert_eq!(expected_token, actual.unwrap());
+        check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se detectan como tokens URI aquellos que lo son
@@ -363,7 +363,7 @@ mod sintax_detectors_tests {
     fn test_query_definition_detector_ok() {
         let expected_token = TestTokens::query_definition_test_token("SELECT * FROM example;", 1);
         let actual = query_definition_detector().parse(vec![expected_token.clone()]);
-        assert_eq!(expected_token, actual.unwrap());
+        check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se detectan como tokens Query Definition aquellos que lo son
@@ -380,7 +380,7 @@ mod sintax_detectors_tests {
     fn test_colon_detector_ok() {
         let expected_token = TestTokens::colon_test_token(1);
         let actual = colon_detector().parse(vec![expected_token.clone()]);
-        assert_eq!(expected_token, actual.unwrap());
+        check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se detectan como tokens COLON (:) aquellos que lo son
@@ -391,6 +391,19 @@ mod sintax_detectors_tests {
         check_error(actual);
     }
 
+    /// Comprueba que el resultado actual del test es igual al esperado
+    /// 
+    /// # Argumentos
+    /// * `expected` - El token esperado
+    /// * `actual` - El token detectado real
+    fn check_ok(expected: Token, actual: Result<Token, Vec<Simple<Token>>>) {
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que el resultado actual del test es un error
+    /// 
+    /// # Argumentos
+    /// * `actual` - Un Result con el error esperado
     fn check_error(actual: Result<Token, Vec<Simple<Token>>>) {
         assert!(actual.is_err(), "Se esperaba un error, pero se obtuvo: {:?}", actual);
     }
