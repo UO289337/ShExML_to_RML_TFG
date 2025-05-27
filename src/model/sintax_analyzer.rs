@@ -25,13 +25,9 @@ use super::token::TokenType;
 fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
     prefix_parser()
         .then(source_parser())
-        .then(query_parser())
+        .then(query_parser().or_not())
         .map(|((prefixes, sources), queries)| {
-            if queries.is_empty() {
-                FileASTNode { prefixes, sources, queries: None}
-            } else {
-                FileASTNode { prefixes, sources, queries: Some(queries)}
-            }
+            FileASTNode { prefixes, sources, queries}
         })
 }
 
@@ -116,17 +112,7 @@ fn prefix_detector(
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
     > {
-    filter(|token: &Token| token.token_type == TokenType::PREFIX)
-        .map(|token| token.clone())
-        .map_err(move |token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Se esperaba un PREFIX en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
-        })
+    general_detector(TokenType::PREFIX, format!("Se esperaba un PREFIX en la línea"))
 }
 
 /// Detecta el token SOURCE en los tokens
@@ -141,17 +127,7 @@ fn source_detector(
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
     > {
-    filter(|token: &Token| token.token_type == TokenType::SOURCE)
-        .map(|token| token.clone())
-        .map_err(move |token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Se esperaba un SOURCE en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
-        })
+    general_detector(TokenType::SOURCE, format!("Se esperaba un SOURCE en la línea"))
 }
 
 /// Detecta el token QUERY en los tokens
@@ -166,17 +142,7 @@ fn query_detector(
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
     > {
-    filter(|token: &Token| token.token_type == TokenType::QUERY)
-        .map(|token| token.clone())
-        .map_err(move |token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Se esperaba un QUERY en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
-        })
+    general_detector(TokenType::QUERY, format!("Se esperaba un QUERY en la línea"))
 }
 
 /// Detecta el token IDENT en los tokens
@@ -195,17 +161,7 @@ fn identifier_detector(
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    filter(|token: &Token| token.token_type == TokenType::IDENT)
-        .map(|token| token.clone())
-        .map_err(move |token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Se esperaba un identificador después de {previous_token} en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
-        })
+    general_detector(TokenType::IDENT, format!("Se esperaba un identificador después de {previous_token} en la línea"))
 }
 
 /// Detecta el token URI en los tokens
@@ -219,17 +175,7 @@ fn uri_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    filter(|token: &Token| token.token_type == TokenType::URI)
-        .map(|token| token.clone())
-        .map_err(|token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Se esperaba una URI después del identificador en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
-        })
+    general_detector(TokenType::URI, format!("Se esperaba una URI después del identificador en la línea"))
 }
 
 /// Detecta el token QUERYDEFINITION en los tokens
@@ -243,17 +189,7 @@ fn query_definition_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    filter(|token: &Token| token.token_type == TokenType::QUERYDEFINITION)
-        .map(|token| token.clone())
-        .map_err(|token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Se esperaba una consulta SQL o un path o URL a un fichero .sql o .sparql después del identificador en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
-        })
+    general_detector(TokenType::QUERYDEFINITION, format!("Se esperaba una consulta SQL o un path o URL a un fichero .sql o .sparql después del identificador en la línea"))
 }
 
 /// Detecta el token SOURCEPATH en los tokens
@@ -267,17 +203,7 @@ fn source_path_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
     > {
-    filter(|token: &Token| token.token_type == TokenType::SOURCEPATH)
-        .map(|token| token.clone())
-        .map_err(|token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
-        })
+    general_detector(TokenType::SOURCEPATH, format!("Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea"))
 }
 
 /// Detecta el token ':' en los tokens
@@ -291,16 +217,26 @@ fn colon_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    filter(|token: &Token| token.token_type == TokenType::COLON)
+    general_detector(TokenType::COLON, format!("Faltan los ':' después del identificador en la línea"))
+}
+
+/// Detecta cualquier token válido
+///
+/// /// # Argumentos
+/// * `token_type` - El tipo de token esperado
+/// * `message` - El mensaje de error que se muestra en el caso de que el tipo del token no sea el esperado
+/// 
+/// # Retorna
+/// El token reconocido
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea del tipo esperado
+fn general_detector(token_type: TokenType, message: String) -> MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>> {
+    filter(move |token: &Token| token.token_type == token_type)
         .map(|token| token.clone())
-        .map_err(|token: Simple<Token>| {
-            Simple::custom(
-                token.span(),
-                format!(
-                    "Faltan los ':' después del identificador en la línea {}",
-                    token.found().map(|t| t.num_line).unwrap()
-                ),
-            )
+        .map_err(move |token: Simple<Token>| {
+            let line = token.found().map(|t| t.num_line).unwrap_or(0);
+            Simple::custom(token.span(), format!("{message} {}", line))
         })
 }
 
@@ -700,7 +636,7 @@ mod sintax_tests {
     /// * `actual` - El Result con el error
     /// * `error_message` - El mensaje de error esperado
     fn check_error<T>(actual: Result<Vec<T>, Vec<Simple<Token>>>, expected_error_message: &str) {
-        assert!(actual.is_err(), "Se esperaba un error diferente al obtenido");
+        assert!(actual.is_err(), "Se esperaba un error");
         
         let _ = actual.map_err(|e| {
             let mut error_message_find = false;
