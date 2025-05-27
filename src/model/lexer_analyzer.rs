@@ -64,6 +64,23 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(SOURCE.to_string(), TokenType::SOURCE))
 }
 
+/// Encuentra el token QUERY en la entrada
+///
+/// Acepta la entrada 'QUERY'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Query
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(QUERY).parse_next(input)?;
+    Ok(Token::new(QUERY.to_string(), TokenType::QUERY))
+}
+
 /// Encuentra un token identificador en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '_'
@@ -84,7 +101,7 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 
 /// Encuentra un token URI en la entrada
 ///
-/// Acepta como entrada cualquier cadena de caracteres entre < y >
+/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular de URIs
 ///
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
@@ -104,6 +121,91 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     }
 
     Ok(Token::new(uri.to_string(), TokenType::URI))
+}
+
+/// Encuentra un token SOURCEPATH en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
+/// * Ficheros CSV con un path en remoto o en local
+/// * Bases de datos con una URL JDBC
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token SOURCEPATH
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let source_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let re_source_path = Regex::new(r"(?ix)                    
+            ^(
+                file://[/\\][^ \n\r\t]+\.csv    # Ficheros
+                |
+                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.csv    # rutas absolutas
+                |
+                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])*[\w\-.\\\/*]+\.csv     # rutas locales
+                |
+                jdbc:[\w]+://[^ \n\r\t]+    # JBDC URLs
+                |
+                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv    # URLs remotas a ficheros
+            )$
+            "
+        ).unwrap();
+    
+    if !re_source_path.is_match(source_path) {
+        let error = &ContextError::new()
+            .add_context(&"Formato incorrecto", &source_path.checkpoint(), StrContext::Label("Path o URI del fichero CSV o base de datos inválida"));
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    Ok(Token::new(source_path.to_string(), TokenType::SOURCEPATH))
+}
+
+/// Encuentra un token QUERYDEFINITION en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
+/// * Consultas SQL literales o en ficheros externos .sql
+/// * Consultas externas SPARQL en ficheros externos .sparql
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token QUERYDEFINITION
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let mut query_definition = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let re_query_definition = Regex::new(r"(?ix)
+            ^(?:                                  
+                |
+                file://[/\\]?[^\s\r\n]+\.(?:sparql|sql)   # Ficheros .sparql y .sql
+                |
+                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.(?:sparql|sql) # rutas absolutas 
+                |
+                (\.{0,2}[\\/])?(?:[\w\-.]+[\\/])*[\w\-.]+\.(?:sparql|sql)  # rutas locales
+                |                            
+                sql:\s*\bSELECT\b\s+.+?\bFROM\b\s+.+?(?:\bWHERE\b\s+.+?)?(?:\bGROUP\s+BY\b\s+.+?)?(?:\bORDER\s+BY\b\s+.+?)?    # SQL
+                |
+                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.(?:sparql|sql)  # URLs remotas a ficheros
+            )$
+        "
+        ).unwrap();
+    
+    if !re_query_definition.is_match(query_definition) {
+        let error = &ContextError::new()
+            .add_context(&"Formato incorrecto", &query_definition.checkpoint(), StrContext::Label("Consulta SQL o path a fichero inválido"));
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    if query_definition.starts_with("sql:") {
+        query_definition = query_definition.strip_prefix("sql:").unwrap_or(query_definition).trim_start()
+    }
+
+    Ok(Token::new(query_definition.to_string(), TokenType::QUERYDEFINITION))
 }
 
 /// Realiza el análisis léxico de la entrada
@@ -198,7 +300,7 @@ fn match_alternatives(
     num_line: u16,
     errors: &mut Vec<ParserError>,
 ) {
-    match alt((colon, prefix, source, uri, identifier)).parse_next(input) {
+    match alt((colon, prefix, source, query, source_path, query_definition, uri, identifier)).parse_next(input) {
         Ok(mut token) => {
             token.set_num_line(num_line);
             tokens.push(token);
@@ -358,16 +460,165 @@ mod lexer_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token SOURCEPATH
+    #[doc(hidden)]
+    #[test]
+    fn test_source_path_ok() {
+        // Test con SOURCEPATH con un fichero CSV en remoto
+        let expected = TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv",0);
+        let actual = source_path(&mut "<https://ejemplo.com/fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con SOURCEPATH con un fichero CSV en local con ruta relativa
+        let expected = TestTokens::source_path_test_token("ejemplo/fichero.csv", 0);
+        let actual = source_path(&mut "<ejemplo/fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta con file
+        let expected = TestTokens::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
+        let actual = source_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta sin file
+        let expected = TestTokens::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
+        let actual = source_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con SOURCEPATH con una base de datos
+        let expected = TestTokens::source_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
+        let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que no se detecta como token source_path aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn test_source_path_fail() {
+        // Test con > faltante al final del SOURCEPATH
+        let actual = source_path(&mut "<https://ejemplo.com");
+        check_error(actual);
+
+        // Test con < faltante al final del SOURCEPATH
+        let actual = source_path(&mut "https://ejemplo.com>");
+        check_error(actual);
+
+        // Test con < y > faltantes 
+        let actual = source_path(&mut "https://ejemplo.com");
+        check_error(actual);
+
+        // Test con una URI incorrecta
+        let actual = source_path(&mut "<https:ejemplo.com/fichero.csv>");
+        check_error(actual);
+
+        // Test con un path absoluto con file incorrecto
+        let actual = source_path(&mut "<file//>");
+        check_error(actual);
+
+        // Test con un path absoluto sin file incorrecto
+        let actual = source_path(&mut "<//..>");
+        check_error(actual);
+
+        // Test con un path relativo incorrecto
+        let actual = source_path(&mut "<ejemplo/>");
+        check_error(actual);
+
+        // Test con un tipo de fichero incorrecto
+        let actual = source_path(&mut "<ejemplo/fichero.xml>");
+        check_error(actual);
+
+        // Test con una JBDC URL incorrecta
+        let actual = source_path(&mut "<jdbc:/localhost:3306/db>");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION
+    #[doc(hidden)]
+    #[test]
+    fn test_query_definition_ok() {
+        // Test con QUERYDEFINITION con un fichero .sql en remoto
+        let expected = TestTokens::query_definition_test_token("https://ejemplo.com/fichero.sql",0);
+        let actual = query_definition(&mut "<https://ejemplo.com/fichero.sql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con un fichero .sparql en local con ruta relativa
+        let expected = TestTokens::query_definition_test_token("ejemplo/fichero.sparql", 0);
+        let actual = query_definition(&mut "<ejemplo/fichero.sparql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con un fichero .sql en local con ruta absoluta con file
+        let expected = TestTokens::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sql", 0);
+        let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con un fichero .sparql en local con ruta absoluta sin file
+        let expected = TestTokens::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sparql", 0);
+        let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sparql>");
+        assert_eq!(expected, actual.unwrap());
+
+        // Test con QUERYDEFINITION con una consulta SQL
+        let expected = TestTokens::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
+        let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'>");
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que no se detecta como token query_definition aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn test_query_definition_fail() {
+        // Test con > faltante al final del QUERYDEFINITION
+        let actual = query_definition(&mut "<https://ejemplo.com");
+        check_error(actual);
+
+        // Test con < faltante al final del QUERYDEFINITION
+        let actual = query_definition(&mut "https://ejemplo.com>");
+        check_error(actual);
+
+        // Test con < y > faltantes 
+        let actual = query_definition(&mut "https://ejemplo.com");
+        check_error(actual);
+
+        // Test con una URL incorrecta
+        let actual = query_definition(&mut "<https:ejemplo.com/fichero.sparql>");
+        check_error(actual);
+
+        // Test con un path absoluto con file incorrecto
+        let actual = query_definition(&mut "<file//>");
+        check_error(actual);
+
+        // Test con un path absoluto sin file incorrecto
+        let actual = query_definition(&mut "<//..>");
+        check_error(actual);
+
+        // Test con un path relativo incorrecto
+        let actual = query_definition(&mut "<ejemplo/>");
+        check_error(actual);
+
+        // Test con un tipo de fichero incorrecto
+        let actual = query_definition(&mut "<ejemplo/fichero.csv>");
+        check_error(actual);
+
+        // Test con una consulta SQL incorrecta
+        let actual = query_definition(&mut "<sql: SELECT FROM tabla>");
+        check_error(actual);
+
+        // Test con una consulta SQL sin :sql
+        let actual = query_definition(&mut "<SELECT * FROM tabla>");
+        check_error(actual);
+    }
+
     /// Comprueba que se detectan múltiples tokens distintos
     #[doc(hidden)]
     #[test]
     fn test_lexer_ok() {
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
 
-        let expected: Vec<Token> = vec![TestTokens::prefix_test_token(1), TestTokens::ident_test_token("example", 1), TestTokens::colon_test_token(1),
-            TestTokens::uri_test_token("http://example.com/", 1), TestTokens::source_test_token(2), TestTokens::ident_test_token("films_xml_file", 2),
-            TestTokens::uri_test_token("https://shexml.herminiogarcia.com/files/films.xml", 2), TestTokens::eof_test_token(2)];
+        let expected: Vec<Token> = vec![
+            TestTokens::prefix_test_token(1), TestTokens::ident_test_token("example", 1), TestTokens::colon_test_token(1), TestTokens::uri_test_token("http://example.com/", 1), 
+            TestTokens::source_test_token(2), TestTokens::ident_test_token("films_csv_file", 2), TestTokens::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
+            TestTokens::query_test_token(3), TestTokens::ident_test_token("query_sql", 3), TestTokens::query_definition_test_token("SELECT * FROM example;", 3),
+            TestTokens::eof_test_token(3)];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);
     }
@@ -378,13 +629,22 @@ mod lexer_tests {
     fn test_lexer_fail() {
         // Test con un error en el identificador de PREFIX
         let mut input = "PREFIX example123: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml>";
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
 
-        // Test con un error en la URI de SOURCE
+        // Test con un error en el path de SOURCE
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.xml";
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
+            QUERY query_sql <sql: SELECT * FROM example;>";
+        let actual = lexer(&mut input);
+        assert!(actual.is_err());
+
+        // Test con un error en QUERY
+        let mut input = "PREFIX example: <http://example.com/>
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
+            QUERY query_sql SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
     }

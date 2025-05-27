@@ -7,6 +7,7 @@
 pub struct FileASTNode {
     pub prefixes: Vec<PrefixASTNode>,
     pub sources: Vec<SourceASTNode>,
+    pub queries: Option<Vec<QueryASTNode>>,
 }
 
 /// Nodo de tipo Prefix del AST
@@ -20,9 +21,18 @@ pub struct PrefixASTNode {
 
 /// Nodo de tipo Source del AST
 ///
-/// Se corresponde con los Source de SheXMl; contiene un identificador y una URI
+/// Se corresponde con los Source de SheXMl; contiene un identificador y un path o URL
 #[derive(Debug, PartialEq)]
 pub struct SourceASTNode {
     pub identifier: String,
-    pub uri: String,
+    pub source_path: String,
+}
+
+/// Nodo de tipo Query del AST
+///
+/// Se corresponde con los Query de SheXMl; contiene un identificador y una consulta, path o URL
+#[derive(Debug, PartialEq)]
+pub struct QueryASTNode {
+    pub identifier: String,
+    pub query_definition: String,
 }
