@@ -12,7 +12,8 @@ mod integration_lexer_syntax_analyzers_tests {
     #[test]
     fn test_integration_ok() {
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>";
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax_analyzer::parser(lexer_result.unwrap());
 
@@ -30,13 +31,15 @@ mod integration_lexer_syntax_analyzers_tests {
     fn test_integration_fail() {
         // Test con un fallo léxico
         let mut input = "PREFIX example123: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.csv>";
+            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer_analyzer::lexer(&mut input);
         assert!(lexer_result.is_err());
 
         // Test con un fallo sintáctico
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE <https://shexml.herminiogarcia.com/files/films.csv>";
+            SOURCE <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax_analyzer::parser(lexer_result.unwrap());
 
