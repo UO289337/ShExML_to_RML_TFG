@@ -7,7 +7,8 @@
 use chumsky::error::SimpleReason;
 
 use crate::model;
-use crate::model::parser_error::ParserError;
+use crate::model::ast::FileASTNode;
+use crate::model::compiler_error::CompilerError;
 use crate::model::lexer::token::Token;
 use crate::view;
 
@@ -20,7 +21,7 @@ pub fn run_lexer_analyzer() {
             run_sintax_analyzer(tokens);
         }
         Err(parser_errors) => {
-            show_lexer_errors(parser_errors);
+            show_errors(parser_errors);
         }
     };
 }
@@ -32,8 +33,7 @@ pub fn run_lexer_analyzer() {
 fn run_sintax_analyzer(tokens: Vec<Token>) {
     match model::sintax::sintax_analyzer::parser(tokens) {
         Ok(node) => {
-            model::generator::rml_generator::rml_generator(node);
-            view::main_view::show_correct_generation()
+            run_semantic_analyzer(node);
         }
         Err(e) => {
             show_sintax_errors(e);
@@ -41,12 +41,27 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
     }
 }
 
-/// Muestra los errores léxicos encontrados al realizar el análisis léxico
+/// Ejecuta el analizador semántico del compilador
+/// 
+/// # Argumentos
+/// * `node` - El nodo raíz del AST resultado del analizador sintáctico
+fn run_semantic_analyzer(node: FileASTNode) {
+    let semantic_errors = model::semantic::semantic_analyzer::semantic_analysis(&node);
+
+    if semantic_errors.is_empty() {
+        model::generator::rml_generator::rml_generator(node);
+        view::main_view::show_correct_generation()
+    } else {
+        show_errors(semantic_errors);
+    }
+}
+
+/// Muestra los errores encontrados al realizar los distintos análisis
 ///
 /// # Argumentos
-/// * `lexer_errors` - Un vector de ParserError que contiene los errores léxicos encontrados
-fn show_lexer_errors(lexer_errors: Vec<ParserError>) {
-    for error in lexer_errors {
+/// * `errors` - Un vector de CompilerError que contiene los errores encontrados
+fn show_errors(errors: Vec<CompilerError>) {
+    for error in errors {
         eprintln!("{}", error);
     }
 }

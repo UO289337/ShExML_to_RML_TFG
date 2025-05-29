@@ -8,7 +8,7 @@ use winnow::error::{AddContext, ContextError, ErrMode, StrContext};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
 
-use super::super::parser_error::ParserError;
+use super::super::compiler_error::CompilerError;
 use super::token::*;
 
 use regex::Regex;
@@ -220,9 +220,9 @@ fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// # Errores
 /// Devuelve un `[Vec<ParserError>]` con los errores detectados por el analizador léxico
-pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
+pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<CompilerError>> {
     let mut tokens = Vec::new();
-    let mut errors: Vec<ParserError> = Vec::new();
+    let mut errors: Vec<CompilerError> = Vec::new();
 
     let num_line = look_over_input(input, &mut tokens, &mut errors);
 
@@ -245,9 +245,9 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 /// Devuelve un `[Vec<ParserError>]` El vector de errores detectados en el análisis léxico
 fn end_lexer(
     mut tokens: Vec<Token>,
-    errors: Vec<ParserError>,
+    errors: Vec<CompilerError>,
     num_line: u16
-) -> Result<Vec<Token>, Vec<ParserError>> {
+) -> Result<Vec<Token>, Vec<CompilerError>> {
     if errors.is_empty() {
         tokens.push(Token::create_eof_token(num_line));
         Ok(tokens)
@@ -265,7 +265,7 @@ fn end_lexer(
 /// 
 /// # Retorna
 /// El último número de línea
-fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<ParserError>) -> u16 {
+fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<CompilerError>) -> u16 {
     let mut num_line = 1;
 
     while !input.is_empty() {
@@ -298,7 +298,7 @@ fn match_alternatives(
     input: &mut &str,
     tokens: &mut Vec<Token>,
     num_line: u16,
-    errors: &mut Vec<ParserError>,
+    errors: &mut Vec<CompilerError>,
 ) {
     match alt((colon, prefix, source, query, source_path, query_definition, uri, identifier)).parse_next(input) {
         Ok(mut token) => {
@@ -311,7 +311,7 @@ fn match_alternatives(
             let token_error: Result<&str, ErrMode<ContextError>> =
                 take_while(1, |c: char| c.is_ascii()).parse_next(input);
             if token_error.is_ok() {
-                errors.push(ParserError::new(format!(
+                errors.push(CompilerError::new(format!(
                     "Error léxico: '{}'; en la línea {}",
                     token_error.unwrap().to_string(),
                     num_line
