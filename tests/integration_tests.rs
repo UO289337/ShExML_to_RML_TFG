@@ -7,12 +7,13 @@ use shexml_to_rml_tfg::model;
 mod integration_lexer_syntax_analyzers_tests {
     use super::*;
 
+
     /// Comprueba que la integración entre el analizador léxico y el analizador sintáctico se realiza correctamente
     #[doc(hidden)]
     #[test]
     fn test_integration_ok() {
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            SOURCE <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
