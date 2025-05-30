@@ -277,7 +277,7 @@ mod sintax_detectors_tests {
     /// Comprueba que se detectan los tokens PREFIX
     #[doc(hidden)]
     #[test]
-    fn test_prefix_detector_ok() {
+    fn detect_valid_prefix() {
         let expected_token = TestUtilities::prefix_test_token(1);
         let actual = prefix_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -286,7 +286,7 @@ mod sintax_detectors_tests {
     /// Comprueba que no se detectan como tokens PREFIX aquellos que lo son
     #[doc(hidden)]
     #[test]
-    fn test_prefix_detector_fail() {
+    fn not_detect_invalid_prefix() {
         let actual = prefix_detector().parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
@@ -294,7 +294,7 @@ mod sintax_detectors_tests {
     /// Comprueba que se detectan los tokens SOURCE
     #[doc(hidden)]
     #[test]
-    fn test_source_detector_ok() {
+    fn detect_valid_source() {
         let expected_token = TestUtilities::source_test_token(1);
         let actual = source_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -303,7 +303,7 @@ mod sintax_detectors_tests {
     /// Comprueba que no se detectan como tokens SOURCE aquellos que lo son
     #[doc(hidden)]
     #[test]
-    fn test_source_detector_fail() {
+    fn not_detect_invalid_source() {
         let actual = source_detector().parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
@@ -311,7 +311,7 @@ mod sintax_detectors_tests {
     /// Comprueba que se detectan los tokens QUERY
     #[doc(hidden)]
     #[test]
-    fn test_query_detector_ok() {
+    fn detect_valid_query() {
         let expected_token = TestUtilities::query_test_token(1);
         let actual = query_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -320,7 +320,7 @@ mod sintax_detectors_tests {
     /// Comprueba que no se detectan como tokens QUERY aquellos que lo son
     #[doc(hidden)]
     #[test]
-    fn test_query_detector_fail() {
+    fn not_detect_invalid_query() {
         let actual = query_detector().parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
@@ -328,7 +328,7 @@ mod sintax_detectors_tests {
     /// Comprueba que se detectan los tokens IDENT
     #[doc(hidden)]
     #[test]
-    fn test_identifier_detector_ok() {
+    fn detect_valid_identifier() {
         let expected_token = TestUtilities::ident_test_token("ident", 1);
         let actual = identifier_detector("PREFIX".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -337,7 +337,7 @@ mod sintax_detectors_tests {
     /// Comprueba que no se detectan como tokens IDENT aquellos que lo son
     #[doc(hidden)]
     #[test]
-    fn test_identifier_detector_fail() {
+    fn not_detect_invalid_identifier() {
         let actual = identifier_detector("SOURCE".to_string()).parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
@@ -345,7 +345,7 @@ mod sintax_detectors_tests {
     /// Comprueba que se detectan los tokens URI
     #[doc(hidden)]
     #[test]
-    fn test_uri_detector_ok() {
+    fn detect_valid_uri() {
         let expected_token = TestUtilities::uri_test_token("https://ejemplo.com", 1);
         let actual = uri_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -354,7 +354,7 @@ mod sintax_detectors_tests {
     /// Comprueba que no se detectan como tokens URI aquellos que lo son
     #[doc(hidden)]
     #[test]
-    fn test_uri_detector_fail() {
+    fn not_detect_invalid_uri() {
         let actual = uri_detector().parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
@@ -362,7 +362,7 @@ mod sintax_detectors_tests {
     /// Comprueba que se detectan los tokens Query Definition
     #[doc(hidden)]
     #[test]
-    fn test_query_definition_detector_ok() {
+    fn detect_valid_query_definition() {
         let expected_token = TestUtilities::query_definition_test_token("SELECT * FROM example;", 1);
         let actual = query_definition_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -371,7 +371,7 @@ mod sintax_detectors_tests {
     /// Comprueba que no se detectan como tokens Query Definition aquellos que lo son
     #[doc(hidden)]
     #[test]
-    fn test_query_definition_detector_fail() {
+    fn not_detect_invalid_query_definition() {
         let actual = query_definition_detector().parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
@@ -379,7 +379,7 @@ mod sintax_detectors_tests {
     /// Comprueba que se detectan los tokens COLON (:)
     #[doc(hidden)]
     #[test]
-    fn test_colon_detector_ok() {
+    fn detect_valid_colon() {
         let expected_token = TestUtilities::colon_test_token(1);
         let actual = colon_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -388,7 +388,7 @@ mod sintax_detectors_tests {
     /// Comprueba que no se detectan como tokens COLON (:) aquellos que lo son
     #[doc(hidden)]
     #[test]
-    fn test_colon_detector_fail() {
+    fn not_detect_invalid_colon() {
         let actual = colon_detector().parse(vec![TestUtilities::ident_test_token("ident", 1)]);
         check_error(actual);
     }
@@ -425,7 +425,7 @@ mod sintax_tests {
     /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST
     #[doc(hidden)]
     #[test]
-    fn test_file_parser_ok() {
+    fn file_parser_with_valid_sintax() {
         let tokens_vector = vec![
             TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("example", 1), TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://example.com/", 1), 
             TestUtilities::source_test_token(2), TestUtilities::ident_test_token("films_csv_file", 2), TestUtilities::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
@@ -450,19 +450,34 @@ mod sintax_tests {
         assert_eq!(expected, actual.unwrap());
     }
 
-    /// Comprueba que el parser general de file no genera el nodo raíz del AST si hay algún error sintáctico
+    /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST si no hay query y no hay errores sintácticos
     #[doc(hidden)]
     #[test]
-    fn test_file_parser_fail() {
-        // Test con Sources faltantes
-        let tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
-        let actual = file_parser().parse(tokens_vector.clone());
-        // Es necesario crear el Result con el error dentro porque es lo que espera check_error
-        let actual = Err(actual.unwrap_err());
-        check_error::<FileASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
+    fn file_parser_with_valid_sintax_and_withouth_query() {
+        let tokens_vector = vec![
+            TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("example", 1), TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://example.com/", 1), 
+            TestUtilities::source_test_token(2), TestUtilities::ident_test_token("films_csv_file", 2), TestUtilities::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
+            TestUtilities::eof_test_token(3)];
 
-        // Test con prefixes faltantes
+        let expected = FileASTNode {
+            prefixes: vec![PrefixASTNode {
+                identifier: "example".to_string(),
+                uri: "https://example.com/".to_string(),
+            }],
+            sources: vec![SourceASTNode {
+                identifier: "films_csv_file".to_string(),
+                source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+            }],
+            queries: None,
+        };
+        let actual = file_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que el parser general de file no genera el nodo raíz del AST si no hay prefixes
+    #[doc(hidden)]
+    #[test]
+    fn file_parser_withouth_prefixes() {
         let tokens_vector = vec![TestUtilities::source_test_token(1), TestUtilities::ident_test_token("ident", 1), 
         TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
         let actual = file_parser().parse(tokens_vector.clone());
@@ -471,14 +486,25 @@ mod sintax_tests {
         check_error::<FileASTNode>(actual, "Se esperaba un PREFIX en la línea 1");
     }
 
+    /// Comprueba que el parser general de file no genera el nodo raíz del AST si no hay sources
+    #[doc(hidden)]
+    #[test]
+    fn file_parser_withouth_sources() {
+        let tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1), 
+            TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
+        let actual = file_parser().parse(tokens_vector.clone());
+        // Es necesario crear el Result con el error dentro porque es lo que espera check_error
+        let actual = Err(actual.unwrap_err());
+        check_error::<FileASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
+    }
+
     /// Comprueba que el parser de Prefix detecta la secuencia de tokens: PREFIX IDENT COLON URI
     #[doc(hidden)]
     #[test]
-    fn test_prefix_parser_ok() {
+    fn valid_prefix_sintax() {
         let mut tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1), 
             TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
 
-        // Test con un solo PREFIX
         let expected = PrefixASTNode {
             identifier: "ident".to_string(),
             uri: "https://ejemplo.com".to_string(),
@@ -486,7 +512,7 @@ mod sintax_tests {
         let actual = prefix_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
-        // Test con más de un PREFIX
+        // Se añaden más PREFIX
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestUtilities::prefix_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
@@ -504,31 +530,42 @@ mod sintax_tests {
         assert_eq!(expected_vector, actual.unwrap());
     }
 
-    /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que no son: PREFIX IDENT COLON URI
+    /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: IDENT COLON URI
     #[doc(hidden)]
     #[test]
-    fn test_prefix_parser_fail() {
-        // Test con el token PREFIX faltante
+    fn prefix_sintax_withouth_prefix() {
         let fail_tokens_vector = vec![TestUtilities::ident_test_token("ident", 1), 
             TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1),
             TestUtilities::eof_test_token(1)];
         let actual = prefix_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba un PREFIX en la línea 1");
+    }
 
-        // Test con el token IDENT (identificador) faltante
+    /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: PREFIX COLON URI
+    #[doc(hidden)]
+    #[test]
+    fn prefix_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![TestUtilities::prefix_test_token(1), 
             TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1),
             TestUtilities::eof_test_token(1)];
         let actual = prefix_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba un identificador después de PREFIX en la línea 1");
+    }
 
-        // Test con el token COLON (:) faltante
+    /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: PREFIX IDENT URI
+    #[doc(hidden)]
+    #[test]
+    fn prefix_sintax_withouth_colon() {
         let fail_tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1),
              TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
         let actual = prefix_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Faltan los ':' después del identificador en la línea 1");
+    }
 
-        // Test con el token URI faltante
+    /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: PREFIX IDENT COLON
+    #[doc(hidden)]
+    #[test]
+    fn prefix_sintax_withouth_uri() {
         let fail_tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1),
         TestUtilities::colon_test_token(1), TestUtilities::eof_test_token(1)];
         let actual = prefix_parser().parse(fail_tokens_vector);
@@ -538,11 +575,10 @@ mod sintax_tests {
     /// Comprueba que el parser de Source detecta la secuencia de tokens: SOURCE IDENT URI
     #[doc(hidden)]
     #[test]
-    fn test_source_parser_ok() {
+    fn valid_source_sintax() {
         let mut tokens_vector = vec![TestUtilities::source_test_token(1), TestUtilities::ident_test_token("ident", 1), 
             TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestUtilities::eof_test_token(1)];
 
-        // Test con un solo SOURCE
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
             source_path: "https://ejemplo.com/fichero.csv".to_string(),
@@ -550,7 +586,7 @@ mod sintax_tests {
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
-        // Test con más de un SOURCE
+        // Se añaden más SOURCE
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestUtilities::source_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
@@ -567,37 +603,43 @@ mod sintax_tests {
         assert_eq!(expected_vector, actual.unwrap());
     }
 
-    /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que no son: SOURCE IDENT URI
+    /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: IDENT SOURCEPATH
     #[doc(hidden)]
     #[test]
-    fn test_source_parser_fail() {
-        // Test con el token SOURCE faltante
+    fn source_sintax_withouth_source() {
         let fail_tokens_vector = vec![TestUtilities::ident_test_token("ident", 1), 
             TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestUtilities::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
+        check_error::<SourceASTNode>(actual, "Se esperaba un SOURCE en la línea 1");        
+    }
 
-        // Test con el token IDENT (identificador) faltante
+    /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: SOURCE SOURCEPATH
+    #[doc(hidden)]
+    #[test]
+    fn source_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![TestUtilities::source_test_token(1), 
             TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestUtilities::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un identificador después de SOURCE en la línea 1");
+        check_error::<SourceASTNode>(actual, "Se esperaba un identificador después de SOURCE en la línea 1");      
+    }
 
-        // Test con el token SOURCEPATH faltante
+    /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: SOURCE IDENT
+    #[doc(hidden)]
+    #[test]
+    fn source_sintax_withouth_sourcepath() {
         let fail_tokens_vector = vec![TestUtilities::source_test_token(1), TestUtilities::ident_test_token("ident", 1),
         TestUtilities::eof_test_token(1)];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea 1");
+        check_error::<SourceASTNode>(actual, "Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea 1");     
     }
 
     /// Comprueba que el parser de Query detecta la secuencia de tokens: QUERY IDENT QueryDefinition
     #[doc(hidden)]
     #[test]
-    fn test_query_parser_ok() {
+    fn valid_query_sintax() {
         let mut tokens_vector = vec![TestUtilities::query_test_token(1), TestUtilities::ident_test_token("ident", 1), 
             TestUtilities::query_definition_test_token("SELECT * FROM example;", 1), TestUtilities::eof_test_token(1)];
 
-        // Test con una sola QUERY
         let expected = QueryASTNode {
             identifier: "ident".to_string(),
             query_definition: "SELECT * FROM example;".to_string(),
@@ -605,7 +647,7 @@ mod sintax_tests {
         let actual = query_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
-        // Test con más de una QUERY
+        // Se añaden más QUERY
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestUtilities::query_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
@@ -622,23 +664,30 @@ mod sintax_tests {
         assert_eq!(expected_vector, actual.unwrap());
     }
 
-    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que no son: QUERY IDENT QueryDefinition
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: IDENT QUERYDEFINITION
     #[doc(hidden)]
     #[test]
-    fn test_query_parser_fail() {
-        // Test con el token QUERY faltante
+    fn query_sintax_withouth_query() {
         let fail_tokens_vector = vec![TestUtilities::ident_test_token("ident", 1), 
             TestUtilities::query_definition_test_token("SELECT * FROM example;", 1), TestUtilities::eof_test_token(1)];
         let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(actual, "Se esperaba un QUERY en la línea 1");
+    }
 
-        // Test con el token IDENT (identificador) faltante
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: QUERY QUERYDEFINITION
+    #[doc(hidden)]
+    #[test]
+    fn query_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![TestUtilities::query_test_token(1), 
             TestUtilities::query_definition_test_token("SELECT * FROM example;", 1), TestUtilities::eof_test_token(1)];
         let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(actual, "Se esperaba un identificador después de QUERY en la línea 1");
+    }
 
-        // Test con el token QUERYDEFINITION faltante
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: QUERY IDENT
+    #[doc(hidden)]
+    #[test]
+    fn query_sintax_withouth_query_definition() {
         let fail_tokens_vector = vec![TestUtilities::query_test_token(1), TestUtilities::ident_test_token("ident", 1),
         TestUtilities::eof_test_token(1)];
         let actual = query_parser().parse(fail_tokens_vector);
