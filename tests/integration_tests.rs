@@ -2,13 +2,13 @@
 
 use shexml_to_rml_tfg::model;
 
-/// Módulo con los tests de integración del analizador léxico y del analizador sintáctico
+/// Módulo con los tests de integración del analizador léxico, del analizador sintáctico y del analizador semántico
 #[cfg(test)]
 mod integration_lexer_syntax_analyzers_tests {
+
     use super::*;
 
-
-    /// Comprueba que la integración entre el analizador léxico y el analizador sintáctico se realiza correctamente
+    /// Comprueba que la integración entre el analizador léxico, el analizador sintáctico y el semántico se realiza correctamente
     #[doc(hidden)]
     #[test]
     fn integration_with_valid_input() {
@@ -17,7 +17,9 @@ mod integration_lexer_syntax_analyzers_tests {
             QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
+        let semantic_result = model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 
+        assert!(semantic_result.is_empty());
         assert!(sintax_result.as_ref().is_ok_and(|file| !file.prefixes.is_empty() && !file.sources.is_empty() && file.queries.is_some()));
 
         let _ = sintax_result.as_ref().map(|file| {
@@ -27,7 +29,7 @@ mod integration_lexer_syntax_analyzers_tests {
         });
     }
 
-    /// Comprueba que la integración entre el analizador léxico y el analizador sintáctico falla en el caso de que ocurra un error en el análisis léxico
+    /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis léxico
     #[doc(hidden)]
     #[test]
     fn integration_with_lexer_fail() {
@@ -38,11 +40,10 @@ mod integration_lexer_syntax_analyzers_tests {
         assert!(lexer_result.is_err());
     }
 
-    /// Comprueba que la integración entre el analizador léxico y el analizador sintáctico falla en el caso de que ocurra un error en el análisis sintáctico
+    /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis sintáctico
     #[doc(hidden)]
     #[test]
     fn integration_with_syntax_fail() {
-        // Test con un fallo sintáctico
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
@@ -55,5 +56,19 @@ mod integration_lexer_syntax_analyzers_tests {
             assert_eq!(file.prefixes.len(), 0);
             assert_eq!(file.sources.len(), 0);
         });
+    }
+
+    /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis semántico
+    #[doc(hidden)]
+    #[test]
+    fn integration_with_semantic_fail() {
+        let mut input = "PREFIX example: <http://example.com/>
+            SOURCE example <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY query_sql <sql: SELECT * FROM example;>";
+        let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
+        let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
+        let semantic_result = model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
+
+        assert_eq!(semantic_result.len(), 1);
     }
 }
