@@ -5,7 +5,7 @@ use std::fmt;
 /// Estructura del CompilerError
 ///
 /// Unicamente contiene el mensaje de error
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CompilerError {
     message: String,
 }
