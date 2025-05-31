@@ -2,23 +2,23 @@
 
 use std::fmt;
 
-/// Estructura del ParserError
+/// Estructura del CompilerError
 ///
 /// Unicamente contiene el mensaje de error
-#[derive(Debug, Clone)]
-pub struct ParserError {
+#[derive(Debug, Clone, PartialEq)]
+pub struct CompilerError {
     message: String,
 }
 
-impl fmt::Display for ParserError {
+impl fmt::Display for CompilerError {
     /// Muestra el mensaje de error por pantalla
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.message)
     }
 }
 
-impl ParserError {
-    /// Crea un ParserError y lo devuelve
+impl CompilerError {
+    /// Crea un CompilerError y lo devuelve
     ///
     /// # Argumentos
     /// * `message` - Mensaje del error
@@ -26,6 +26,6 @@ impl ParserError {
     /// # Retorna
     /// A si mismo
     pub fn new(message: String) -> Self {
-        ParserError { message }
+        CompilerError { message }
     }
 }

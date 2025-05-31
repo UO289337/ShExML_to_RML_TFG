@@ -8,7 +8,7 @@ use winnow::error::{AddContext, ContextError, ErrMode, StrContext};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
 
-use super::parser_error::ParserError;
+use super::super::compiler_error::CompilerError;
 use super::token::*;
 
 use regex::Regex;
@@ -220,9 +220,9 @@ fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// # Errores
 /// Devuelve un `[Vec<ParserError>]` con los errores detectados por el analizador léxico
-pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
+pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<CompilerError>> {
     let mut tokens = Vec::new();
-    let mut errors: Vec<ParserError> = Vec::new();
+    let mut errors: Vec<CompilerError> = Vec::new();
 
     let num_line = look_over_input(input, &mut tokens, &mut errors);
 
@@ -245,9 +245,9 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<ParserError>> {
 /// Devuelve un `[Vec<ParserError>]` El vector de errores detectados en el análisis léxico
 fn end_lexer(
     mut tokens: Vec<Token>,
-    errors: Vec<ParserError>,
+    errors: Vec<CompilerError>,
     num_line: u16
-) -> Result<Vec<Token>, Vec<ParserError>> {
+) -> Result<Vec<Token>, Vec<CompilerError>> {
     if errors.is_empty() {
         tokens.push(Token::create_eof_token(num_line));
         Ok(tokens)
@@ -265,7 +265,7 @@ fn end_lexer(
 /// 
 /// # Retorna
 /// El último número de línea
-fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<ParserError>) -> u16 {
+fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<CompilerError>) -> u16 {
     let mut num_line = 1;
 
     while !input.is_empty() {
@@ -298,7 +298,7 @@ fn match_alternatives(
     input: &mut &str,
     tokens: &mut Vec<Token>,
     num_line: u16,
-    errors: &mut Vec<ParserError>,
+    errors: &mut Vec<CompilerError>,
 ) {
     match alt((colon, prefix, source, query, source_path, query_definition, uri, identifier)).parse_next(input) {
         Ok(mut token) => {
@@ -311,7 +311,7 @@ fn match_alternatives(
             let token_error: Result<&str, ErrMode<ContextError>> =
                 take_while(1, |c: char| c.is_ascii()).parse_next(input);
             if token_error.is_ok() {
-                errors.push(ParserError::new(format!(
+                errors.push(CompilerError::new(format!(
                     "Error léxico: '{}'; en la línea {}",
                     token_error.unwrap().to_string(),
                     num_line
@@ -330,6 +330,8 @@ fn match_alternatives(
 /// Los tests se hacen tanto a nivel de tokens individuales como a nivel de tokens en conjunto
 #[cfg(test)]
 mod lexer_tests {
+    use crate::test_utils::TestUtilities;
+
     use super::*;
 
     // En los tests el número de línea de los tokens es 0 porque todavía no se le asigna
@@ -337,16 +339,16 @@ mod lexer_tests {
     /// Comprueba que se detecta el token PREFIX
     #[doc(hidden)]
     #[test]
-    fn test_prefix_ok() {
-        let expected = TestTokens::prefix_test_token(0);
+    fn valid_prefix() {
+        let expected = TestUtilities::prefix_test_token(0);
         let actual = prefix(&mut "PREFIX");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token aquellas cadenas que no sean PREFIX
     #[doc(hidden)]
     #[test]
-    fn test_prefix_fail() {
+    fn invalid_prefix() {
         let actual = prefix(&mut "PRFIX");
         check_error(actual);
     }
@@ -354,16 +356,16 @@ mod lexer_tests {
     /// Comprueba que se detecta el token :
     #[doc(hidden)]
     #[test]
-    fn test_colon_ok() {
-        let expected = TestTokens::colon_test_token(0);
+    fn valid_colon() {
+        let expected = TestUtilities::colon_test_token(0);
         let actual = colon(&mut ":");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token : aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
-    fn test_colon_fail() {
+    fn invalid_colon() {
         let actual = colon(&mut ";");
         check_error(actual);
     }
@@ -371,237 +373,409 @@ mod lexer_tests {
     /// Comprueba que se detecta el token SOURCE
     #[doc(hidden)]
     #[test]
-    fn test_source_ok() {
-        let expected = TestTokens::source_test_token(0);
+    fn valid_source() {
+        let expected = TestUtilities::source_test_token(0);
         let actual = source(&mut "SOURCE");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token SOURCE aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
-    fn test_source_fail() {
+    fn invalid_source() {
         // Fail test
         let actual = source(&mut "SOUR");
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token IDENT; los identificadores
+    /// Comprueba que se detecta el token IDENT (identificadores) sin que tenga un '_'
     #[doc(hidden)]
     #[test]
-    fn test_identifier_ok() {
-        // Test con identificador sin _
-        let expected = TestTokens::ident_test_token("ident",0);
+    fn valid_identifier_withouth_underscore() {
+        let expected = TestUtilities::ident_test_token("ident",0);
         let actual = identifier(&mut "ident");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
+    }
 
-        // Test con identificador con _ entre 2 secuencias de caracteres
-        let expected = TestTokens::ident_test_token("ident_valid",0);
+    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' en medio
+    #[doc(hidden)]
+    #[test]
+    fn valid_identifier_with_underscore_inside() {
+        let expected = TestUtilities::ident_test_token("ident_valid",0);
         let actual = identifier(&mut "ident_valid");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
+    }
 
-        // Test con identificador con _ al principio del identificador
-        let expected = TestTokens::ident_test_token("_ident_valid", 0);
+    /// Comprueba que se detecta el token IDENT (identificadores) con un '_ ' al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn valid_identifier_with_underscore_at_the_begining() {
+        let expected = TestUtilities::ident_test_token("_ident_valid", 0);
         let actual = identifier(&mut "_ident_valid");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
+    }
 
+    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' al final
+    #[doc(hidden)]
+    #[test]
+    fn valid_identifier_with_underscore_at_the_end() {
         // Test con identificador con _ al final del identificador
-        let expected = TestTokens::ident_test_token("ident_valid_", 0);
+        let expected = TestUtilities::ident_test_token("ident_valid_", 0);
         let actual = identifier(&mut "ident_valid_");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' al comienzo y final
+    #[doc(hidden)]
+    #[test]
+    fn valid_identifier_with_underscore_at_the_begining_and_end() {
+        // Test con identificador con _ al final del identificador
+        let expected = TestUtilities::ident_test_token("_ident_valid_", 0);
+        let actual = identifier(&mut "_ident_valid_");
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token IDENT aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
-    fn test_identifier_fail() {
+    fn invalid_identifier() {
         let actual = identifier(&mut "123ident_invalid");
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token URI
+    /// Comprueba que se detecta el token URI con el protocolo HTTPS
     #[doc(hidden)]
     #[test]
-    fn test_uri_ok() {
-        // Test con URI con el protocolo HTTPS
-        let expected = TestTokens::uri_test_token("https://ejemplo.com",0);
+    fn valid_uri_with_https() {
+        let expected = TestUtilities::uri_test_token("https://ejemplo.com",0);
         let actual = uri(&mut "<https://ejemplo.com>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con URI con el protocolo HTTP
-        let expected = TestTokens::uri_test_token("http://ejemplo.com", 0);
-        let actual = uri(&mut "<http://ejemplo.com>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con URI acabada en /
-        let expected = TestTokens::uri_test_token("https://ejemplo.com/", 0);
-        let actual = uri(&mut "<https://ejemplo.com/>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token uri aquellas cadenas que no lo sean
+    /// Comprueba que se detecta el token URI con el protocolo HTTP
     #[doc(hidden)]
     #[test]
-    fn test_uri_fail() {
-        // Test con > faltante al final de la URI
+    fn valid_uri_with_http() {
+        let expected = TestUtilities::uri_test_token("http://ejemplo.com",0);
+        let actual = uri(&mut "<http://ejemplo.com>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token URI con una '/' al final
+    #[doc(hidden)]
+    #[test]
+    fn valid_uri_with_slash_at_the_end() {
+        let expected = TestUtilities::uri_test_token("https://ejemplo.com/",0);
+        let actual = uri(&mut "<https://ejemplo.com/>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token URI aquellas cadenas que no tengan un '>' al final
+    #[doc(hidden)]
+    #[test]
+    fn uri_withouth_right_angle_bracket() {
         let actual = uri(&mut "<https://ejemplo.com");
         check_error(actual);
+    }
 
-        // Test con < faltante al comienzo de la URI
+    /// Comprueba que no se detecta como token URI aquellas cadenas que no tengan un '<' al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn uri_withouth_left_angle_bracket() {
         let actual = uri(&mut "https://ejemplo.com>");
         check_error(actual);
+    }
 
-        // Test con < y > faltantes
+    /// Comprueba que no se detecta como token URI aquellas cadenas que no tengan un '<' al comienzo y un '>' al final
+    #[doc(hidden)]
+    #[test]
+    fn uri_withouth_angle_brackets() {
         let actual = uri(&mut "https://ejemplo.com");
         check_error(actual);
+    }
 
-        // Test con una URI incorrecta
+    /// Comprueba que no se detecta como token URI las URIs incorrectas
+    #[doc(hidden)]
+    #[test]
+    fn invalid_format_uri() {
         let actual = uri(&mut "<https:ejemplo.com>");
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token SOURCEPATH
+    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV remoto
     #[doc(hidden)]
     #[test]
-    fn test_source_path_ok() {
-        // Test con SOURCEPATH con un fichero CSV en remoto
-        let expected = TestTokens::source_path_test_token("https://ejemplo.com/fichero.csv",0);
+    fn valid_source_path_with_csv_remote_file() {
+        let expected = TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv",0);
         let actual = source_path(&mut "<https://ejemplo.com/fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con SOURCEPATH con un fichero CSV en local con ruta relativa
-        let expected = TestTokens::source_path_test_token("ejemplo/fichero.csv", 0);
-        let actual = source_path(&mut "<ejemplo/fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta con file
-        let expected = TestTokens::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
-        let actual = source_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con SOURCEPATH con un fichero CSV en local con ruta absoluta sin file
-        let expected = TestTokens::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
-        let actual = source_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con SOURCEPATH con una base de datos
-        let expected = TestTokens::source_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
-        let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token source_path aquellas cadenas que no lo sean
+    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV local usando una ruta relativa
     #[doc(hidden)]
     #[test]
-    fn test_source_path_fail() {
-        // Test con > faltante al final del SOURCEPATH
+    fn valid_source_path_with_csv_local_file_relative_path() {
+        let expected = TestUtilities::source_path_test_token("ejemplo/fichero.csv", 0);
+        let actual = source_path(&mut "<ejemplo/fichero.csv>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV local usando una ruta absoluta con file
+    #[doc(hidden)]
+    #[test]
+    fn valid_source_path_with_csv_local_file_absolute_path_with_file() {
+        let expected = TestUtilities::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
+        let actual = source_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV local usando una ruta absoluta sin file
+    #[doc(hidden)]
+    #[test]
+    fn valid_source_path_with_csv_local_file_absolute_path_withouth_file() {
+        let expected = TestUtilities::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
+        let actual = source_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token SOURCEPATH de una base de datos
+    #[doc(hidden)]
+    #[test]
+    fn valid_source_path_with_database() {
+        let expected = TestUtilities::source_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
+        let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que no tengan un '>' al final
+    #[doc(hidden)]
+    #[test]
+    fn source_path_withouth_right_angle_bracket() {
         let actual = source_path(&mut "<https://ejemplo.com");
         check_error(actual);
+    }
 
-        // Test con < faltante al final del SOURCEPATH
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que no tengan un '<' al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn source_path_withouth_left_angle_bracket() {
         let actual = source_path(&mut "https://ejemplo.com>");
         check_error(actual);
+    }
 
-        // Test con < y > faltantes 
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que no tengan un '<' al comienzo y un '>' al final
+    #[doc(hidden)]
+    #[test]
+    fn source_path_withouth_angle_brackets() {
         let actual = source_path(&mut "https://ejemplo.com");
         check_error(actual);
+    }
 
-        // Test con una URI incorrecta
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan una URI incorrecta
+    #[doc(hidden)]
+    #[test]
+    fn source_path_with_invalid_uri() {
         let actual = source_path(&mut "<https:ejemplo.com/fichero.csv>");
         check_error(actual);
+    }
 
-        // Test con un path absoluto con file incorrecto
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un path absoluto con file incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn source_path_with_invalid_absolute_path_with_file() {
         let actual = source_path(&mut "<file//>");
         check_error(actual);
+    }
 
-        // Test con un path absoluto sin file incorrecto
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un path absoluto sin file incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn source_path_with_invalid_absolute_path_withouth_file() {
         let actual = source_path(&mut "<//..>");
         check_error(actual);
+    }
 
-        // Test con un path relativo incorrecto
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un path relativo incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn source_path_with_invalid_relative_path() {
         let actual = source_path(&mut "<ejemplo/>");
         check_error(actual);
+    }
 
-        // Test con un tipo de fichero incorrecto
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un tipo de fichero incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn source_path_with_invalid_file_type() {
         let actual = source_path(&mut "<ejemplo/fichero.xml>");
         check_error(actual);
+    }
 
-        // Test con una JBDC URL incorrecta
+    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan una URL JDBC incorrecta
+    #[doc(hidden)]
+    #[test]
+    fn source_path_with_invalid_jdbc_url() {
         let actual = source_path(&mut "<jdbc:/localhost:3306/db>");
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token QUERYDEFINITION
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en remoto
     #[doc(hidden)]
     #[test]
-    fn test_query_definition_ok() {
-        // Test con QUERYDEFINITION con un fichero .sql en remoto
-        let expected = TestTokens::query_definition_test_token("https://ejemplo.com/fichero.sql",0);
+    fn valid_query_definition_with_remote_sql_file() {
+        let expected = TestUtilities::query_definition_test_token("https://ejemplo.com/fichero.sql",0);
         let actual = query_definition(&mut "<https://ejemplo.com/fichero.sql>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con QUERYDEFINITION con un fichero .sparql en local con ruta relativa
-        let expected = TestTokens::query_definition_test_token("ejemplo/fichero.sparql", 0);
-        let actual = query_definition(&mut "<ejemplo/fichero.sparql>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con QUERYDEFINITION con un fichero .sql en local con ruta absoluta con file
-        let expected = TestTokens::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sql", 0);
-        let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sql>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con QUERYDEFINITION con un fichero .sparql en local con ruta absoluta sin file
-        let expected = TestTokens::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sparql", 0);
-        let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sparql>");
-        assert_eq!(expected, actual.unwrap());
-
-        // Test con QUERYDEFINITION con una consulta SQL
-        let expected = TestTokens::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
-        let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'>");
-        assert_eq!(expected, actual.unwrap());
+        check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token query_definition aquellas cadenas que no lo sean
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en remoto
     #[doc(hidden)]
     #[test]
-    fn test_query_definition_fail() {
-        // Test con > faltante al final del QUERYDEFINITION
+    fn valid_query_definition_with_remote_sparql_file() {
+        let expected = TestUtilities::query_definition_test_token("https://ejemplo.com/fichero.sparql",0);
+        let actual = query_definition(&mut "<https://ejemplo.com/fichero.sparql>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en local con ruta relativa
+    #[doc(hidden)]
+    #[test]
+    fn valid_query_definition_with_sql_file_relative_path() {
+        let expected = TestUtilities::query_definition_test_token("ejemplo/fichero.sql", 0);
+        let actual = query_definition(&mut "<ejemplo/fichero.sql>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en local con ruta relativa
+    #[doc(hidden)]
+    #[test]
+    fn valid_query_definition_with_sparql_file_relative_path() {
+        let expected = TestUtilities::query_definition_test_token("ejemplo/fichero.sparql", 0);
+        let actual = query_definition(&mut "<ejemplo/fichero.sparql>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en local con ruta absoluta con file
+    #[doc(hidden)]
+    #[test]
+    fn valid_query_definition_with_sql_file_absolute_path_with_file() {
+        let expected = TestUtilities::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sql", 0);
+        let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sql>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en local con ruta absoluta con file
+    #[doc(hidden)]
+    #[test]
+    fn valid_query_definition_with_sparql_file_absolute_path_with_file() {
+        let expected = TestUtilities::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sparql", 0);
+        let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sparql>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en local con ruta absoluta sin file
+    #[doc(hidden)]
+    #[test]
+    fn valid_query_definition_with_sql_file_absolute_path_withouth_file() {
+        let expected = TestUtilities::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sql", 0);
+        let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sql>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en local con ruta absoluta sin file
+    #[doc(hidden)]
+    #[test]
+    fn valid_query_definition_with_sparql_file_absolute_path_withouth_file() {
+        let expected = TestUtilities::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sparql", 0);
+        let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sparql>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token QUERYDEFINITION con una consulta SQL
+    #[doc(hidden)]
+    #[test]
+    fn valid_query_definition_with_sql_query() {
+        let expected = TestUtilities::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
+        let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'>");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que no tengan un '>' al final
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_withouth_right_angle_bracket() {
         let actual = query_definition(&mut "<https://ejemplo.com");
         check_error(actual);
+    }
 
-        // Test con < faltante al final del QUERYDEFINITION
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que no tengan un '<' al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_withouth_left_angle_bracket() {
         let actual = query_definition(&mut "https://ejemplo.com>");
         check_error(actual);
+    }
 
-        // Test con < y > faltantes 
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que no tengan un '<' al comienzo y un '>' al final
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_withouth_angle_bracket() {
         let actual = query_definition(&mut "https://ejemplo.com");
         check_error(actual);
+    }
 
-        // Test con una URL incorrecta
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan una URL incorrecta
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_with_invalid_url() {
         let actual = query_definition(&mut "<https:ejemplo.com/fichero.sparql>");
         check_error(actual);
+    }
 
-        // Test con un path absoluto con file incorrecto
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un path absoluto con file incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_with_invalid_absolute_path_with_field() {
         let actual = query_definition(&mut "<file//>");
         check_error(actual);
+    }
 
-        // Test con un path absoluto sin file incorrecto
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un path absoluto sin file incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_with_invalid_absolute_path_withouth_field() {
         let actual = query_definition(&mut "<//..>");
         check_error(actual);
+    }
 
-        // Test con un path relativo incorrecto
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un path relativo incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_with_invalid_relative_path() {
         let actual = query_definition(&mut "<ejemplo/>");
         check_error(actual);
+    }
 
-        // Test con un tipo de fichero incorrecto
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un tipo de fichero incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_with_invalid_file_type() {
         let actual = query_definition(&mut "<ejemplo/fichero.csv>");
         check_error(actual);
+    }
 
-        // Test con una consulta SQL incorrecta
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan una consulta SQL incorrecta
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_with_invalid_sql_query() {
         let actual = query_definition(&mut "<sql: SELECT FROM tabla>");
         check_error(actual);
+    }
 
-        // Test con una consulta SQL sin :sql
+    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan una consulta SQL sin ':sql' al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn query_definition_with_invalid_sql_query_withouth_sql_begining() {
         let actual = query_definition(&mut "<SELECT * FROM tabla>");
         check_error(actual);
     }
@@ -609,44 +783,60 @@ mod lexer_tests {
     /// Comprueba que se detectan múltiples tokens distintos
     #[doc(hidden)]
     #[test]
-    fn test_lexer_ok() {
+    fn lexer_with_multiple_tokens() {
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
 
         let expected: Vec<Token> = vec![
-            TestTokens::prefix_test_token(1), TestTokens::ident_test_token("example", 1), TestTokens::colon_test_token(1), TestTokens::uri_test_token("http://example.com/", 1), 
-            TestTokens::source_test_token(2), TestTokens::ident_test_token("films_csv_file", 2), TestTokens::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
-            TestTokens::query_test_token(3), TestTokens::ident_test_token("query_sql", 3), TestTokens::query_definition_test_token("SELECT * FROM example;", 3),
-            TestTokens::eof_test_token(3)];
+            TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("example", 1), TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("http://example.com/", 1), 
+            TestUtilities::source_test_token(2), TestUtilities::ident_test_token("films_csv_file", 2), TestUtilities::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
+            TestUtilities::query_test_token(3), TestUtilities::ident_test_token("query_sql", 3), TestUtilities::query_definition_test_token("SELECT * FROM example;", 3),
+            TestUtilities::eof_test_token(3)];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);
     }
 
-    /// Comprueba que se detectan errores si, entre múltiples tokens, hay alguna cadena con algún error
+    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en el PREFIX
     #[doc(hidden)]
     #[test]
-    fn test_lexer_fail() {
-        // Test con un error en el identificador de PREFIX
+    fn lexer_with_invalid_prefix() {
         let mut input = "PREFIX example123: <http://example.com/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
+    }
 
-        // Test con un error en el path de SOURCE
+    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en el SOURCE
+    #[doc(hidden)]
+    #[test]
+    fn lexer_with_invalid_source() {
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
             QUERY query_sql <sql: SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
+    }
 
-        // Test con un error en QUERY
+    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en el QUERY
+    #[doc(hidden)]
+    #[test]
+    fn lexer_with_invalid_query() {
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
             QUERY query_sql SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
+    }
+
+    /// Comprueba que el resultado actual del test es igual al esperado
+    /// 
+    /// # Argumentos
+    /// * `expected` - El token esperado
+    /// * `actual` - El token real
+    fn check_ok(expected: Token, actual: Result<Token, ErrMode<ContextError>>) {
+        assert_eq!(expected, actual.unwrap());
     }
 
     /// Comprueba que el resultado actual del test es un error

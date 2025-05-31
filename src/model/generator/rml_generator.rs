@@ -5,9 +5,9 @@
 use std::fs;
 use std::io::prelude::*;
 
-use crate::model::visitor::{Generator, Visitor};
+use crate::model::generator::visitor::{Generator, Visitor};
 
-use super::ast::FileASTNode;
+use super::super::ast::FileASTNode;
 
 const RML_FILE_NAME: &str = "generated.rml";
 const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";

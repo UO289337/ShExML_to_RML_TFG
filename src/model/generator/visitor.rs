@@ -1,6 +1,6 @@
 //! Visitor del AST
 
-use super::ast::*;
+use super::super::ast::*;
 
 /// Trait general del visitor para visitar cada uno de los nodos del AST
 pub trait Visitor<T> {
