@@ -114,9 +114,13 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let uri = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
     let re_uri = Regex::new(r"^[a-zA-Z][a-zA-Z0-9+.-]*://[^\s<>]+$").unwrap();
-    
+
     if !re_uri.is_match(uri) {
-        let error = &ContextError::new().add_context(&"Formato incorrecto", &uri.checkpoint(), StrContext::Label("URI inválida"));
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &uri.checkpoint(),
+            StrContext::Label("URI inválida"),
+        );
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
@@ -139,7 +143,8 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let source_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
-    let re_source_path = Regex::new(r"(?ix)                    
+    let re_source_path = Regex::new(
+        r"(?ix)                    
             ^(
                 file://[/\\][^ \n\r\t]+\.csv    # Ficheros
                 |
@@ -151,13 +156,19 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
                 |
                 https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv    # URLs remotas a ficheros
             )$
-            "
-        ).unwrap();
-    
+            ",
+    )
+    .unwrap();
+
     // Es necesario hacer una comprobación extra con las URLs JDBC
-    if !re_source_path.is_match(source_path) || (source_path.starts_with("jdbc:") && source_path.ends_with(".csv")) {
-        let error = &ContextError::new()
-            .add_context(&"Formato incorrecto", &source_path.checkpoint(), StrContext::Label("Path o URI del fichero CSV o base de datos inválida"));
+    if !re_source_path.is_match(source_path)
+        || (source_path.starts_with("jdbc:") && source_path.ends_with(".csv"))
+    {
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &source_path.checkpoint(),
+            StrContext::Label("Path o URI del fichero CSV o base de datos inválida"),
+        );
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
@@ -178,25 +189,35 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
 fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let mut query_definition = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let mut query_definition =
+        delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
     let re_query_definition = Regex::new(r"(?ix)
             ^(?:                                                          
                 sql:\s*\bSELECT\b\s+.+?\bFROM\b\s+.+?(?:\bWHERE\b\s+.+?)?(?:\bGROUP\s+BY\b\s+.+?)?(?:\bORDER\s+BY\b\s+.+?)?    # SQL
             )$
         "
         ).unwrap();
-    
+
     if !re_query_definition.is_match(query_definition) {
-        let error = &ContextError::new()
-            .add_context(&"Formato incorrecto", &query_definition.checkpoint(), StrContext::Label("Consulta SQL o path a fichero inválido"));
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &query_definition.checkpoint(),
+            StrContext::Label("Consulta SQL o path a fichero inválido"),
+        );
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
     if query_definition.starts_with("sql:") {
-        query_definition = query_definition.strip_prefix("sql:").unwrap_or(query_definition).trim_start()
+        query_definition = query_definition
+            .strip_prefix("sql:")
+            .unwrap_or(query_definition)
+            .trim_start()
     }
 
-    Ok(Token::new(query_definition.to_string(), TokenType::QUERYDEFINITION))
+    Ok(Token::new(
+        query_definition.to_string(),
+        TokenType::QUERYDEFINITION,
+    ))
 }
 
 /// Realiza el análisis léxico de la entrada
@@ -237,7 +258,7 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<CompilerError>> {
 fn end_lexer(
     mut tokens: Vec<Token>,
     errors: Vec<CompilerError>,
-    num_line: u16
+    num_line: u16,
 ) -> Result<Vec<Token>, Vec<CompilerError>> {
     if errors.is_empty() {
         tokens.push(Token::create_eof_token(num_line));
@@ -253,10 +274,14 @@ fn end_lexer(
 /// * `input` - La entrada del fichero
 /// * `tokens` - El vector que contendrá los tokens detectados
 /// * `errors` - El vector que contendrá los errores léxicos detectados
-/// 
+///
 /// # Retorna
 /// El último número de línea
-fn look_over_input(input: &mut &str, tokens: &mut Vec<Token>, errors: &mut Vec<CompilerError>) -> u16 {
+fn look_over_input(
+    input: &mut &str,
+    tokens: &mut Vec<Token>,
+    errors: &mut Vec<CompilerError>,
+) -> u16 {
     let mut num_line = 1;
 
     while !input.is_empty() {
@@ -291,7 +316,18 @@ fn match_alternatives(
     num_line: u16,
     errors: &mut Vec<CompilerError>,
 ) {
-    match alt((colon, prefix, source, query, source_path, query_definition, uri, identifier)).parse_next(input) {
+    match alt((
+        colon,
+        prefix,
+        source,
+        query,
+        source_path,
+        query_definition,
+        uri,
+        identifier,
+    ))
+    .parse_next(input)
+    {
         Ok(mut token) => {
             token.set_num_line(num_line);
             tokens.push(token);
@@ -316,7 +352,7 @@ fn match_alternatives(
 // Tests
 
 /// Módulo de los tests del analizador léxico
-/// 
+///
 /// Contiene los tests que se encargan de probar que se detectan todos los tokens válidos y se descartan los inválidos
 /// Los tests se hacen tanto a nivel de tokens individuales como a nivel de tokens en conjunto
 #[cfg(test)]
@@ -383,7 +419,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_withouth_underscore() {
-        let expected = TestUtilities::ident_test_token("ident",0);
+        let expected = TestUtilities::ident_test_token("ident", 0);
         let actual = identifier(&mut "ident");
         check_ok(expected, actual);
     }
@@ -392,7 +428,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_inside() {
-        let expected = TestUtilities::ident_test_token("ident_valid",0);
+        let expected = TestUtilities::ident_test_token("ident_valid", 0);
         let actual = identifier(&mut "ident_valid");
         check_ok(expected, actual);
     }
@@ -438,7 +474,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_uri_with_https() {
-        let expected = TestUtilities::uri_test_token("https://ejemplo.com",0);
+        let expected = TestUtilities::uri_test_token("https://ejemplo.com", 0);
         let actual = uri(&mut "<https://ejemplo.com>");
         check_ok(expected, actual);
     }
@@ -447,7 +483,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_uri_with_http() {
-        let expected = TestUtilities::uri_test_token("http://ejemplo.com",0);
+        let expected = TestUtilities::uri_test_token("http://ejemplo.com", 0);
         let actual = uri(&mut "<http://ejemplo.com>");
         check_ok(expected, actual);
     }
@@ -456,7 +492,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_uri_with_slash_at_the_end() {
-        let expected = TestUtilities::uri_test_token("https://ejemplo.com/",0);
+        let expected = TestUtilities::uri_test_token("https://ejemplo.com/", 0);
         let actual = uri(&mut "<https://ejemplo.com/>");
         check_ok(expected, actual);
     }
@@ -497,7 +533,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source_path_with_csv_remote_file() {
-        let expected = TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv",0);
+        let expected = TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 0);
         let actual = source_path(&mut "<https://ejemplo.com/fichero.csv>");
         check_ok(expected, actual);
     }
@@ -515,7 +551,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source_path_with_csv_local_file_absolute_path_with_file() {
-        let expected = TestUtilities::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
+        let expected =
+            TestUtilities::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
         let actual = source_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
         check_ok(expected, actual);
     }
@@ -524,7 +561,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source_path_with_csv_local_file_absolute_path_withouth_file() {
-        let expected = TestUtilities::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
+        let expected =
+            TestUtilities::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
         let actual = source_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
         check_ok(expected, actual);
     }
@@ -622,7 +660,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_query_definition_with_sql_query() {
-        let expected = TestUtilities::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
+        let expected =
+            TestUtilities::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
         let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'>");
         check_ok(expected, actual);
     }
@@ -676,10 +715,21 @@ mod lexer_tests {
             QUERY query_sql <sql: SELECT * FROM example;>";
 
         let expected: Vec<Token> = vec![
-            TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("example", 1), TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("http://example.com/", 1), 
-            TestUtilities::source_test_token(2), TestUtilities::ident_test_token("films_csv_file", 2), TestUtilities::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
-            TestUtilities::query_test_token(3), TestUtilities::ident_test_token("query_sql", 3), TestUtilities::query_definition_test_token("SELECT * FROM example;", 3),
-            TestUtilities::eof_test_token(3)];
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("example", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::uri_test_token("http://example.com/", 1),
+            TestUtilities::source_test_token(2),
+            TestUtilities::ident_test_token("films_csv_file", 2),
+            TestUtilities::source_path_test_token(
+                "https://shexml.herminiogarcia.com/files/films.csv",
+                2,
+            ),
+            TestUtilities::query_test_token(3),
+            TestUtilities::ident_test_token("query_sql", 3),
+            TestUtilities::query_definition_test_token("SELECT * FROM example;", 3),
+            TestUtilities::eof_test_token(3),
+        ];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);
     }
@@ -718,7 +768,7 @@ mod lexer_tests {
     }
 
     /// Comprueba que el resultado actual del test es igual al esperado
-    /// 
+    ///
     /// # Argumentos
     /// * `expected` - El token esperado
     /// * `actual` - El token real
@@ -727,10 +777,14 @@ mod lexer_tests {
     }
 
     /// Comprueba que el resultado actual del test es un error
-    /// 
+    ///
     /// # Argumentos
     /// * `actual` - Un Result con el error esperado
     fn check_error(actual: Result<Token, ErrMode<ContextError>>) {
-        assert!(actual.is_err(), "Se esperaba un error, pero se obtuvo: {:?}", actual);
+        assert!(
+            actual.is_err(),
+            "Se esperaba un error, pero se obtuvo: {:?}",
+            actual
+        );
     }
 }

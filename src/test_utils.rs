@@ -3,7 +3,6 @@ use crate::model::lexer::token::*;
 pub struct TestUtilities;
 
 impl TestUtilities {
-
     pub fn prefix_test_token(num_line: u16) -> Token {
         let mut token = Token::new(PREFIX.to_string(), TokenType::PREFIX);
         token.set_num_line(num_line);

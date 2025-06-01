@@ -42,7 +42,7 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 }
 
 /// Ejecuta el analizador semántico del compilador
-/// 
+///
 /// # Argumentos
 /// * `node` - El nodo raíz del AST resultado del analizador sintáctico
 fn run_semantic_analyzer(node: FileASTNode) {

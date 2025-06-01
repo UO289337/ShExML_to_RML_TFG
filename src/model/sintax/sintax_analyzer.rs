@@ -26,8 +26,10 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
     prefix_parser()
         .then(source_parser())
         .then(query_parser().or_not())
-        .map(|((prefixes, sources), queries)| {
-            FileASTNode { prefixes, sources, queries}
+        .map(|((prefixes, sources), queries)| FileASTNode {
+            prefixes,
+            sources,
+            queries,
         })
 }
 
@@ -107,12 +109,14 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Prefix
-fn prefix_detector(
-    ) -> MapErr<
+fn prefix_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
-    > {
-    general_detector(TokenType::PREFIX, format!("Se esperaba un PREFIX en la línea"))
+> {
+    general_detector(
+        TokenType::PREFIX,
+        format!("Se esperaba un PREFIX en la línea"),
+    )
 }
 
 /// Detecta el token SOURCE en los tokens
@@ -122,12 +126,14 @@ fn prefix_detector(
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Source
-fn source_detector(
-    ) -> MapErr<
+fn source_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
-    > {
-    general_detector(TokenType::SOURCE, format!("Se esperaba un SOURCE en la línea"))
+> {
+    general_detector(
+        TokenType::SOURCE,
+        format!("Se esperaba un SOURCE en la línea"),
+    )
 }
 
 /// Detecta el token QUERY en los tokens
@@ -137,12 +143,14 @@ fn source_detector(
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Source
-fn query_detector(
-    ) -> MapErr<
+fn query_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
-    > {
-    general_detector(TokenType::QUERY, format!("Se esperaba un QUERY en la línea"))
+> {
+    general_detector(
+        TokenType::QUERY,
+        format!("Se esperaba un QUERY en la línea"),
+    )
 }
 
 /// Detecta el token IDENT en los tokens
@@ -161,7 +169,10 @@ fn identifier_detector(
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    general_detector(TokenType::IDENT, format!("Se esperaba un identificador después de {previous_token} en la línea"))
+    general_detector(
+        TokenType::IDENT,
+        format!("Se esperaba un identificador después de {previous_token} en la línea"),
+    )
 }
 
 /// Detecta el token URI en los tokens
@@ -175,7 +186,10 @@ fn uri_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    general_detector(TokenType::URI, format!("Se esperaba una URI después del identificador en la línea"))
+    general_detector(
+        TokenType::URI,
+        format!("Se esperaba una URI después del identificador en la línea"),
+    )
 }
 
 /// Detecta el token QUERYDEFINITION en los tokens
@@ -202,7 +216,7 @@ fn query_definition_detector() -> MapErr<
 fn source_path_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
-    > {
+> {
     general_detector(TokenType::SOURCEPATH, format!("Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea"))
 }
 
@@ -217,7 +231,10 @@ fn colon_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    general_detector(TokenType::COLON, format!("Faltan los ':' después del identificador en la línea"))
+    general_detector(
+        TokenType::COLON,
+        format!("Faltan los ':' después del identificador en la línea"),
+    )
 }
 
 /// Detecta cualquier token válido
@@ -225,13 +242,19 @@ fn colon_detector() -> MapErr<
 /// /// # Argumentos
 /// * `token_type` - El tipo de token esperado
 /// * `message` - El mensaje de error que se muestra en el caso de que el tipo del token no sea el esperado
-/// 
+///
 /// # Retorna
 /// El token reconocido
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea del tipo esperado
-fn general_detector(token_type: TokenType, message: String) -> MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>> {
+fn general_detector(
+    token_type: TokenType,
+    message: String,
+) -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
     filter(move |token: &Token| token.token_type == token_type)
         .map(|token| token.clone())
         .map_err(move |token: Simple<Token>| {
@@ -264,9 +287,8 @@ pub fn parser(tokens: Vec<Token>) -> Result<FileASTNode, Vec<Simple<Token>>> {
 
 // Tests
 
-
 /// Módulo de los tests de los detectors analizador sintáctico
-/// 
+///
 /// Contiene los tests de los detectors que se encargan de detectar los tokens provenientes del análisis léxico
 #[cfg(test)]
 mod sintax_detectors_tests {
@@ -338,7 +360,8 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn not_detect_invalid_identifier() {
-        let actual = identifier_detector("SOURCE".to_string()).parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = identifier_detector("SOURCE".to_string())
+            .parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
 
@@ -363,7 +386,8 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn detect_valid_query_definition() {
-        let expected_token = TestUtilities::query_definition_test_token("SELECT * FROM example;", 1);
+        let expected_token =
+            TestUtilities::query_definition_test_token("SELECT * FROM example;", 1);
         let actual = query_definition_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -394,7 +418,7 @@ mod sintax_detectors_tests {
     }
 
     /// Comprueba que el resultado actual del test es igual al esperado
-    /// 
+    ///
     /// # Argumentos
     /// * `expected` - El token esperado
     /// * `actual` - El token detectado real
@@ -403,16 +427,20 @@ mod sintax_detectors_tests {
     }
 
     /// Comprueba que el resultado actual del test es un error
-    /// 
+    ///
     /// # Argumentos
     /// * `actual` - Un Result con el error esperado
     fn check_error(actual: Result<Token, Vec<Simple<Token>>>) {
-        assert!(actual.is_err(), "Se esperaba un error, pero se obtuvo: {:?}", actual);
+        assert!(
+            actual.is_err(),
+            "Se esperaba un error, pero se obtuvo: {:?}",
+            actual
+        );
     }
 }
 
 /// Módulo para los tests del analizador sintáctico
-/// 
+///
 /// Contiene los tests que se encargan de comprobar que los diferentes parsers del analizador sintáctico funcionan correctamente
 #[cfg(test)]
 mod sintax_tests {
@@ -427,10 +455,21 @@ mod sintax_tests {
     #[test]
     fn file_parser_with_valid_sintax() {
         let tokens_vector = vec![
-            TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("example", 1), TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://example.com/", 1), 
-            TestUtilities::source_test_token(2), TestUtilities::ident_test_token("films_csv_file", 2), TestUtilities::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
-            TestUtilities::query_test_token(3), TestUtilities::ident_test_token("query_sql", 3), TestUtilities::query_definition_test_token("SELECT * FROM example;", 3),
-            TestUtilities::eof_test_token(3)];
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("example", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::uri_test_token("https://example.com/", 1),
+            TestUtilities::source_test_token(2),
+            TestUtilities::ident_test_token("films_csv_file", 2),
+            TestUtilities::source_path_test_token(
+                "https://shexml.herminiogarcia.com/files/films.csv",
+                2,
+            ),
+            TestUtilities::query_test_token(3),
+            TestUtilities::ident_test_token("query_sql", 3),
+            TestUtilities::query_definition_test_token("SELECT * FROM example;", 3),
+            TestUtilities::eof_test_token(3),
+        ];
 
         let expected = FileASTNode {
             prefixes: vec![PrefixASTNode {
@@ -455,9 +494,18 @@ mod sintax_tests {
     #[test]
     fn file_parser_with_valid_sintax_and_withouth_query() {
         let tokens_vector = vec![
-            TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("example", 1), TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://example.com/", 1), 
-            TestUtilities::source_test_token(2), TestUtilities::ident_test_token("films_csv_file", 2), TestUtilities::source_path_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2), 
-            TestUtilities::eof_test_token(3)];
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("example", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::uri_test_token("https://example.com/", 1),
+            TestUtilities::source_test_token(2),
+            TestUtilities::ident_test_token("films_csv_file", 2),
+            TestUtilities::source_path_test_token(
+                "https://shexml.herminiogarcia.com/files/films.csv",
+                2,
+            ),
+            TestUtilities::eof_test_token(3),
+        ];
 
         let expected = FileASTNode {
             prefixes: vec![PrefixASTNode {
@@ -478,8 +526,12 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn file_parser_withouth_prefixes() {
-        let tokens_vector = vec![TestUtilities::source_test_token(1), TestUtilities::ident_test_token("ident", 1), 
-        TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
+        let tokens_vector = vec![
+            TestUtilities::source_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::uri_test_token("https://ejemplo.com", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = file_parser().parse(tokens_vector.clone());
         // Es necesario crear el Result con el error porque es lo que espera check_error
         let actual = Err(actual.unwrap_err());
@@ -490,8 +542,13 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn file_parser_withouth_sources() {
-        let tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
+        let tokens_vector = vec![
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::uri_test_token("https://ejemplo.com", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = file_parser().parse(tokens_vector.clone());
         // Es necesario crear el Result con el error dentro porque es lo que espera check_error
         let actual = Err(actual.unwrap_err());
@@ -502,8 +559,13 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_prefix_sintax() {
-        let mut tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
+        let mut tokens_vector = vec![
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::uri_test_token("https://ejemplo.com", 1),
+            TestUtilities::eof_test_token(1),
+        ];
 
         let expected = PrefixASTNode {
             identifier: "ident".to_string(),
@@ -534,9 +596,12 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn prefix_sintax_withouth_prefix() {
-        let fail_tokens_vector = vec![TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::uri_test_token("https://ejemplo.com", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = prefix_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba un PREFIX en la línea 1");
     }
@@ -545,39 +610,63 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn prefix_sintax_withouth_identifier() {
-        let fail_tokens_vector = vec![TestUtilities::prefix_test_token(1), 
-            TestUtilities::colon_test_token(1), TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::uri_test_token("https://ejemplo.com", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = prefix_parser().parse(fail_tokens_vector);
-        check_error::<PrefixASTNode>(actual, "Se esperaba un identificador después de PREFIX en la línea 1");
+        check_error::<PrefixASTNode>(
+            actual,
+            "Se esperaba un identificador después de PREFIX en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: PREFIX IDENT URI
     #[doc(hidden)]
     #[test]
     fn prefix_sintax_withouth_colon() {
-        let fail_tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1),
-             TestUtilities::uri_test_token("https://ejemplo.com", 1), TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::uri_test_token("https://ejemplo.com", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = prefix_parser().parse(fail_tokens_vector);
-        check_error::<PrefixASTNode>(actual, "Faltan los ':' después del identificador en la línea 1");
+        check_error::<PrefixASTNode>(
+            actual,
+            "Faltan los ':' después del identificador en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: PREFIX IDENT COLON
     #[doc(hidden)]
     #[test]
     fn prefix_sintax_withouth_uri() {
-        let fail_tokens_vector = vec![TestUtilities::prefix_test_token(1), TestUtilities::ident_test_token("ident", 1),
-        TestUtilities::colon_test_token(1), TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = prefix_parser().parse(fail_tokens_vector);
-        check_error::<PrefixASTNode>(actual, "Se esperaba una URI después del identificador en la línea 1");
+        check_error::<PrefixASTNode>(
+            actual,
+            "Se esperaba una URI después del identificador en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Source detecta la secuencia de tokens: SOURCE IDENT URI
     #[doc(hidden)]
     #[test]
     fn valid_source_sintax() {
-        let mut tokens_vector = vec![TestUtilities::source_test_token(1), TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestUtilities::eof_test_token(1)];
+        let mut tokens_vector = vec![
+            TestUtilities::source_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1),
+            TestUtilities::eof_test_token(1),
+        ];
 
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
@@ -590,7 +679,10 @@ mod sintax_tests {
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestUtilities::source_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::source_path_test_token("https://ejemplo2.com/fichero.csv", 2));
+        tokens_vector.push(TestUtilities::source_path_test_token(
+            "https://ejemplo2.com/fichero.csv",
+            2,
+        ));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = SourceASTNode {
@@ -607,38 +699,54 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn source_sintax_withouth_source() {
-        let fail_tokens_vector = vec![TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un SOURCE en la línea 1");        
+        check_error::<SourceASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
     }
 
     /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: SOURCE SOURCEPATH
     #[doc(hidden)]
     #[test]
     fn source_sintax_withouth_identifier() {
-        let fail_tokens_vector = vec![TestUtilities::source_test_token(1), 
-            TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1), TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::source_test_token(1),
+            TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un identificador después de SOURCE en la línea 1");      
+        check_error::<SourceASTNode>(
+            actual,
+            "Se esperaba un identificador después de SOURCE en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: SOURCE IDENT
     #[doc(hidden)]
     #[test]
     fn source_sintax_withouth_sourcepath() {
-        let fail_tokens_vector = vec![TestUtilities::source_test_token(1), TestUtilities::ident_test_token("ident", 1),
-        TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::source_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea 1");     
+        check_error::<SourceASTNode>(actual, "Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea 1");
     }
 
     /// Comprueba que el parser de Query detecta la secuencia de tokens: QUERY IDENT QueryDefinition
     #[doc(hidden)]
     #[test]
     fn valid_query_sintax() {
-        let mut tokens_vector = vec![TestUtilities::query_test_token(1), TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::query_definition_test_token("SELECT * FROM example;", 1), TestUtilities::eof_test_token(1)];
+        let mut tokens_vector = vec![
+            TestUtilities::query_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::query_definition_test_token("SELECT * FROM example;", 1),
+            TestUtilities::eof_test_token(1),
+        ];
 
         let expected = QueryASTNode {
             identifier: "ident".to_string(),
@@ -651,7 +759,10 @@ mod sintax_tests {
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestUtilities::query_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::query_definition_test_token("/path/to/example_query.sql", 2));
+        tokens_vector.push(TestUtilities::query_definition_test_token(
+            "/path/to/example_query.sql",
+            2,
+        ));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = QueryASTNode {
@@ -668,8 +779,11 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_query() {
-        let fail_tokens_vector = vec![TestUtilities::ident_test_token("ident", 1), 
-            TestUtilities::query_definition_test_token("SELECT * FROM example;", 1), TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::query_definition_test_token("SELECT * FROM example;", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(actual, "Se esperaba un QUERY en la línea 1");
     }
@@ -678,32 +792,41 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_identifier() {
-        let fail_tokens_vector = vec![TestUtilities::query_test_token(1), 
-            TestUtilities::query_definition_test_token("SELECT * FROM example;", 1), TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::query_test_token(1),
+            TestUtilities::query_definition_test_token("SELECT * FROM example;", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = query_parser().parse(fail_tokens_vector);
-        check_error::<QueryASTNode>(actual, "Se esperaba un identificador después de QUERY en la línea 1");
+        check_error::<QueryASTNode>(
+            actual,
+            "Se esperaba un identificador después de QUERY en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: QUERY IDENT
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_query_definition() {
-        let fail_tokens_vector = vec![TestUtilities::query_test_token(1), TestUtilities::ident_test_token("ident", 1),
-        TestUtilities::eof_test_token(1)];
+        let fail_tokens_vector = vec![
+            TestUtilities::query_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::eof_test_token(1),
+        ];
         let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(actual, "Se esperaba una consulta SQL o un path o URL a un fichero .sql después del identificador en la línea 1");
     }
 
     /// Comprueba que el resultado actual del test es un error y que el mensaje de este concuerda con el esperado
-    /// 
+    ///
     /// Utiliza como tipo genérico el tipo de nodo del AST que se esté testeando
-    /// 
+    ///
     /// #Argumentos
     /// * `actual` - El Result con el error
     /// * `error_message` - El mensaje de error esperado
     fn check_error<T>(actual: Result<Vec<T>, Vec<Simple<Token>>>, expected_error_message: &str) {
         assert!(actual.is_err(), "Se esperaba un error");
-        
+
         let _ = actual.map_err(|e| {
             let mut error_message_find = false;
 
