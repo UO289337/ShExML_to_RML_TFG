@@ -5,15 +5,19 @@
 /// Enumerador que contiene todos los tipos de tokens que puede haber en el compilador
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TokenType {
-    PREFIX,
-    SOURCE,
-    QUERY,
-    ITERATOR,
-    IDENT,
-    URI,
-    SOURCEPATH,
-    QUERYDEFINITION,
-    COLON,
+    Prefix,
+    Source,
+    Query,
+    Iterator,
+    Ident,
+    Uri,
+    JdbcUrl,
+    FilePath,
+    Path,
+    QueryDefinition,
+    Colon,
+    LeftAngleBracket,
+    RightAngleBracket,
     EOF,
 }
 
@@ -22,6 +26,8 @@ pub const SOURCE: &str = "SOURCE";
 pub const QUERY: &str = "QUERY";
 pub const ITERATOR: &str = "ITERATOR";
 pub const COLON: &str = ":";
+pub const LEFT_ANGLE_BRACKET: &str = "<";
+pub const RIGHT_ANGLE_BRACKET: &str = ">";
 pub const EOF: &str = " ";
 
 /// Estructura de los token

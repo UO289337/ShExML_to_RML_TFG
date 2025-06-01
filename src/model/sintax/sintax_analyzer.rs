@@ -114,7 +114,7 @@ fn prefix_detector() -> MapErr<
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
     general_detector(
-        TokenType::PREFIX,
+        TokenType::Prefix,
         format!("Se esperaba un PREFIX en la línea"),
     )
 }
@@ -131,7 +131,7 @@ fn source_detector() -> MapErr<
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
     general_detector(
-        TokenType::SOURCE,
+        TokenType::Source,
         format!("Se esperaba un SOURCE en la línea"),
     )
 }
@@ -148,7 +148,7 @@ fn query_detector() -> MapErr<
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
     general_detector(
-        TokenType::QUERY,
+        TokenType::Query,
         format!("Se esperaba un QUERY en la línea"),
     )
 }
@@ -170,7 +170,7 @@ fn identifier_detector(
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
     general_detector(
-        TokenType::IDENT,
+        TokenType::Ident,
         format!("Se esperaba un identificador después de {previous_token} en la línea"),
     )
 }
@@ -187,7 +187,7 @@ fn uri_detector() -> MapErr<
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
     general_detector(
-        TokenType::URI,
+        TokenType::Uri,
         format!("Se esperaba una URI después del identificador en la línea"),
     )
 }
@@ -203,7 +203,7 @@ fn query_definition_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    general_detector(TokenType::QUERYDEFINITION, format!("Se esperaba una consulta SQL o un path o URL a un fichero .sql después del identificador en la línea"))
+    general_detector(TokenType::QueryDefinition, format!("Se esperaba una consulta SQL o un path o URL a un fichero .sql después del identificador en la línea"))
 }
 
 /// Detecta el token SOURCEPATH en los tokens
@@ -217,7 +217,7 @@ fn source_path_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    general_detector(TokenType::SOURCEPATH, format!("Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea"))
+    general_detector(TokenType::SourceDefinition, format!("Se esperaba una ruta o URL a un fichero o base de datos después del identificador en la línea"))
 }
 
 /// Detecta el token ':' en los tokens
@@ -232,7 +232,7 @@ fn colon_detector() -> MapErr<
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
     general_detector(
-        TokenType::COLON,
+        TokenType::Colon,
         format!("Faltan los ':' después del identificador en la línea"),
     )
 }

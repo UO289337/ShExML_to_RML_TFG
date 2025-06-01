@@ -3,7 +3,7 @@
 //! Toma como entrada el fichero .shexml que indique el usuario y extrae los tokens de este
 //! También puede indicar errores léxicos en el que caso de que encuentre algún lexema en la entrada que no esté incluido en la especificación ShExML
 
-use winnow::combinator::{alt, delimited};
+use winnow::combinator::alt;
 use winnow::error::{AddContext, ContextError, ErrMode, StrContext};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
@@ -13,7 +13,7 @@ use super::token::*;
 
 use regex::Regex;
 
-/// Encuentra el token PREFIX en la entrada
+/// Encuentra el token Prefix en la entrada
 ///
 /// Acepta la entrada 'PREFIX'
 ///
@@ -27,10 +27,10 @@ use regex::Regex;
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(PREFIX).parse_next(input)?;
-    Ok(Token::new(PREFIX.to_string(), TokenType::PREFIX))
+    Ok(Token::new(PREFIX.to_string(), TokenType::Prefix))
 }
 
-/// Encuentra el token : en la entrada
+/// Encuentra el token Colon en la entrada
 ///
 /// Acepta la entrada ':'
 ///
@@ -44,10 +44,44 @@ fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(COLON).parse_next(input)?;
-    Ok(Token::new(COLON.to_string(), TokenType::COLON))
+    Ok(Token::new(COLON.to_string(), TokenType::Colon))
 }
 
-/// Encuentra el token SOURCE en la entrada
+/// Encuentra el token LeftAngleBracket en la entrada
+///
+/// Acepta la entrada '<'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token < 
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(LEFT_ANGLE_BRACKET).parse_next(input)?;
+    Ok(Token::new(LEFT_ANGLE_BRACKET.to_string(), TokenType::LeftAngleBracket))
+}
+
+/// Encuentra el token RightAngleBracket en la entrada
+///
+/// Acepta la entrada '>'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token >
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn right_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(RIGHT_ANGLE_BRACKET).parse_next(input)?;
+    Ok(Token::new(RIGHT_ANGLE_BRACKET.to_string(), TokenType::RightAngleBracket))
+}
+
+/// Encuentra el token Source en la entrada
 ///
 /// Acepta la entrada 'SOURCE'
 ///
@@ -61,10 +95,10 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(SOURCE).parse_next(input)?;
-    Ok(Token::new(SOURCE.to_string(), TokenType::SOURCE))
+    Ok(Token::new(SOURCE.to_string(), TokenType::Source))
 }
 
-/// Encuentra el token QUERY en la entrada
+/// Encuentra el token Query en la entrada
 ///
 /// Acepta la entrada 'QUERY'
 ///
@@ -78,10 +112,10 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(QUERY).parse_next(input)?;
-    Ok(Token::new(QUERY.to_string(), TokenType::QUERY))
+    Ok(Token::new(QUERY.to_string(), TokenType::Query))
 }
 
-/// Encuentra el token ITERATOR en la entrada
+/// Encuentra el token Iterator en la entrada
 ///
 /// Acepta la entrada 'ITERATOR'
 ///
@@ -95,7 +129,7 @@ fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(ITERATOR).parse_next(input)?;
-    Ok(Token::new(ITERATOR.to_string(), TokenType::ITERATOR))
+    Ok(Token::new(ITERATOR.to_string(), TokenType::Iterator))
 }
 
 /// Encuentra un token identificador en la entrada
@@ -112,12 +146,12 @@ fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let ident = take_while(1.., |c: char| c.is_alphabetic() || c == '_').parse_next(input)?;
-    Ok(Token::new(ident.to_string(), TokenType::IDENT))
+    Ok(Token::new(ident.to_string(), TokenType::Ident))
 }
 
 /// Encuentra un token URI en la entrada
 ///
-/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular de URIs
+/// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de URIs
 ///
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
@@ -128,83 +162,130 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let uri = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let uri = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_uri = Regex::new(r"^[a-zA-Z][a-zA-Z0-9+.-]*://[^\s<>]+$").unwrap();
 
     if !re_uri.is_match(uri) {
         let error = &ContextError::new().add_context(
             &"Formato incorrecto",
             &uri.checkpoint(),
-            StrContext::Label("URI inválida"),
+            StrContext::Label("URI incorrecta"),
         );
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    Ok(Token::new(uri.to_string(), TokenType::URI))
+    Ok(Token::new(uri.to_string(), TokenType::Uri))
 }
 
-/// Encuentra un token SOURCEPATH en la entrada
+/// Encuentra un token JdbcUrl en la entrada
 ///
-/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
-/// * Ficheros CSV con un path en remoto o en local
-/// * Bases de datos con una URL JDBC
+/// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de JDBC URLs
 ///
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
-/// Un token SOURCEPATH
+/// Un token URI
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let source_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
-    let re_source_path = Regex::new(
+fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let jdbc_url = take_while(1.., |c: char| c != '>').parse_next(input)?;
+    let re_jdbc_url = Regex::new(r"^jdbc:[a-zA-Z0-9]+://[^\s<>]+$").unwrap();
+
+    if !re_jdbc_url.is_match(jdbc_url) {
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &jdbc_url.checkpoint(),
+            StrContext::Label("JDBC URL incorrecta"),
+        );
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    Ok(Token::new(jdbc_url.to_string(), TokenType::JdbcUrl))
+}
+
+/// Encuentra un token FilePath en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de file
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token FilePath
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let file_path = take_while(1.., |c: char| c != '>').parse_next(input)?;
+    let re_file_path = Regex::new(r"^file://[/\\][^ \n\r\t]+\.\w+$").unwrap();
+
+    if !re_file_path.is_match(file_path)
+    {
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &file_path.checkpoint(),
+            StrContext::Label("Ruta file incorrecto"),
+        );
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    Ok(Token::new(file_path.to_string(), TokenType::FilePath))
+}
+
+/// Encuentra un token Path en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de una ruta relativa o absoluta
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Path
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let path = take_while(1.., |c: char| c != '>').parse_next(input)?;
+    let re_path = Regex::new(
         r"(?ix)                    
             ^(
-                file://[/\\][^ \n\r\t]+\.csv    # Ficheros
+                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas
                 |
-                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.csv    # rutas absolutas
-                |
-                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])*[\w\-.\\\/*]+\.csv     # rutas locales
-                |
-                jdbc:[\w]+://[^ \n\r\t]+    # JBDC URLs
-                |
-                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.csv    # URLs remotas a ficheros
+                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])*[\w\-.\\\/*]+\.\w+     # rutas relativas
             )$
             ",
     )
     .unwrap();
 
-    if !re_source_path.is_match(source_path)
+    if !re_path.is_match(path)
     {
         let error = &ContextError::new().add_context(
             &"Formato incorrecto",
-            &source_path.checkpoint(),
-            StrContext::Label("Path o URI del fichero CSV o base de datos inválida"),
+            &path.checkpoint(),
+            StrContext::Label("Ruta absoluta o relativa incorrecta"),
         );
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    Ok(Token::new(source_path.to_string(), TokenType::SOURCEPATH))
+    Ok(Token::new(path.to_string(), TokenType::Path))
 }
 
-/// Encuentra un token QUERYDEFINITION en la entrada
+/// Encuentra un token QueryDefinition en la entrada
 ///
-/// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
-/// * Consultas SQL literales o en ficheros externos .sql
+/// Acepta como entrada consultas SQL
 ///
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
-/// Un token QUERYDEFINITION
+/// Un token QueryDefinition
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let mut query_definition =
-        delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
+    let mut query_definition = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_query_definition = Regex::new(r"(?ix)
             ^(?:                                                          
                 sql:\s*\bSELECT\b\s+.+?\bFROM\b\s+.+?(?:\bWHERE\b\s+.+?)?(?:\bGROUP\s+BY\b\s+.+?)?(?:\bORDER\s+BY\b\s+.+?)?    # SQL
@@ -228,7 +309,7 @@ fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 
     Ok(Token::new(
         query_definition.to_string(),
-        TokenType::QUERYDEFINITION,
+        TokenType::QueryDefinition,
     ))
 }
 
@@ -330,12 +411,16 @@ fn match_alternatives(
 ) {
     match alt((
         colon,
+        left_angle_bracket,
+        right_angle_bracket,
         prefix,
         source,
         iterator,
         query,
-        source_path,
         query_definition,
+        file_path,
+        path,
+        jdbc_url,
         uri,
         identifier,
     ))
@@ -407,6 +492,40 @@ mod lexer_tests {
     #[test]
     fn invalid_colon() {
         let actual = colon(&mut ";");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token <
+    #[doc(hidden)]
+    #[test]
+    fn valid_left_angle_bracket() {
+        let expected = TestUtilities::left_angle_bracket_test_token(0);
+        let actual = left_angle_bracket(&mut "<");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token < aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_left_angle_bracket() {
+        let actual = left_angle_bracket(&mut ">");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token >
+    #[doc(hidden)]
+    #[test]
+    fn valid_right_angle_bracket() {
+        let expected = TestUtilities::right_angle_bracket_test_token(0);
+        let actual = right_angle_bracket(&mut ">");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token > aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_right_angle_bracket() {
+        let actual = right_angle_bracket(&mut "<");
         check_error(actual);
     }
 
@@ -524,7 +643,7 @@ mod lexer_tests {
     #[test]
     fn invalid_identifier_with_special_characters() {
         let actual = identifier(&mut "ident@invalid");
-        assert_ne!(actual.unwrap(), Token::new("ident@invalid".to_string(), TokenType::IDENT));
+        assert_ne!(actual.unwrap(), Token::new("ident@invalid".to_string(), TokenType::Ident));
     }
 
     /// Comprueba que se detecta el token URI con el protocolo HTTPS
@@ -532,7 +651,7 @@ mod lexer_tests {
     #[test]
     fn valid_uri_with_https() {
         let expected = TestUtilities::uri_test_token("https://ejemplo.com", 0);
-        let actual = uri(&mut "<https://ejemplo.com>");
+        let actual = uri(&mut "https://ejemplo.com");
         check_ok(expected, actual);
     }
 
@@ -541,7 +660,7 @@ mod lexer_tests {
     #[test]
     fn valid_uri_with_http() {
         let expected = TestUtilities::uri_test_token("http://ejemplo.com", 0);
-        let actual = uri(&mut "<http://ejemplo.com>");
+        let actual = uri(&mut "http://ejemplo.com");
         check_ok(expected, actual);
     }
 
@@ -550,150 +669,94 @@ mod lexer_tests {
     #[test]
     fn valid_uri_with_slash_at_the_end() {
         let expected = TestUtilities::uri_test_token("https://ejemplo.com/", 0);
-        let actual = uri(&mut "<https://ejemplo.com/>");
+        let actual = uri(&mut "https://ejemplo.com/");
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token URI aquellas cadenas que no tengan un '>' al final
+    /// Comprueba que se detecta el token URI de un fichero CSV remoto
     #[doc(hidden)]
     #[test]
-    fn uri_withouth_right_angle_bracket() {
-        let actual = uri(&mut "<https://ejemplo.com");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token URI aquellas cadenas que no tengan un '<' al comienzo
-    #[doc(hidden)]
-    #[test]
-    fn uri_withouth_left_angle_bracket() {
-        let actual = uri(&mut "https://ejemplo.com>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token URI aquellas cadenas que no tengan un '<' al comienzo y un '>' al final
-    #[doc(hidden)]
-    #[test]
-    fn uri_withouth_angle_brackets() {
-        let actual = uri(&mut "https://ejemplo.com");
-        check_error(actual);
+    fn uri_to_a_csv_remote_file() {
+        let expected = TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 0);
+        let actual = uri(&mut "https://ejemplo.com/fichero.csv");
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token URI las URIs incorrectas
     #[doc(hidden)]
     #[test]
     fn invalid_format_uri() {
-        let actual = uri(&mut "<https:ejemplo.com>");
+        let actual = uri(&mut "https:ejemplo.com");
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV remoto
+    /// Comprueba que se detecta el token JdbcUrl a una base de datos
     #[doc(hidden)]
     #[test]
-    fn valid_source_path_with_csv_remote_file() {
-        let expected = TestUtilities::source_path_test_token("https://ejemplo.com/fichero.csv", 0);
-        let actual = source_path(&mut "<https://ejemplo.com/fichero.csv>");
+    fn valid_jdbc_url() {
+        let expected = TestUtilities::jdbc_url_test_token("jdbc:mysql://localhost:3306/mydb", 0);
+        let actual = jdbc_url(&mut "jdbc:mysql://localhost:3306/mydb");
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV local usando una ruta relativa
+    /// Comprueba que no se detecta como token URI aquellas cadenas que tengan una URL JDBC incorrecta
     #[doc(hidden)]
     #[test]
-    fn valid_source_path_with_csv_local_file_relative_path() {
-        let expected = TestUtilities::source_path_test_token("ejemplo/fichero.csv", 0);
-        let actual = source_path(&mut "<ejemplo/fichero.csv>");
-        check_ok(expected, actual);
+    fn invalid_jdbc_url() {
+        let actual = jdbc_url(&mut "jdbc:/localhost:3306/db");
+        check_error(actual);
     }
 
-    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV local usando una ruta absoluta con file
+    /// Comprueba que se detecta el token FilePath de un fichero CSV usando una ruta con file
     #[doc(hidden)]
     #[test]
-    fn valid_source_path_with_csv_local_file_absolute_path_with_file() {
+    fn valid_file_absolute_path() {
         let expected =
-            TestUtilities::source_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
-        let actual = source_path(&mut "<file:///ejemplo/path/a/fichero/fichero.csv>");
+            TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
+        let actual = file_path(&mut "file:///ejemplo/path/a/fichero/fichero.csv");
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token SOURCEPATH de un fichero CSV local usando una ruta absoluta sin file
+    /// Comprueba que se detecta el token Path de un fichero CSV usando una ruta relativa
     #[doc(hidden)]
     #[test]
-    fn valid_source_path_with_csv_local_file_absolute_path_withouth_file() {
+    fn valid_relative_path() {
+        let expected = TestUtilities::path_test_token("ejemplo/fichero.csv", 0);
+        let actual = path(&mut "ejemplo/fichero.csv");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token Path de un fichero CSV usando una ruta absoluta
+    #[doc(hidden)]
+    #[test]
+    fn valid_absolute_path() {
         let expected =
-            TestUtilities::source_path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
-        let actual = source_path(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.csv>");
+            TestUtilities::path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
+        let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token SOURCEPATH de una base de datos
+    /// Comprueba que no se detecta como token FilePath aquellas cadenas que tengan un path incorrecto
     #[doc(hidden)]
     #[test]
-    fn valid_source_path_with_database() {
-        let expected = TestUtilities::source_path_test_token("jdbc:mysql://localhost:3306/mydb", 0);
-        let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que no tengan un '>' al final
-    #[doc(hidden)]
-    #[test]
-    fn source_path_withouth_right_angle_bracket() {
-        let actual = source_path(&mut "<https://ejemplo.com");
+    fn file_path_with_invalid_path() {
+        let actual = file_path(&mut "file//");
         check_error(actual);
     }
 
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que no tengan un '<' al comienzo
+    /// Comprueba que no se detecta como token Path aquellas cadenas que tengan un path absoluto incorrecto
     #[doc(hidden)]
     #[test]
-    fn source_path_withouth_left_angle_bracket() {
-        let actual = source_path(&mut "https://ejemplo.com>");
+    fn path_with_invalid_absolute_path() {
+        let actual = path(&mut "//..");
         check_error(actual);
     }
 
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que no tengan un '<' al comienzo y un '>' al final
+    /// Comprueba que no se detecta como token Path aquellas cadenas que tengan un path relativo incorrecto
     #[doc(hidden)]
     #[test]
-    fn source_path_withouth_angle_brackets() {
-        let actual = source_path(&mut "https://ejemplo.com");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan una URI incorrecta
-    #[doc(hidden)]
-    #[test]
-    fn source_path_with_invalid_uri() {
-        let actual = source_path(&mut "<https:ejemplo.com/fichero.csv>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un path absoluto con file incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn source_path_with_invalid_absolute_path_with_file() {
-        let actual = source_path(&mut "<file//>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un path absoluto sin file incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn source_path_with_invalid_absolute_path_withouth_file() {
-        let actual = source_path(&mut "<//..>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un path relativo incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn source_path_with_invalid_relative_path() {
-        let actual = source_path(&mut "<ejemplo/>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan una URL JDBC incorrecta
-    #[doc(hidden)]
-    #[test]
-    fn source_path_with_invalid_jdbc_url() {
-        let actual = source_path(&mut "<jdbc:/localhost:3306/db>");
+    fn path_with_invalid_relative_path() {
+        let actual = path(&mut "ejemplo/");
         check_error(actual);
     }
 
@@ -703,39 +766,15 @@ mod lexer_tests {
     fn valid_query_definition_with_sql_query() {
         let expected =
             TestUtilities::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
-        let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que no tengan un '>' al final
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_withouth_right_angle_bracket() {
-        let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que no tengan un '<' al comienzo
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_withouth_left_angle_bracket() {
-        let actual = query_definition(&mut "sql: SELECT * FROM tabla WHERE id = '1'>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que no tengan un '<' al comienzo y un '>' al final
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_withouth_angle_bracket() {
         let actual = query_definition(&mut "sql: SELECT * FROM tabla WHERE id = '1'");
-        check_error(actual);
+        check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan una consulta SQL incorrecta
     #[doc(hidden)]
     #[test]
     fn query_definition_with_invalid_sql_query() {
-        let actual = query_definition(&mut "<sql: SELECT FROM tabla>");
+        let actual = query_definition(&mut "sql: SELECT FROM tabla");
         check_error(actual);
     }
 
@@ -743,7 +782,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn query_definition_with_invalid_sql_query_withouth_sql_begining() {
-        let actual = query_definition(&mut "<SELECT * FROM tabla>");
+        let actual = query_definition(&mut "SELECT * FROM tabla");
         check_error(actual);
     }
 
@@ -759,16 +798,19 @@ mod lexer_tests {
             TestUtilities::prefix_test_token(1),
             TestUtilities::ident_test_token("example", 1),
             TestUtilities::colon_test_token(1),
+            TestUtilities::left_angle_bracket_test_token(1),
             TestUtilities::uri_test_token("http://example.com/", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::source_test_token(2),
             TestUtilities::ident_test_token("films_csv_file", 2),
-            TestUtilities::source_path_test_token(
-                "https://shexml.herminiogarcia.com/files/films.csv",
-                2,
-            ),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::query_test_token(3),
             TestUtilities::ident_test_token("query_sql", 3),
+            TestUtilities::left_angle_bracket_test_token(3),
             TestUtilities::query_definition_test_token("SELECT * FROM example;", 3),
+            TestUtilities::right_angle_bracket_test_token(3),
             TestUtilities::eof_test_token(3),
         ];
         let actual = lexer(&mut input).unwrap();
