@@ -8,6 +8,7 @@ pub enum TokenType {
     PREFIX,
     SOURCE,
     QUERY,
+    ITERATOR,
     IDENT,
     URI,
     SOURCEPATH,
@@ -19,6 +20,7 @@ pub enum TokenType {
 pub const PREFIX: &str = "PREFIX";
 pub const SOURCE: &str = "SOURCE";
 pub const QUERY: &str = "QUERY";
+pub const ITERATOR: &str = "ITERATOR";
 pub const COLON: &str = ":";
 pub const EOF: &str = " ";
 

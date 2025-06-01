@@ -24,7 +24,7 @@ use regex::Regex;
 /// Un token Prefix
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(PREFIX).parse_next(input)?;
     Ok(Token::new(PREFIX.to_string(), TokenType::PREFIX))
@@ -41,7 +41,7 @@ fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Un token :
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(COLON).parse_next(input)?;
     Ok(Token::new(COLON.to_string(), TokenType::COLON))
@@ -58,7 +58,7 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Un token Source
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(SOURCE).parse_next(input)?;
     Ok(Token::new(SOURCE.to_string(), TokenType::SOURCE))
@@ -75,10 +75,27 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Un token Query
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(QUERY).parse_next(input)?;
     Ok(Token::new(QUERY.to_string(), TokenType::QUERY))
+}
+
+/// Encuentra el token ITERATOR en la entrada
+///
+/// Acepta la entrada 'ITERATOR'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Iterator
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(ITERATOR).parse_next(input)?;
+    Ok(Token::new(ITERATOR.to_string(), TokenType::ITERATOR))
 }
 
 /// Encuentra un token identificador en la entrada
@@ -92,10 +109,9 @@ fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Un token identificador
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let ident = take_while(1.., |c: char| c.is_alphabetic() || c == '_').parse_next(input)?;
-
     Ok(Token::new(ident.to_string(), TokenType::IDENT))
 }
 
@@ -110,7 +126,7 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Un token URI
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let uri = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
     let re_uri = Regex::new(r"^[a-zA-Z][a-zA-Z0-9+.-]*://[^\s<>]+$").unwrap();
@@ -140,7 +156,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Un token SOURCEPATH
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let source_path = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
     let re_source_path = Regex::new(
@@ -160,9 +176,7 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     )
     .unwrap();
 
-    // Es necesario hacer una comprobación extra con las URLs JDBC
     if !re_source_path.is_match(source_path)
-        || (source_path.starts_with("jdbc:") && source_path.ends_with(".csv"))
     {
         let error = &ContextError::new().add_context(
             &"Formato incorrecto",
@@ -187,7 +201,7 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Un token QUERYDEFINITION
 ///
 /// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el parseo de la entrada
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let mut query_definition =
         delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
@@ -202,17 +216,15 @@ fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         let error = &ContextError::new().add_context(
             &"Formato incorrecto",
             &query_definition.checkpoint(),
-            StrContext::Label("Consulta SQL o path a fichero inválido"),
+            StrContext::Label("Consulta SQL incorrecta"),
         );
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    if query_definition.starts_with("sql:") {
-        query_definition = query_definition
+    query_definition = query_definition
             .strip_prefix("sql:")
             .unwrap_or(query_definition)
-            .trim_start()
-    }
+            .trim_start();
 
     Ok(Token::new(
         query_definition.to_string(),
@@ -320,6 +332,7 @@ fn match_alternatives(
         colon,
         prefix,
         source,
+        iterator,
         query,
         source_path,
         query_definition,
@@ -415,6 +428,42 @@ mod lexer_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token QUERY
+    #[doc(hidden)]
+    #[test]
+    fn valid_query() {
+        let expected = TestUtilities::query_test_token(0);
+        let actual = query(&mut "QUERY");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token QUERY aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_query() {
+        // Fail test
+        let actual = query(&mut "QURY");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token ITERATOR
+    #[doc(hidden)]
+    #[test]
+    fn valid_iterator() {
+        let expected = TestUtilities::iterator_test_token(0);
+        let actual = iterator(&mut "ITERATOR");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token ITERATOR aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_iterator() {
+        // Fail test
+        let actual = query(&mut "ITR");
+        check_error(actual);
+    }
+
     /// Comprueba que se detecta el token IDENT (identificadores) sin que tenga un '_'
     #[doc(hidden)]
     #[test]
@@ -462,12 +511,20 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token IDENT aquellas cadenas que no lo sean
+    /// Comprueba que no se detecta como token IDENT aquellas cadenas que tengan números
     #[doc(hidden)]
     #[test]
-    fn invalid_identifier() {
+    fn invalid_identifier_with_numbers() {
         let actual = identifier(&mut "123ident_invalid");
         check_error(actual);
+    }
+
+    /// Comprueba que no se detecta como token IDENT aquellas cadenas que tengan caracteres especiales
+    #[doc(hidden)]
+    #[test]
+    fn invalid_identifier_with_special_characters() {
+        let actual = identifier(&mut "ident@invalid");
+        assert_ne!(actual.unwrap(), Token::new("ident@invalid".to_string(), TokenType::IDENT));
     }
 
     /// Comprueba que se detecta el token URI con el protocolo HTTPS
@@ -632,27 +689,11 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan un tipo de fichero incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn source_path_with_invalid_file_type() {
-        let actual = source_path(&mut "<ejemplo/fichero.xml>");
-        check_error(actual);
-    }
-
     /// Comprueba que no se detecta como token SOURCEPATH aquellas cadenas que tengan una URL JDBC incorrecta
     #[doc(hidden)]
     #[test]
     fn source_path_with_invalid_jdbc_url() {
         let actual = source_path(&mut "<jdbc:/localhost:3306/db>");
-        check_error(actual);
-    }
-
-    /// Comprueba que se detecta el token SOURCEPATH de una base de datos a un fichero .csv
-    #[doc(hidden)]
-    #[test]
-    fn source_path_with_invalid_database_to_csv() {
-        let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb.csv>");
         check_error(actual);
     }
 
@@ -734,35 +775,24 @@ mod lexer_tests {
         assert_eq!(expected, actual);
     }
 
-    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en el PREFIX
+    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en un identificador
     #[doc(hidden)]
     #[test]
-    fn lexer_with_invalid_prefix() {
-        let mut input = "PREFIX example123: <http://example.com/>
+    fn lexer_with_invalid_identifier() {
+        let mut input = "PREFIX exam123ple: <http://example.com/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
     }
 
-    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en el SOURCE
+    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en alguna cadena 'fija' (PREFIX, SOURCE, ...)
     #[doc(hidden)]
     #[test]
-    fn lexer_with_invalid_source() {
+    fn lexer_with_invalid_fix_string() {
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
+            SOURE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
             QUERY query_sql <sql: SELECT * FROM example;>";
-        let actual = lexer(&mut input);
-        assert!(actual.is_err());
-    }
-
-    /// Comprueba que se detectan errores si, entre múltiples tokens, hay algún error en el QUERY
-    #[doc(hidden)]
-    #[test]
-    fn lexer_with_invalid_query() {
-        let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv
-            QUERY query_sql SELECT * FROM example;>";
         let actual = lexer(&mut input);
         assert!(actual.is_err());
     }

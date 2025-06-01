@@ -21,6 +21,12 @@ impl TestUtilities {
         token
     }
 
+    pub fn iterator_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(ITERATOR.to_string(), TokenType::ITERATOR);
+        token.set_num_line(num_line);
+        token
+    }
+
     pub fn colon_test_token(num_line: u16) -> Token {
         let mut token = Token::new(COLON.to_string(), TokenType::COLON);
         token.set_num_line(num_line);

@@ -20,6 +20,7 @@ use crate::model::{
 /// # Retorna
 /// El vector con los errores semánticos encontrados durante el análisis; puede estar vacío si no se encontró ninguno
 pub fn semantic_analysis(node: &FileASTNode) -> Vec<CompilerError> {
+    // todo!("COMPROBAR LOS TIPOS DE FICHERO QUE SEAN CORRECTOS, LO MISMO CON LAS URLS JDBC");
     check_duplicate_identifiers(node)
 }
 
