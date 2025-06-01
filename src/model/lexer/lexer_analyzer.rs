@@ -154,7 +154,8 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
             "
         ).unwrap();
     
-    if !re_source_path.is_match(source_path) {
+    // Es necesario hacer una comprobación extra con las URLs JDBC
+    if !re_source_path.is_match(source_path) || (source_path.starts_with("jdbc:") && source_path.ends_with(".csv")) {
         let error = &ContextError::new()
             .add_context(&"Formato incorrecto", &source_path.checkpoint(), StrContext::Label("Path o URI del fichero CSV o base de datos inválida"));
         return Err(ErrMode::Backtrack(error.clone()));
@@ -167,7 +168,6 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres entre < y > que cumpla con la expresión regular que detecta:
 /// * Consultas SQL literales o en ficheros externos .sql
-/// * Consultas externas SPARQL en ficheros externos .sparql
 ///
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
@@ -180,17 +180,8 @@ fn source_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let mut query_definition = delimited('<', take_while(1.., |c: char| c != '>'), '>').parse_next(input)?;
     let re_query_definition = Regex::new(r"(?ix)
-            ^(?:                                  
-                |
-                file://[/\\]?[^\s\r\n]+\.(?:sparql|sql)   # Ficheros .sparql y .sql
-                |
-                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.(?:sparql|sql) # rutas absolutas 
-                |
-                (\.{0,2}[\\/])?(?:[\w\-.]+[\\/])*[\w\-.]+\.(?:sparql|sql)  # rutas locales
-                |                            
+            ^(?:                                                          
                 sql:\s*\bSELECT\b\s+.+?\bFROM\b\s+.+?(?:\bWHERE\b\s+.+?)?(?:\bGROUP\s+BY\b\s+.+?)?(?:\bORDER\s+BY\b\s+.+?)?    # SQL
-                |
-                https?://[\w\-.]+(?:/[^\s\r\n\t]*)*\.(?:sparql|sql)  # URLs remotas a ficheros
             )$
         "
         ).unwrap();
@@ -619,76 +610,12 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en remoto
+    /// Comprueba que se detecta el token SOURCEPATH de una base de datos a un fichero .csv
     #[doc(hidden)]
     #[test]
-    fn valid_query_definition_with_remote_sql_file() {
-        let expected = TestUtilities::query_definition_test_token("https://ejemplo.com/fichero.sql",0);
-        let actual = query_definition(&mut "<https://ejemplo.com/fichero.sql>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en remoto
-    #[doc(hidden)]
-    #[test]
-    fn valid_query_definition_with_remote_sparql_file() {
-        let expected = TestUtilities::query_definition_test_token("https://ejemplo.com/fichero.sparql",0);
-        let actual = query_definition(&mut "<https://ejemplo.com/fichero.sparql>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en local con ruta relativa
-    #[doc(hidden)]
-    #[test]
-    fn valid_query_definition_with_sql_file_relative_path() {
-        let expected = TestUtilities::query_definition_test_token("ejemplo/fichero.sql", 0);
-        let actual = query_definition(&mut "<ejemplo/fichero.sql>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en local con ruta relativa
-    #[doc(hidden)]
-    #[test]
-    fn valid_query_definition_with_sparql_file_relative_path() {
-        let expected = TestUtilities::query_definition_test_token("ejemplo/fichero.sparql", 0);
-        let actual = query_definition(&mut "<ejemplo/fichero.sparql>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en local con ruta absoluta con file
-    #[doc(hidden)]
-    #[test]
-    fn valid_query_definition_with_sql_file_absolute_path_with_file() {
-        let expected = TestUtilities::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sql", 0);
-        let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sql>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en local con ruta absoluta con file
-    #[doc(hidden)]
-    #[test]
-    fn valid_query_definition_with_sparql_file_absolute_path_with_file() {
-        let expected = TestUtilities::query_definition_test_token("file:///ejemplo/path/a/fichero/fichero.sparql", 0);
-        let actual = query_definition(&mut "<file:///ejemplo/path/a/fichero/fichero.sparql>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sql en local con ruta absoluta sin file
-    #[doc(hidden)]
-    #[test]
-    fn valid_query_definition_with_sql_file_absolute_path_withouth_file() {
-        let expected = TestUtilities::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sql", 0);
-        let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sql>");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token QUERYDEFINITION con un fichero .sparql en local con ruta absoluta sin file
-    #[doc(hidden)]
-    #[test]
-    fn valid_query_definition_with_sparql_file_absolute_path_withouth_file() {
-        let expected = TestUtilities::query_definition_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.sparql", 0);
-        let actual = query_definition(&mut "<C:\\ejemplo\\path\\a\\fichero\\fichero.sparql>");
-        check_ok(expected, actual);
+    fn source_path_with_invalid_database_to_csv() {
+        let actual = source_path(&mut "<jdbc:mysql://localhost:3306/mydb.csv>");
+        check_error(actual);
     }
 
     /// Comprueba que se detecta el token QUERYDEFINITION con una consulta SQL
@@ -704,7 +631,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn query_definition_withouth_right_angle_bracket() {
-        let actual = query_definition(&mut "<https://ejemplo.com");
+        let actual = query_definition(&mut "<sql: SELECT * FROM tabla WHERE id = '1'");
         check_error(actual);
     }
 
@@ -712,7 +639,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn query_definition_withouth_left_angle_bracket() {
-        let actual = query_definition(&mut "https://ejemplo.com>");
+        let actual = query_definition(&mut "sql: SELECT * FROM tabla WHERE id = '1'>");
         check_error(actual);
     }
 
@@ -720,47 +647,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn query_definition_withouth_angle_bracket() {
-        let actual = query_definition(&mut "https://ejemplo.com");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan una URL incorrecta
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_with_invalid_url() {
-        let actual = query_definition(&mut "<https:ejemplo.com/fichero.sparql>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un path absoluto con file incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_with_invalid_absolute_path_with_field() {
-        let actual = query_definition(&mut "<file//>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un path absoluto sin file incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_with_invalid_absolute_path_withouth_field() {
-        let actual = query_definition(&mut "<//..>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un path relativo incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_with_invalid_relative_path() {
-        let actual = query_definition(&mut "<ejemplo/>");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan un tipo de fichero incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn query_definition_with_invalid_file_type() {
-        let actual = query_definition(&mut "<ejemplo/fichero.csv>");
+        let actual = query_definition(&mut "sql: SELECT * FROM tabla WHERE id = '1'");
         check_error(actual);
     }
 

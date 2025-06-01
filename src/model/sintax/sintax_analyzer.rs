@@ -189,7 +189,7 @@ fn query_definition_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    general_detector(TokenType::QUERYDEFINITION, format!("Se esperaba una consulta SQL o un path o URL a un fichero .sql o .sparql después del identificador en la línea"))
+    general_detector(TokenType::QUERYDEFINITION, format!("Se esperaba una consulta SQL o un path o URL a un fichero .sql después del identificador en la línea"))
 }
 
 /// Detecta el token SOURCEPATH en los tokens
@@ -651,12 +651,12 @@ mod sintax_tests {
         let eof_node = tokens_vector.pop();
         tokens_vector.push(TestUtilities::query_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::query_definition_test_token("/path/to/example_query.sparql", 2));
+        tokens_vector.push(TestUtilities::query_definition_test_token("/path/to/example_query.sql", 2));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = QueryASTNode {
             identifier: "ident2".to_string(),
-            query_definition: "/path/to/example_query.sparql".to_string(),
+            query_definition: "/path/to/example_query.sql".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];
@@ -691,7 +691,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![TestUtilities::query_test_token(1), TestUtilities::ident_test_token("ident", 1),
         TestUtilities::eof_test_token(1)];
         let actual = query_parser().parse(fail_tokens_vector);
-        check_error::<QueryASTNode>(actual, "Se esperaba una consulta SQL o un path o URL a un fichero .sql o .sparql después del identificador en la línea 1");
+        check_error::<QueryASTNode>(actual, "Se esperaba una consulta SQL o un path o URL a un fichero .sql después del identificador en la línea 1");
     }
 
     /// Comprueba que el resultado actual del test es un error y que el mensaje de este concuerda con el esperado
