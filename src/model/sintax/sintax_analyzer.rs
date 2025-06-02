@@ -49,7 +49,7 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
         .then(left_angle_bracket_detector("URI".to_string()))
         .then(uri_detector())
         .then(right_angle_bracket_detector("URI".to_string()))
-        .map(|(((_, ident), _), uri)| PrefixASTNode {
+        .map(|(((((_, ident), _), _), uri), _)| PrefixASTNode {
             identifier: ident.lexeme.clone(),
             uri: uri.lexeme.clone(),
         })
@@ -73,9 +73,9 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
         .then(left_angle_bracket_detector("URL o ruta".to_string()))
         .then(uri_detector().or(file_path_detector()).or(path_detector()).or(jdbc_url_detector()))
         .then(right_angle_bracket_detector("URL o ruta".to_string()))
-        .map(|((_, ident), source_path)| SourceASTNode {
+        .map(|((((_, ident), _), source_definition), _)| SourceASTNode {
             identifier: ident.lexeme.clone(),
-            source_path: source_path.lexeme.clone(),
+            source_definition: source_definition.lexeme.clone(),
         })
         .repeated()
         .at_least(1)
@@ -97,9 +97,9 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
         .then(left_angle_bracket_detector("consulta SQL".to_string()))
         .then(sql_query_detector())
         .then(right_angle_bracket_detector("consulta SQL".to_string()))
-        .map(|((_, ident), query_definition)| QueryASTNode {
+        .map(|((((_, ident), _), sql_query), _)| QueryASTNode {
             identifier: ident.lexeme.clone(),
-            query_definition: query_definition.lexeme.clone(),
+            sql_query: sql_query.lexeme.clone(),
         })
         .repeated()
         .at_least(1)
@@ -621,7 +621,7 @@ mod sintax_tests {
             TestUtilities::ident_test_token("example", 1),
             TestUtilities::colon_test_token(1),
             TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("http://example.com/", 1),
+            TestUtilities::uri_test_token("https://example.com/", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::source_test_token(2),
             TestUtilities::ident_test_token("films_csv_file", 2),
@@ -643,11 +643,11 @@ mod sintax_tests {
             }],
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
-                source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: Some(vec![QueryASTNode {
                 identifier: "query_sql".to_string(),
-                query_definition: "SELECT * FROM example;".to_string(),
+                sql_query: "SELECT * FROM example;".to_string(),
             }]),
         };
         let actual = file_parser().parse(tokens_vector.clone());
@@ -680,7 +680,7 @@ mod sintax_tests {
             }],
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
-                source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: None,
         };
@@ -808,7 +808,6 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             TestUtilities::prefix_test_token(1),
             TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
             TestUtilities::left_angle_bracket_test_token(1),
             TestUtilities::uri_test_token("https://ejemplo.com", 1),
             TestUtilities::right_angle_bracket_test_token(1),
@@ -911,7 +910,7 @@ mod sintax_tests {
 
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
-            source_path: "https://ejemplo.com/fichero.csv".to_string(),
+            source_definition: "https://ejemplo.com/fichero.csv".to_string(),
         };
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -927,7 +926,7 @@ mod sintax_tests {
 
         let expected2 = SourceASTNode {
             identifier: "ident2".to_string(),
-            source_path: "https://ejemplo2.com/fichero.csv".to_string(),
+            source_definition: "https://ejemplo2.com/fichero.csv".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];
@@ -950,7 +949,7 @@ mod sintax_tests {
 
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
-            source_path: "jdbc:mysql://localhost:3306/mydb".to_string(),
+            source_definition: "jdbc:mysql://localhost:3306/mydb".to_string(),
         };
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -966,7 +965,7 @@ mod sintax_tests {
 
         let expected2 = SourceASTNode {
             identifier: "ident2".to_string(),
-            source_path: "jdbc:mysql://localhost:3356/anotherdb".to_string(),
+            source_definition: "jdbc:mysql://localhost:3356/anotherdb".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];
@@ -989,7 +988,7 @@ mod sintax_tests {
 
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
-            source_path: "file:///ejemplo/path/a/fichero/fichero.csv".to_string(),
+            source_definition: "file:///ejemplo/path/a/fichero/fichero.csv".to_string(),
         };
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -1005,7 +1004,7 @@ mod sintax_tests {
 
         let expected2 = SourceASTNode {
             identifier: "ident2".to_string(),
-            source_path: "file:///otroejemplo/path/a/fichero/otrofichero.csv".to_string(),
+            source_definition: "file:///otroejemplo/path/a/fichero/otrofichero.csv".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];
@@ -1028,7 +1027,7 @@ mod sintax_tests {
 
         let expected = SourceASTNode {
             identifier: "ident".to_string(),
-            source_path: "ejemplo/fichero.csv".to_string(),
+            source_definition: "ejemplo/fichero.csv".to_string(),
         };
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -1044,7 +1043,7 @@ mod sintax_tests {
 
         let expected2 = SourceASTNode {
             identifier: "ident2".to_string(),
-            source_path: "C:\\ejemplo\\path\\a\\fichero\\fichero.csv".to_string(),
+            source_definition: "C:\\ejemplo\\path\\a\\fichero\\fichero.csv".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];
@@ -1112,7 +1111,7 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba una URL o ruta entre '<' y '>' en la línea 1");
+        check_error::<SourceASTNode>(actual, "Se esperaba una URI entre '<' y '>' en la línea 1");
     }
 
     /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: Source Ident LeftAngleBracket (Uri|JdbcUrl|FilePath|Path)
@@ -1153,12 +1152,13 @@ mod sintax_tests {
             TestUtilities::ident_test_token("ident", 1),
             TestUtilities::left_angle_bracket_test_token(1),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
 
         let expected = QueryASTNode {
             identifier: "ident".to_string(),
-            query_definition: "SELECT * FROM example;".to_string(),
+            sql_query: "SELECT * FROM example;".to_string(),
         };
         let actual = query_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -1177,7 +1177,7 @@ mod sintax_tests {
 
         let expected2 = QueryASTNode {
             identifier: "ident2".to_string(),
-            query_definition: "SELECT * FROM example;".to_string(),
+            sql_query: "SELECT * FROM example;".to_string(),
         };
 
         let expected_vector = vec![expected, expected2];

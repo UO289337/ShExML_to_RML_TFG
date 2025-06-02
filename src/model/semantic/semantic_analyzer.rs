@@ -129,11 +129,11 @@ mod lexer_tests {
             ],
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
-                source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: Some(vec![QueryASTNode {
                 identifier: "query_sql".to_string(),
-                query_definition: "SELECT * FROM example;".to_string(),
+                sql_query: "SELECT * FROM example;".to_string(),
             }]),
         };
 
@@ -157,16 +157,16 @@ mod lexer_tests {
             sources: vec![
                 SourceASTNode {
                     identifier: "films_csv_file".to_string(),
-                    source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+                    source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
                 },
                 SourceASTNode {
                     identifier: "films_csv_file".to_string(),
-                    source_path: "https://another.csv".to_string(),
+                    source_definition: "https://another.csv".to_string(),
                 },
             ],
             queries: Some(vec![QueryASTNode {
                 identifier: "query_sql".to_string(),
-                query_definition: "SELECT * FROM example;".to_string(),
+                sql_query: "SELECT * FROM example;".to_string(),
             }]),
         };
 
@@ -189,16 +189,16 @@ mod lexer_tests {
             }],
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
-                source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: Some(vec![
                 QueryASTNode {
                     identifier: "query_sql".to_string(),
-                    query_definition: "SELECT * FROM example;".to_string(),
+                    sql_query: "SELECT * FROM example;".to_string(),
                 },
                 QueryASTNode {
                     identifier: "query_sql".to_string(),
-                    query_definition: "SELECT name FROM anothertable;".to_string(),
+                    sql_query: "SELECT name FROM anothertable;".to_string(),
                 },
             ]),
         };
@@ -222,11 +222,11 @@ mod lexer_tests {
             }],
             sources: vec![SourceASTNode {
                 identifier: "duplicate".to_string(),
-                source_path: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: Some(vec![QueryASTNode {
                 identifier: "duplicate".to_string(),
-                query_definition: "SELECT * FROM example;".to_string(),
+                sql_query: "SELECT * FROM example;".to_string(),
             }]),
         };
 
