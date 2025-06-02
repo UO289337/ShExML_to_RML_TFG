@@ -26,7 +26,8 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
     prefix_parser()
         .then(source_parser())
         .then(query_parser().or_not())
-        .map(|((prefixes, sources), queries)| FileASTNode {
+        .then(eof_detector())
+        .map(|(((prefixes, sources), queries), _)| FileASTNode {
             prefixes,
             sources,
             queries,
@@ -142,9 +143,11 @@ fn source_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
+    // Se indica que 'Se esperaba un PREFIX' porque el analizador no tiene manera de saber si lo que hay en la línea del error
+    // es un PREFIX o un SOURCE en el caso, por ejemplo, de que encuentre SOURC
     general_detector(
         TokenType::Source,
-        format!("Se esperaba un SOURCE en la línea"),
+        format!("Se esperaba un PREFIX o un SOURCE en la línea"),
     )
 }
 
@@ -341,6 +344,23 @@ fn right_angle_bracket_detector(
     general_detector(
         TokenType::RightAngleBracket,
         format!("Se esperaba un '>' después de la {previous_token} en la línea"),
+    )
+}
+
+/// Detecta el token EOF en los tokens
+///
+/// # Retorna
+/// Un token de tipo EOF si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo >
+fn eof_detector() -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
+    general_detector(
+        TokenType::EOF,
+        format!("Se ha encontrado una cadena donde debería estar el final del fichero, en la línea"),
     )
 }
 
@@ -640,6 +660,16 @@ mod sintax_detectors_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token EOF
+    #[doc(hidden)]
+    #[test]
+    fn detect_eof() {
+        let expected_token = TestUtilities::eof_test_token(1);
+        let actual =
+            eof_detector().parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
     /// Comprueba que el resultado actual del test es igual al esperado
     ///
     /// # Argumentos
@@ -784,7 +814,7 @@ mod sintax_tests {
         let actual = file_parser().parse(tokens_vector.clone());
         // Es necesario crear el Result con el error dentro porque es lo que espera check_error
         let actual = Err(actual.unwrap_err());
-        check_error::<FileASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
+        check_error::<FileASTNode>(actual, "Se esperaba un PREFIX o un SOURCE en la línea 1");
     }
 
     /// Comprueba que el parser de Prefix detecta la secuencia de tokens: Prefix Ident Colon LeftAngleBracket URI RightAngleBracket
@@ -1125,7 +1155,7 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un SOURCE en la línea 1");
+        check_error::<SourceASTNode>(actual, "Se esperaba un PREFIX o un SOURCE en la línea 1");
     }
 
     /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: Source LeftAngleBracket (Uri|JdbcUrl|FilePath|Path) RightAngleBracket
