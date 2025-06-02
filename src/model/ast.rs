@@ -25,7 +25,7 @@ pub struct PrefixASTNode {
 #[derive(Debug, PartialEq)]
 pub struct SourceASTNode {
     pub identifier: String,
-    pub source_path: String,
+    pub source_definition: String,
 }
 
 /// Nodo de tipo Query del AST
@@ -34,5 +34,5 @@ pub struct SourceASTNode {
 #[derive(Debug, PartialEq)]
 pub struct QueryASTNode {
     pub identifier: String,
-    pub query_definition: String,
+    pub sql_query: String,
 }
