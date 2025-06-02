@@ -9,7 +9,9 @@ pub enum TokenType {
     Source,
     Query,
     Iterator,
+    Field,
     SqlType,
+    CsvPerRow,
     Ident,
     Uri,
     JdbcUrl,
@@ -19,6 +21,8 @@ pub enum TokenType {
     Colon,
     LeftAngleBracket,
     RightAngleBracket,
+    OpeningCurlyBrace,
+    ClosingCurlyBrace,
     EOF,
 }
 
@@ -26,10 +30,14 @@ pub const PREFIX: &str = "PREFIX";
 pub const SOURCE: &str = "SOURCE";
 pub const QUERY: &str = "QUERY";
 pub const ITERATOR: &str = "ITERATOR";
+pub const FIELD: &str = "FIELD";
 pub const SQL_TYPE: &str = "sql:";
+pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";
+pub const OPENING_CURLY_BRACE: &str = "{";
+pub const CLOSING_CURLY_BRACE: &str = "}";
 pub const EOF: &str = " ";
 
 /// Estructura de los token

@@ -27,8 +27,20 @@ impl TestUtilities {
         token
     }
 
+    pub fn field_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(FIELD.to_string(), TokenType::Field);
+        token.set_num_line(num_line);
+        token
+    }
+
     pub fn sql_type_test_token(num_line: u16) -> Token {
         let mut token = Token::new(SQL_TYPE.to_string(), TokenType::SqlType);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn csv_per_row_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(CSV_PER_ROW.to_string(), TokenType::CsvPerRow);
         token.set_num_line(num_line);
         token
     }
@@ -49,6 +61,21 @@ impl TestUtilities {
         let mut token = Token::new(
             RIGHT_ANGLE_BRACKET.to_string(),
             TokenType::RightAngleBracket,
+        );
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn opening_curly_brace_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(OPENING_CURLY_BRACE.to_string(), TokenType::OpeningCurlyBrace);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn closing_curly_brace_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(
+            CLOSING_CURLY_BRACE.to_string(),
+            TokenType::ClosingCurlyBrace,
         );
         token.set_num_line(num_line);
         token

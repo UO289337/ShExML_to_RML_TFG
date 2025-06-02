@@ -38,7 +38,7 @@ mod integration_lexer_syntax_analyzers_tests {
     #[doc(hidden)]
     #[test]
     fn integration_with_lexer_fail() {
-        let mut input = "PREFIX example123: <http://example.com/>
+        let mut input = "PREFIX 123example: <http://example.com/>
             SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);

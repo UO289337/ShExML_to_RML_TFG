@@ -87,6 +87,46 @@ fn right_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
     ))
 }
 
+/// Encuentra el token OpeningCurlyBrace en la entrada
+///
+/// Acepta la entrada '{'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token {
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn opening_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(OPENING_CURLY_BRACE).parse_next(input)?;
+    Ok(Token::new(
+        OPENING_CURLY_BRACE.to_string(),
+        TokenType::OpeningCurlyBrace,
+    ))
+}
+
+/// Encuentra el token ClosingCurlyBrace en la entrada
+///
+/// Acepta la entrada '}'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token }
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn closing_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(CLOSING_CURLY_BRACE).parse_next(input)?;
+    Ok(Token::new(
+        CLOSING_CURLY_BRACE.to_string(),
+        TokenType::ClosingCurlyBrace,
+    ))
+}
+
 /// Encuentra el token Source en la entrada
 ///
 /// Acepta la entrada 'SOURCE'
@@ -138,6 +178,23 @@ fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(ITERATOR.to_string(), TokenType::Iterator))
 }
 
+/// Encuentra el token Field en la entrada
+///
+/// Acepta la entrada 'FIELD'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Field
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn field(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(FIELD).parse_next(input)?;
+    Ok(Token::new(FIELD.to_string(), TokenType::Field))
+}
+
 /// Encuentra el token SqlType en la entrada
 ///
 /// Acepta la entrada ':sql'
@@ -155,6 +212,23 @@ fn sql_type(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(SQL_TYPE.to_string(), TokenType::SqlType))
 }
 
+/// Encuentra el token CsvPerRow en la entrada
+///
+/// Acepta la entrada 'csvperrow'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token CsvPerRow
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn csv_per_row(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(CSV_PER_ROW).parse_next(input)?;
+    Ok(Token::new(CSV_PER_ROW.to_string(), TokenType::CsvPerRow))
+}
+
 /// Encuentra un token identificador en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '_'
@@ -168,7 +242,16 @@ fn sql_type(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let ident = take_while(1.., |c: char| c.is_alphabetic() || c == '_').parse_next(input)?;
+    let ident = take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
+
+    if ident.chars().next().unwrap().is_numeric() {
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &ident.checkpoint(),
+            StrContext::Label("No se permiten números al comienzo de los identificadores"),
+        );
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
     Ok(Token::new(ident.to_string(), TokenType::Ident))
 }
 
@@ -434,10 +517,14 @@ fn match_alternatives(
         colon,
         left_angle_bracket,
         right_angle_bracket,
+        opening_curly_brace,
+        closing_curly_brace,
         prefix,
         source,
         iterator,
+        field,
         sql_type,
+        csv_per_row,
         query,
         sql_query,
         file_path,
@@ -551,6 +638,40 @@ mod lexer_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token {
+    #[doc(hidden)]
+    #[test]
+    fn valid_opening_curly_brace() {
+        let expected = TestUtilities::opening_curly_brace_test_token(0);
+        let actual = opening_curly_brace(&mut "{");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token { aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_opening_curly_brace() {
+        let actual = left_angle_bracket(&mut "}");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token }
+    #[doc(hidden)]
+    #[test]
+    fn valid_closing_curly_brace() {
+        let expected = TestUtilities::closing_curly_brace_test_token(0);
+        let actual = closing_curly_brace(&mut "}");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token } aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_closing_curly_brace() {
+        let actual = closing_curly_brace(&mut "{");
+        check_error(actual);
+    }
+
     /// Comprueba que se detecta el token Source
     #[doc(hidden)]
     #[test]
@@ -564,7 +685,6 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn invalid_source() {
-
         let actual = source(&mut "SOUR");
         check_error(actual);
     }
@@ -603,6 +723,23 @@ mod lexer_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token Field
+    #[doc(hidden)]
+    #[test]
+    fn valid_field() {
+        let expected = TestUtilities::field_test_token(0);
+        let actual = field(&mut "FIELD");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Field aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_field() {
+        let actual = field(&mut "ITR");
+        check_error(actual);
+    }
+
     /// Comprueba que se detecta el token SqlType
     #[doc(hidden)]
     #[test]
@@ -617,6 +754,23 @@ mod lexer_tests {
     #[test]
     fn invalid_sql_type() {
         let actual = sql_type(&mut "sql");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token CsvPerRow
+    #[doc(hidden)]
+    #[test]
+    fn valid_csv_per_row() {
+        let expected = TestUtilities::csv_per_row_test_token(0);
+        let actual = csv_per_row(&mut "csvperrow");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token CsvPerRow aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_csv_per_row() {
+        let actual = sql_type(&mut "csv_per_row");
         check_error(actual);
     }
 
@@ -665,23 +819,21 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token IDENT aquellas cadenas que tengan números
+    /// Comprueba que se detecta el token IDENT (identificadores) con números no al comienzo
     #[doc(hidden)]
     #[test]
-    fn invalid_identifier_with_numbers() {
-        let actual = identifier(&mut "123ident_invalid");
-        check_error(actual);
+    fn valid_identifier_with_numbers() {
+        let expected = TestUtilities::ident_test_token("ident1_2valid", 0);
+        let actual = identifier(&mut "ident1_2valid");
+        check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token IDENT aquellas cadenas que tengan caracteres especiales
+    /// Comprueba que no se detecta como token IDENT aquellas cadenas que empiezan por números
     #[doc(hidden)]
     #[test]
-    fn invalid_identifier_with_special_characters() {
-        let actual = identifier(&mut "ident@invalid");
-        assert_ne!(
-            actual.unwrap(),
-            Token::new("ident@invalid".to_string(), TokenType::Ident)
-        );
+    fn invalid_identifier_with_numbers_at_the_begining() {
+        let actual = identifier(&mut "123ident_invalid");
+        check_error(actual);
     }
 
     /// Comprueba que se detecta el token URI con el protocolo HTTPS
@@ -829,7 +981,11 @@ mod lexer_tests {
     fn lexer_with_multiple_tokens() {
         let mut input = "PREFIX example: <http://example.com/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
-            QUERY query_sql <sql: SELECT * FROM example;>";
+            QUERY query_sql <sql: SELECT * FROM example;>
+            ITERATOR iterator <query_sql> {
+                FIELD field1 <@key>
+                FIELD field2 <attribute>
+            }";
 
         let expected: Vec<Token> = vec![
             TestUtilities::prefix_test_token(1),
@@ -838,18 +994,41 @@ mod lexer_tests {
             TestUtilities::left_angle_bracket_test_token(1),
             TestUtilities::uri_test_token("http://example.com/", 1),
             TestUtilities::right_angle_bracket_test_token(1),
+
             TestUtilities::source_test_token(2),
             TestUtilities::ident_test_token("films_csv_file", 2),
             TestUtilities::left_angle_bracket_test_token(2),
             TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
             TestUtilities::right_angle_bracket_test_token(2),
+
             TestUtilities::query_test_token(3),
             TestUtilities::ident_test_token("query_sql", 3),
             TestUtilities::left_angle_bracket_test_token(3),
             TestUtilities::sql_type_test_token(3),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
             TestUtilities::right_angle_bracket_test_token(3),
-            TestUtilities::eof_test_token(3),
+
+            TestUtilities::iterator_test_token(4),
+            TestUtilities::ident_test_token("iterator", 4),
+            TestUtilities::left_angle_bracket_test_token(4),
+            TestUtilities::ident_test_token("query_sql", 4),
+            TestUtilities::right_angle_bracket_test_token(4),
+            TestUtilities::opening_curly_brace_test_token(4),
+
+            TestUtilities::field_test_token(5),
+            TestUtilities::ident_test_token("field1", 5),
+            TestUtilities::left_angle_bracket_test_token(5),
+            TestUtilities::ident_test_token("@key", 5),
+            TestUtilities::right_angle_bracket_test_token(5),
+
+            TestUtilities::field_test_token(6),
+            TestUtilities::ident_test_token("field2", 6),
+            TestUtilities::left_angle_bracket_test_token(6),
+            TestUtilities::ident_test_token("attribute", 6),
+            TestUtilities::right_angle_bracket_test_token(6),
+
+            TestUtilities::closing_curly_brace_test_token(7),
+            TestUtilities::eof_test_token(7),
         ];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);
@@ -859,7 +1038,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn lexer_with_invalid_identifier() {
-        let mut input = "PREFIX exam123ple: <http://example.com/>
+        let mut input = "PREFIX 123example: <http://example.com/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
         let actual = lexer(&mut input);
