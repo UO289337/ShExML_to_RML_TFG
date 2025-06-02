@@ -272,7 +272,7 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(path.to_string(), TokenType::Path))
 }
 
-/// Encuentra un token QueryDefinition en la entrada
+/// Encuentra un token SqlQuery en la entrada
 ///
 /// Acepta como entrada consultas SQL
 ///
@@ -280,11 +280,11 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
-/// Un token QueryDefinition
+/// Un token SqlQuery
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+fn sql_query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let mut query_definition = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_query_definition = Regex::new(r"(?ix)
             ^(?:                                                          
@@ -309,7 +309,7 @@ fn query_definition(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 
     Ok(Token::new(
         query_definition.to_string(),
-        TokenType::QueryDefinition,
+        TokenType::SqlQuery,
     ))
 }
 
@@ -417,7 +417,7 @@ fn match_alternatives(
         source,
         iterator,
         query,
-        query_definition,
+        sql_query,
         file_path,
         path,
         jdbc_url,
@@ -710,11 +710,19 @@ mod lexer_tests {
     /// Comprueba que se detecta el token FilePath de un fichero CSV usando una ruta con file
     #[doc(hidden)]
     #[test]
-    fn valid_file_absolute_path() {
+    fn valid_file_path() {
         let expected =
             TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
         let actual = file_path(&mut "file:///ejemplo/path/a/fichero/fichero.csv");
         check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token FilePath aquellas cadenas que tengan un path incorrecto
+    #[doc(hidden)]
+    #[test]
+    fn file_path_with_invalid_path() {
+        let actual = file_path(&mut "file//");
+        check_error(actual);
     }
 
     /// Comprueba que se detecta el token Path de un fichero CSV usando una ruta relativa
@@ -736,19 +744,11 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token FilePath aquellas cadenas que tengan un path incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn file_path_with_invalid_path() {
-        let actual = file_path(&mut "file//");
-        check_error(actual);
-    }
-
     /// Comprueba que no se detecta como token Path aquellas cadenas que tengan un path absoluto incorrecto
     #[doc(hidden)]
     #[test]
     fn path_with_invalid_absolute_path() {
-        let actual = path(&mut "//..");
+        let actual = path(&mut "C://..");
         check_error(actual);
     }
 
@@ -760,29 +760,29 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token QUERYDEFINITION con una consulta SQL
+    /// Comprueba que se detecta el token SqlQuery con una consulta SQL
     #[doc(hidden)]
     #[test]
-    fn valid_query_definition_with_sql_query() {
+    fn valid_sql_query() {
         let expected =
-            TestUtilities::query_definition_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
-        let actual = query_definition(&mut "sql: SELECT * FROM tabla WHERE id = '1'");
+            TestUtilities::sql_query_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
+        let actual = sql_query(&mut "sql: SELECT * FROM tabla WHERE id = '1'");
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan una consulta SQL incorrecta
+    /// Comprueba que no se detecta como token SqlQuery aquellas cadenas que tengan una consulta SQL incorrecta
     #[doc(hidden)]
     #[test]
-    fn query_definition_with_invalid_sql_query() {
-        let actual = query_definition(&mut "sql: SELECT FROM tabla");
+    fn sql_query_with_invalid_sql_query() {
+        let actual = sql_query(&mut "sql: SELECT FROM tabla");
         check_error(actual);
     }
 
-    /// Comprueba que no se detecta como token QUERYDEFINITION aquellas cadenas que tengan una consulta SQL sin ':sql' al comienzo
+    /// Comprueba que no se detecta como token SqlQuery aquellas cadenas que tengan una consulta SQL sin ':sql' al comienzo
     #[doc(hidden)]
     #[test]
-    fn query_definition_with_invalid_sql_query_withouth_sql_begining() {
-        let actual = query_definition(&mut "SELECT * FROM tabla");
+    fn sql_query_with_invalid_sql_query_withouth_sql_begining() {
+        let actual = sql_query(&mut "SELECT * FROM tabla");
         check_error(actual);
     }
 
@@ -809,7 +809,7 @@ mod lexer_tests {
             TestUtilities::query_test_token(3),
             TestUtilities::ident_test_token("query_sql", 3),
             TestUtilities::left_angle_bracket_test_token(3),
-            TestUtilities::query_definition_test_token("SELECT * FROM example;", 3),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
             TestUtilities::right_angle_bracket_test_token(3),
             TestUtilities::eof_test_token(3),
         ];

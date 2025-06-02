@@ -75,8 +75,8 @@ impl TestUtilities {
         token
     }
 
-    pub fn query_definition_test_token(query_definition: &str, num_line: u16) -> Token {
-        let mut token = Token::new(query_definition.to_string(), TokenType::QueryDefinition);
+    pub fn sql_query_test_token(query_definition: &str, num_line: u16) -> Token {
+        let mut token = Token::new(query_definition.to_string(), TokenType::SqlQuery);
         token.set_num_line(num_line);
         token
     }

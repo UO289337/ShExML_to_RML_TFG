@@ -14,7 +14,7 @@ pub enum TokenType {
     JdbcUrl,
     FilePath,
     Path,
-    QueryDefinition,
+    SqlQuery,
     Colon,
     LeftAngleBracket,
     RightAngleBracket,
