@@ -40,7 +40,10 @@ impl TestUtilities {
     }
 
     pub fn right_angle_bracket_test_token(num_line: u16) -> Token {
-        let mut token = Token::new(RIGHT_ANGLE_BRACKET.to_string(), TokenType::RightAngleBracket);
+        let mut token = Token::new(
+            RIGHT_ANGLE_BRACKET.to_string(),
+            TokenType::RightAngleBracket,
+        );
         token.set_num_line(num_line);
         token
     }

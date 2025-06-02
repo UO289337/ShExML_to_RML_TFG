@@ -157,7 +157,8 @@ mod lexer_tests {
             sources: vec![
                 SourceASTNode {
                     identifier: "films_csv_file".to_string(),
-                    source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+                    source_definition: "https://shexml.herminiogarcia.com/files/films.csv"
+                        .to_string(),
                 },
                 SourceASTNode {
                     identifier: "films_csv_file".to_string(),

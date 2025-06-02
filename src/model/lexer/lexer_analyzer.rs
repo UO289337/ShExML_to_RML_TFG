@@ -55,13 +55,16 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
-/// Un token < 
+/// Un token <
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(LEFT_ANGLE_BRACKET).parse_next(input)?;
-    Ok(Token::new(LEFT_ANGLE_BRACKET.to_string(), TokenType::LeftAngleBracket))
+    Ok(Token::new(
+        LEFT_ANGLE_BRACKET.to_string(),
+        TokenType::LeftAngleBracket,
+    ))
 }
 
 /// Encuentra el token RightAngleBracket en la entrada
@@ -78,7 +81,10 @@ fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> 
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn right_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(RIGHT_ANGLE_BRACKET).parse_next(input)?;
-    Ok(Token::new(RIGHT_ANGLE_BRACKET.to_string(), TokenType::RightAngleBracket))
+    Ok(Token::new(
+        RIGHT_ANGLE_BRACKET.to_string(),
+        TokenType::RightAngleBracket,
+    ))
 }
 
 /// Encuentra el token Source en la entrada
@@ -221,8 +227,7 @@ fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let file_path = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_file_path = Regex::new(r"^file://[/\\][^ \n\r\t]+\.\w+$").unwrap();
 
-    if !re_file_path.is_match(file_path)
-    {
+    if !re_file_path.is_match(file_path) {
         let error = &ContextError::new().add_context(
             &"Formato incorrecto",
             &file_path.checkpoint(),
@@ -259,8 +264,7 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     )
     .unwrap();
 
-    if !re_path.is_match(path)
-    {
+    if !re_path.is_match(path) {
         let error = &ContextError::new().add_context(
             &"Formato incorrecto",
             &path.checkpoint(),
@@ -303,9 +307,9 @@ fn sql_query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     }
 
     query_definition = query_definition
-            .strip_prefix("sql:")
-            .unwrap_or(query_definition)
-            .trim_start();
+        .strip_prefix("sql:")
+        .unwrap_or(query_definition)
+        .trim_start();
 
     Ok(Token::new(
         query_definition.to_string(),
@@ -643,7 +647,10 @@ mod lexer_tests {
     #[test]
     fn invalid_identifier_with_special_characters() {
         let actual = identifier(&mut "ident@invalid");
-        assert_ne!(actual.unwrap(), Token::new("ident@invalid".to_string(), TokenType::Ident));
+        assert_ne!(
+            actual.unwrap(),
+            Token::new("ident@invalid".to_string(), TokenType::Ident)
+        );
     }
 
     /// Comprueba que se detecta el token URI con el protocolo HTTPS
@@ -764,8 +771,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_sql_query() {
-        let expected =
-            TestUtilities::sql_query_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
+        let expected = TestUtilities::sql_query_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
         let actual = sql_query(&mut "sql: SELECT * FROM tabla WHERE id = '1'");
         check_ok(expected, actual);
     }

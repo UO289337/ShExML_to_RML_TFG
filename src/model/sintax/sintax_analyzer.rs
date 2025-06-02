@@ -71,7 +71,12 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
     source_detector()
         .then(identifier_detector(SOURCE.to_string()))
         .then(left_angle_bracket_detector("URL o ruta".to_string()))
-        .then(uri_detector().or(file_path_detector()).or(path_detector()).or(jdbc_url_detector()))
+        .then(
+            uri_detector()
+                .or(file_path_detector())
+                .or(path_detector())
+                .or(jdbc_url_detector()),
+        )
         .then(right_angle_bracket_detector("URL o ruta".to_string()))
         .map(|((((_, ident), _), source_definition), _)| SourceASTNode {
             identifier: ident.lexeme.clone(),
@@ -260,7 +265,10 @@ fn sql_query_detector() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    general_detector(TokenType::SqlQuery, format!("Se esperaba una consulta SQL entre '<' y '>' en la línea"))
+    general_detector(
+        TokenType::SqlQuery,
+        format!("Se esperaba una consulta SQL entre '<' y '>' en la línea"),
+    )
 }
 
 /// Detecta el token ':' en los tokens
@@ -287,7 +295,9 @@ fn colon_detector() -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo <
-fn left_angle_bracket_detector(next_token: String) -> MapErr<
+fn left_angle_bracket_detector(
+    next_token: String,
+) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
@@ -304,7 +314,9 @@ fn left_angle_bracket_detector(next_token: String) -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo >
-fn right_angle_bracket_detector(previous_token: String) -> MapErr<
+fn right_angle_bracket_detector(
+    previous_token: String,
+) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
@@ -463,7 +475,8 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn detect_valid_jdbc_url() {
-        let expected_token = TestUtilities::jdbc_url_test_token("jdbc:mysql://localhost:3306/mydb", 1);
+        let expected_token =
+            TestUtilities::jdbc_url_test_token("jdbc:mysql://localhost:3306/mydb", 1);
         let actual = jdbc_url_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -472,7 +485,10 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn not_detect_invalid_jdbc_url() {
-        let actual = jdbc_url_detector().parse(vec![TestUtilities::uri_test_token("https://ejemplo.com", 1)]);
+        let actual = jdbc_url_detector().parse(vec![TestUtilities::uri_test_token(
+            "https://ejemplo.com",
+            1,
+        )]);
         check_error(actual);
     }
 
@@ -480,7 +496,8 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn detect_valid_file_path() {
-        let expected_token = TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1);
+        let expected_token =
+            TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1);
         let actual = file_path_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -489,7 +506,10 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn not_detect_invalid_file_path() {
-        let actual = jdbc_url_detector().parse(vec![TestUtilities::uri_test_token("https://ejemplo.com", 1)]);
+        let actual = jdbc_url_detector().parse(vec![TestUtilities::uri_test_token(
+            "https://ejemplo.com",
+            1,
+        )]);
         check_error(actual);
     }
 
@@ -506,7 +526,10 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn not_detect_invalid_path() {
-        let actual = path_detector().parse(vec![TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1)]);
+        let actual = path_detector().parse(vec![TestUtilities::file_path_test_token(
+            "file:///ejemplo/path/a/fichero/fichero.csv",
+            1,
+        )]);
         check_error(actual);
     }
 
@@ -514,8 +537,7 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn detect_valid_sql_query() {
-        let expected_token =
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1);
+        let expected_token = TestUtilities::sql_query_test_token("SELECT * FROM example;", 1);
         let actual = sql_query_detector().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -550,7 +572,8 @@ mod sintax_detectors_tests {
     #[test]
     fn detect_valid_left_angle_bracket() {
         let expected_token = TestUtilities::left_angle_bracket_test_token(1);
-        let actual = left_angle_bracket_detector("URI".to_string()).parse(vec![expected_token.clone()]);
+        let actual =
+            left_angle_bracket_detector("URI".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -558,7 +581,8 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn not_detect_invalid_left_angle_bracket() {
-        let actual = left_angle_bracket_detector("URI".to_string()).parse(vec![TestUtilities::right_angle_bracket_test_token(1)]);
+        let actual = left_angle_bracket_detector("URI".to_string())
+            .parse(vec![TestUtilities::right_angle_bracket_test_token(1)]);
         check_error(actual);
     }
 
@@ -567,7 +591,8 @@ mod sintax_detectors_tests {
     #[test]
     fn detect_valid_right_angle_bracket() {
         let expected_token = TestUtilities::right_angle_bracket_test_token(1);
-        let actual = right_angle_bracket_detector("URI".to_string()).parse(vec![expected_token.clone()]);
+        let actual =
+            right_angle_bracket_detector("URI".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -575,7 +600,8 @@ mod sintax_detectors_tests {
     #[doc(hidden)]
     #[test]
     fn not_detect_invalid_right_angle_bracket() {
-        let actual = right_angle_bracket_detector("URI".to_string()).parse(vec![TestUtilities::left_angle_bracket_test_token(1)]);
+        let actual = right_angle_bracket_detector("URI".to_string())
+            .parse(vec![TestUtilities::left_angle_bracket_test_token(1)]);
         check_error(actual);
     }
 
@@ -833,10 +859,7 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = prefix_parser().parse(fail_tokens_vector);
-        check_error::<PrefixASTNode>(
-            actual,
-            "Se esperaba un '<' antes de la URI en la línea 1",
-        );
+        check_error::<PrefixASTNode>(actual, "Se esperaba un '<' antes de la URI en la línea 1");
     }
 
     /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: Prefix Ident Colon LeftAngleBracket RightAngleBracket
@@ -852,10 +875,7 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = prefix_parser().parse(fail_tokens_vector);
-        check_error::<PrefixASTNode>(
-            actual,
-            "Se esperaba una URI entre '<' y '>' en la línea 1",
-        );
+        check_error::<PrefixASTNode>(actual, "Se esperaba una URI entre '<' y '>' en la línea 1");
     }
 
     /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: Prefix Ident Colon LeftAngleBracket Uri
@@ -871,10 +891,7 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = prefix_parser().parse(fail_tokens_vector);
-        check_error::<PrefixASTNode>(
-            actual,
-            "Se esperaba un '>' después de la URI en la línea 1",
-        );
+        check_error::<PrefixASTNode>(actual, "Se esperaba un '>' después de la URI en la línea 1");
     }
 
     /// Comprueba que el parser de Prefix no detecta como tales aquellas secuencias de tokens que son: Prefix Ident Colon Uri
@@ -889,10 +906,7 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = prefix_parser().parse(fail_tokens_vector);
-        check_error::<PrefixASTNode>(
-            actual,
-            "Se esperaba un '<' antes de la URI en la línea 1",
-        );
+        check_error::<PrefixASTNode>(actual, "Se esperaba un '<' antes de la URI en la línea 1");
     }
 
     /// Comprueba que el parser de Source detecta la secuencia de tokens: Source Ident LeftAngleBracket URI RightAngleBracket
@@ -920,7 +934,10 @@ mod sintax_tests {
         tokens_vector.push(TestUtilities::source_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
         tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::uri_test_token("https://ejemplo2.com/fichero.csv",2));
+        tokens_vector.push(TestUtilities::uri_test_token(
+            "https://ejemplo2.com/fichero.csv",
+            2,
+        ));
         tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
         tokens_vector.push(eof_node.unwrap());
 
@@ -959,7 +976,10 @@ mod sintax_tests {
         tokens_vector.push(TestUtilities::source_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
         tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::jdbc_url_test_token("jdbc:mysql://localhost:3356/anotherdb",2));
+        tokens_vector.push(TestUtilities::jdbc_url_test_token(
+            "jdbc:mysql://localhost:3356/anotherdb",
+            2,
+        ));
         tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
         tokens_vector.push(eof_node.unwrap());
 
@@ -998,7 +1018,10 @@ mod sintax_tests {
         tokens_vector.push(TestUtilities::source_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
         tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::file_path_test_token("file:///otroejemplo/path/a/fichero/otrofichero.csv",2));
+        tokens_vector.push(TestUtilities::file_path_test_token(
+            "file:///otroejemplo/path/a/fichero/otrofichero.csv",
+            2,
+        ));
         tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
         tokens_vector.push(eof_node.unwrap());
 
@@ -1037,7 +1060,10 @@ mod sintax_tests {
         tokens_vector.push(TestUtilities::source_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
         tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv",2));
+        tokens_vector.push(TestUtilities::path_test_token(
+            "C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
+            2,
+        ));
         tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
         tokens_vector.push(eof_node.unwrap());
 
@@ -1096,7 +1122,10 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un '<' antes de la URL o ruta en la línea 1");
+        check_error::<SourceASTNode>(
+            actual,
+            "Se esperaba un '<' antes de la URL o ruta en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: Source Ident LeftAngleBracket RightAngleBracket
@@ -1126,7 +1155,10 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un '>' después de la URL o ruta en la línea 1");
+        check_error::<SourceASTNode>(
+            actual,
+            "Se esperaba un '>' después de la URL o ruta en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Source no detecta como tales aquellas secuencias de tokens que son: Source Ident (Uri|JdbcUrl|FilePath|Path)
@@ -1140,7 +1172,10 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = source_parser().parse(fail_tokens_vector);
-        check_error::<SourceASTNode>(actual, "Se esperaba un '<' antes de la URL o ruta en la línea 1");
+        check_error::<SourceASTNode>(
+            actual,
+            "Se esperaba un '<' antes de la URL o ruta en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Query detecta la secuencia de tokens: Query Ident LeftAngleBracket SqlQuery RightAngleBracket
@@ -1248,7 +1283,10 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = query_parser().parse(fail_tokens_vector);
-        check_error::<QueryASTNode>(actual, "Se esperaba una consulta SQL entre '<' y '>' en la línea 1");
+        check_error::<QueryASTNode>(
+            actual,
+            "Se esperaba una consulta SQL entre '<' y '>' en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident LeftAngleBracket SqlQuery
@@ -1263,7 +1301,10 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = query_parser().parse(fail_tokens_vector);
-        check_error::<QueryASTNode>(actual, "Se esperaba un '>' después de la consulta SQL en la línea 1");
+        check_error::<QueryASTNode>(
+            actual,
+            "Se esperaba un '>' después de la consulta SQL en la línea 1",
+        );
     }
 
     /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident SqlQuery
@@ -1277,7 +1318,10 @@ mod sintax_tests {
             TestUtilities::eof_test_token(1),
         ];
         let actual = query_parser().parse(fail_tokens_vector);
-        check_error::<QueryASTNode>(actual, "Se esperaba un '<' antes de la consulta SQL en la línea 1");
+        check_error::<QueryASTNode>(
+            actual,
+            "Se esperaba un '<' antes de la consulta SQL en la línea 1",
+        );
     }
 
     /// Comprueba que el resultado actual del test es un error y que el mensaje de este concuerda con el esperado
