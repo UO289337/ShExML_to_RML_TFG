@@ -27,6 +27,12 @@ impl TestUtilities {
         token
     }
 
+    pub fn sql_type_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(SQL_TYPE.to_string(), TokenType::SqlType);
+        token.set_num_line(num_line);
+        token
+    }
+
     pub fn colon_test_token(num_line: u16) -> Token {
         let mut token = Token::new(COLON.to_string(), TokenType::Colon);
         token.set_num_line(num_line);

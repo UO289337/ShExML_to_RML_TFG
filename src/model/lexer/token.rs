@@ -9,6 +9,7 @@ pub enum TokenType {
     Source,
     Query,
     Iterator,
+    SqlType,
     Ident,
     Uri,
     JdbcUrl,
@@ -25,6 +26,7 @@ pub const PREFIX: &str = "PREFIX";
 pub const SOURCE: &str = "SOURCE";
 pub const QUERY: &str = "QUERY";
 pub const ITERATOR: &str = "ITERATOR";
+pub const SQL_TYPE: &str = "sql:";
 pub const COLON: &str = ":";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";

@@ -100,9 +100,10 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
     query_detector()
         .then(identifier_detector(QUERY.to_string()))
         .then(left_angle_bracket_detector("consulta SQL".to_string()))
+        .then(sql_type_detector())
         .then(sql_query_detector())
         .then(right_angle_bracket_detector("consulta SQL".to_string()))
-        .map(|((((_, ident), _), sql_query), _)| QueryASTNode {
+        .map(|(((((_, ident), _), _), sql_query), _)| QueryASTNode {
             identifier: ident.lexeme.clone(),
             sql_query: sql_query.lexeme.clone(),
         })
@@ -113,7 +114,7 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
 
 // Detectors
 
-/// Detecta el token PREFIX en los tokens
+/// Detecta el token Prefix en los tokens
 ///
 /// # Retorna
 /// Un token de tipo Prefix si el token actual es de dicho tipo
@@ -130,7 +131,7 @@ fn prefix_detector() -> MapErr<
     )
 }
 
-/// Detecta el token SOURCE en los tokens
+/// Detecta el token Source en los tokens
 ///
 /// # Retorna
 /// Un token de tipo Source si el token actual es de dicho tipo
@@ -161,6 +162,23 @@ fn query_detector() -> MapErr<
     general_detector(
         TokenType::Query,
         format!("Se esperaba un QUERY en la línea"),
+    )
+}
+
+/// Detecta el token SqlType en los tokens
+///
+/// # Retorna
+/// Un token de tipo SqlType si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo SqlType
+fn sql_type_detector() -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
+    general_detector(
+        TokenType::SqlType,
+        format!("Se esperaba 'sql:' después de '<' en la línea"),
     )
 }
 
@@ -436,6 +454,23 @@ mod sintax_detectors_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detectan los tokens SqlType
+    #[doc(hidden)]
+    #[test]
+    fn detect_valid_sql_type() {
+        let expected_token = TestUtilities::sql_type_test_token(1);
+        let actual = sql_type_detector().parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se detectan como tokens SqlType aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_detect_invalid_sql_type() {
+        let actual = sql_type_detector().parse(vec![TestUtilities::colon_test_token(1)]);
+        check_error(actual);
+    }
+
     /// Comprueba que se detectan los tokens Ident
     #[doc(hidden)]
     #[test]
@@ -657,6 +692,7 @@ mod sintax_tests {
             TestUtilities::query_test_token(3),
             TestUtilities::ident_test_token("query_sql", 3),
             TestUtilities::left_angle_bracket_test_token(3),
+            TestUtilities::sql_type_test_token(3),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
             TestUtilities::right_angle_bracket_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -1178,7 +1214,7 @@ mod sintax_tests {
         );
     }
 
-    /// Comprueba que el parser de Query detecta la secuencia de tokens: Query Ident LeftAngleBracket SqlQuery RightAngleBracket
+    /// Comprueba que el parser de Query detecta la secuencia de tokens: Query Ident LeftAngleBracket SqlType SqlQuery RightAngleBracket
     #[doc(hidden)]
     #[test]
     fn valid_query_sintax() {
@@ -1186,6 +1222,7 @@ mod sintax_tests {
             TestUtilities::query_test_token(1),
             TestUtilities::ident_test_token("ident", 1),
             TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
@@ -1203,6 +1240,7 @@ mod sintax_tests {
         tokens_vector.push(TestUtilities::query_test_token(2));
         tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
         tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
+        tokens_vector.push(TestUtilities::sql_type_test_token(2));
         tokens_vector.push(TestUtilities::sql_query_test_token(
             "SELECT * FROM example;",
             2,
@@ -1220,13 +1258,14 @@ mod sintax_tests {
         assert_eq!(expected_vector, actual.unwrap());
     }
 
-    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Ident LeftAngleBracket SqlQuery RightAngleBracket
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Ident LeftAngleBracket SqlType SqlQuery RightAngleBracket
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_query() {
         let fail_tokens_vector = vec![
             TestUtilities::ident_test_token("ident", 1),
             TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
@@ -1235,13 +1274,14 @@ mod sintax_tests {
         check_error::<QueryASTNode>(actual, "Se esperaba un QUERY en la línea 1");
     }
 
-    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query LeftAngleBracket SqlQuery RightAngleBracket
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query LeftAngleBracket SqlType SqlQuery RightAngleBracket
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![
             TestUtilities::query_test_token(1),
             TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
@@ -1253,13 +1293,14 @@ mod sintax_tests {
         );
     }
 
-    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident SqlQuery RightAngleBracket
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident SqlType SqlQuery RightAngleBracket
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_left_angle_bracket() {
         let fail_tokens_vector = vec![
             TestUtilities::query_test_token(1),
             TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::sql_type_test_token(1),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
@@ -1274,11 +1315,31 @@ mod sintax_tests {
     /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident LeftAngleBracket SqlQuery RightAngleBracket
     #[doc(hidden)]
     #[test]
+    fn query_sintax_withouth_sql_type() {
+        let fail_tokens_vector = vec![
+            TestUtilities::query_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::eof_test_token(1),
+        ];
+        let actual = query_parser().parse(fail_tokens_vector);
+        check_error::<QueryASTNode>(
+            actual,
+            "Se esperaba 'sql:' después de '<' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident LeftAngleBracket SqlType RightAngleBracket
+    #[doc(hidden)]
+    #[test]
     fn query_sintax_withouth_sql_query() {
         let fail_tokens_vector = vec![
             TestUtilities::query_test_token(1),
             TestUtilities::ident_test_token("ident", 1),
             TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
@@ -1289,7 +1350,7 @@ mod sintax_tests {
         );
     }
 
-    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident LeftAngleBracket SqlQuery
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident LeftAngleBracket SqlType SqlQuery
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_right_angle_bracket() {
@@ -1297,6 +1358,7 @@ mod sintax_tests {
             TestUtilities::query_test_token(1),
             TestUtilities::ident_test_token("ident", 1),
             TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::eof_test_token(1),
         ];
@@ -1307,13 +1369,14 @@ mod sintax_tests {
         );
     }
 
-    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident SqlQuery
+    /// Comprueba que el parser de Query no detecta como tales aquellas secuencias de tokens que son: Query Ident SqlType SqlQuery
     #[doc(hidden)]
     #[test]
     fn query_sintax_withouth_right_angle_brackets() {
         let fail_tokens_vector = vec![
             TestUtilities::query_test_token(1),
             TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::sql_type_test_token(1),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::eof_test_token(1),
         ];

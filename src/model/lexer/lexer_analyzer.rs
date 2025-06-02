@@ -138,6 +138,23 @@ fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(ITERATOR.to_string(), TokenType::Iterator))
 }
 
+/// Encuentra el token SqlType en la entrada
+///
+/// Acepta la entrada ':sql'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token SqlType
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn sql_type(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(SQL_TYPE).parse_next(input)?;
+    Ok(Token::new(SQL_TYPE.to_string(), TokenType::SqlType))
+}
+
 /// Encuentra un token identificador en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '_'
@@ -292,7 +309,7 @@ fn sql_query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let mut query_definition = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_query_definition = Regex::new(r"(?ix)
             ^(?:                                                          
-                sql:\s*\bSELECT\b\s+.+?\bFROM\b\s+.+?(?:\bWHERE\b\s+.+?)?(?:\bGROUP\s+BY\b\s+.+?)?(?:\bORDER\s+BY\b\s+.+?)?    # SQL
+                SELECT\b\s+.+?\bFROM\b\s+.+?(?:\bWHERE\b\s+.+?)?(?:\bGROUP\s+BY\b\s+.+?)?(?:\bORDER\s+BY\b\s+.+?)?
             )$
         "
         ).unwrap();
@@ -420,6 +437,7 @@ fn match_alternatives(
         prefix,
         source,
         iterator,
+        sql_type,
         query,
         sql_query,
         file_path,
@@ -465,7 +483,7 @@ mod lexer_tests {
 
     // En los tests el número de línea de los tokens es 0 porque todavía no se le asigna
 
-    /// Comprueba que se detecta el token PREFIX
+    /// Comprueba que se detecta el token Prefix
     #[doc(hidden)]
     #[test]
     fn valid_prefix() {
@@ -474,7 +492,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token aquellas cadenas que no sean PREFIX
+    /// Comprueba que no se detecta como token aquellas cadenas que no sean Prefix
     #[doc(hidden)]
     #[test]
     fn invalid_prefix() {
@@ -533,7 +551,7 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token SOURCE
+    /// Comprueba que se detecta el token Source
     #[doc(hidden)]
     #[test]
     fn valid_source() {
@@ -542,16 +560,16 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token SOURCE aquellas cadenas que no lo sean
+    /// Comprueba que no se detecta como token Source aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
     fn invalid_source() {
-        // Fail test
+
         let actual = source(&mut "SOUR");
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token QUERY
+    /// Comprueba que se detecta el token Query
     #[doc(hidden)]
     #[test]
     fn valid_query() {
@@ -560,16 +578,15 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token QUERY aquellas cadenas que no lo sean
+    /// Comprueba que no se detecta como token Query aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
     fn invalid_query() {
-        // Fail test
         let actual = query(&mut "QURY");
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token ITERATOR
+    /// Comprueba que se detecta el token Iterator
     #[doc(hidden)]
     #[test]
     fn valid_iterator() {
@@ -578,12 +595,28 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token ITERATOR aquellas cadenas que no lo sean
+    /// Comprueba que no se detecta como token Iterator aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
     fn invalid_iterator() {
-        // Fail test
         let actual = query(&mut "ITR");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token SqlType
+    #[doc(hidden)]
+    #[test]
+    fn valid_sql_type() {
+        let expected = TestUtilities::sql_type_test_token(0);
+        let actual = sql_type(&mut "sql:");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token SqlType aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_sql_type() {
+        let actual = sql_type(&mut "sql");
         check_error(actual);
     }
 
@@ -618,7 +651,6 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_end() {
-        // Test con identificador con _ al final del identificador
         let expected = TestUtilities::ident_test_token("ident_valid_", 0);
         let actual = identifier(&mut "ident_valid_");
         check_ok(expected, actual);
@@ -628,7 +660,6 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_begining_and_end() {
-        // Test con identificador con _ al final del identificador
         let expected = TestUtilities::ident_test_token("_ident_valid_", 0);
         let actual = identifier(&mut "_ident_valid_");
         check_ok(expected, actual);
@@ -772,7 +803,7 @@ mod lexer_tests {
     #[test]
     fn valid_sql_query() {
         let expected = TestUtilities::sql_query_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
-        let actual = sql_query(&mut "sql: SELECT * FROM tabla WHERE id = '1'");
+        let actual = sql_query(&mut "SELECT * FROM tabla WHERE id = '1'");
         check_ok(expected, actual);
     }
 
@@ -780,15 +811,15 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn sql_query_with_invalid_sql_query() {
-        let actual = sql_query(&mut "sql: SELECT FROM tabla");
+        let actual = sql_query(&mut "SELECT FROM tabla");
         check_error(actual);
     }
 
     /// Comprueba que no se detecta como token SqlQuery aquellas cadenas que tengan una consulta SQL sin ':sql' al comienzo
     #[doc(hidden)]
     #[test]
-    fn sql_query_with_invalid_sql_query_withouth_sql_begining() {
-        let actual = sql_query(&mut "SELECT * FROM tabla");
+    fn sql_query_with_invalid_sql_query_with_sql_begining() {
+        let actual = sql_query(&mut "sql: SELECT * FROM tabla");
         check_error(actual);
     }
 
@@ -815,6 +846,7 @@ mod lexer_tests {
             TestUtilities::query_test_token(3),
             TestUtilities::ident_test_token("query_sql", 3),
             TestUtilities::left_angle_bracket_test_token(3),
+            TestUtilities::sql_type_test_token(3),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
             TestUtilities::right_angle_bracket_test_token(3),
             TestUtilities::eof_test_token(3),
