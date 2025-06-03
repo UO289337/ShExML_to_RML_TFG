@@ -135,6 +135,7 @@ mod lexer_tests {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
+            iterators: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -169,6 +170,7 @@ mod lexer_tests {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
+            iterators: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -202,6 +204,7 @@ mod lexer_tests {
                     sql_query: "SELECT name FROM anothertable;".to_string(),
                 },
             ]),
+            iterators: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -229,6 +232,7 @@ mod lexer_tests {
                 identifier: "duplicate".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
+            iterators: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
