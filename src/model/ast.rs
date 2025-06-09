@@ -8,6 +8,7 @@ pub struct FileASTNode {
     pub prefixes: Vec<PrefixASTNode>,
     pub sources: Vec<SourceASTNode>,
     pub queries: Option<Vec<QueryASTNode>>,
+    pub iterators: Option<Vec<IteratorASTNode>>,
 }
 
 /// Nodo de tipo Prefix del AST
@@ -25,14 +26,33 @@ pub struct PrefixASTNode {
 #[derive(Debug, PartialEq)]
 pub struct SourceASTNode {
     pub identifier: String,
-    pub source_path: String,
+    pub source_definition: String,
 }
 
 /// Nodo de tipo Query del AST
 ///
-/// Se corresponde con los Query de SheXMl; contiene un identificador y una consulta, path o URL
+/// Se corresponde con los Query de SheXMl; contiene un identificador y una consulta SQL
 #[derive(Debug, PartialEq)]
 pub struct QueryASTNode {
     pub identifier: String,
-    pub query_definition: String,
+    pub sql_query: String,
+}
+
+/// Nodo de tipo Iterator del AST
+///
+/// Se corresponde con los Iterator de SheXMl; contiene un identificador, como se accede (identificador, csvperrow o consulta SQL) y un vector de fields
+#[derive(Debug, PartialEq)]
+pub struct IteratorASTNode {
+    pub identifier: String,
+    pub iterator_access: String,
+    pub fields: Vec<FieldASTNode>,
+}
+
+/// Nodo de tipo Field del AST
+///
+/// Se corresponde con los Field de un ITERATOR de SheXMl; contiene un identificador para el field y otro para el campo accedido
+#[derive(Debug, PartialEq)]
+pub struct FieldASTNode {
+    pub field_identifier: String,
+    pub access_field_identifier: String,
 }

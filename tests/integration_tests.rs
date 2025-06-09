@@ -17,10 +17,15 @@ mod integration_lexer_syntax_analyzers_tests {
             QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
-        let semantic_result = model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
+        let semantic_result =
+            model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 
         assert!(semantic_result.is_empty());
-        assert!(sintax_result.as_ref().is_ok_and(|file| !file.prefixes.is_empty() && !file.sources.is_empty() && file.queries.is_some()));
+        assert!(sintax_result
+            .as_ref()
+            .is_ok_and(|file| !file.prefixes.is_empty()
+                && !file.sources.is_empty()
+                && file.queries.is_some()));
 
         let _ = sintax_result.as_ref().map(|file| {
             assert_eq!(file.prefixes.len(), 1);
@@ -33,7 +38,7 @@ mod integration_lexer_syntax_analyzers_tests {
     #[doc(hidden)]
     #[test]
     fn integration_with_lexer_fail() {
-        let mut input = "PREFIX example123: <http://example.com/>
+        let mut input = "PREFIX 123example: <http://example.com/>
             SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
@@ -67,7 +72,8 @@ mod integration_lexer_syntax_analyzers_tests {
             QUERY query_sql <sql: SELECT * FROM example;>";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
-        let semantic_result = model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
+        let semantic_result =
+            model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 
         assert_eq!(semantic_result.len(), 1);
     }

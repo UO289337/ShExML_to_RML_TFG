@@ -1,10 +1,9 @@
 //! Módulos del modelo
 
-
 pub mod generator;
 pub mod lexer;
-pub mod sintax;
 pub mod semantic;
+pub mod sintax;
 
-pub mod compiler_error;
 pub mod ast;
+pub mod compiler_error;
