@@ -10,9 +10,12 @@ pub enum TokenType {
     Query,
     Iterator,
     Field,
+    Expression,
     SqlType,
     CsvPerRow,
     Ident,
+    KeyIdentifier,
+    AccessIdent,
     Uri,
     JdbcUrl,
     FilePath,
@@ -31,6 +34,7 @@ pub const SOURCE: &str = "SOURCE";
 pub const QUERY: &str = "QUERY";
 pub const ITERATOR: &str = "ITERATOR";
 pub const FIELD: &str = "FIELD";
+pub const EXPRESSION: &str = "EXPRESSION";
 pub const SQL_TYPE: &str = "sql:";
 pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";

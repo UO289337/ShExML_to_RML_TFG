@@ -33,6 +33,12 @@ impl TestUtilities {
         token
     }
 
+    pub fn expression_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(EXPRESSION.to_string(), TokenType::Expression);
+        token.set_num_line(num_line);
+        token
+    }
+
     pub fn sql_type_test_token(num_line: u16) -> Token {
         let mut token = Token::new(SQL_TYPE.to_string(), TokenType::SqlType);
         token.set_num_line(num_line);
@@ -86,6 +92,18 @@ impl TestUtilities {
 
     pub fn ident_test_token(ident: &str, num_line: u16) -> Token {
         let mut token = Token::new(ident.to_string(), TokenType::Ident);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn key_identifier_test_token(key_ident: &str, num_line: u16) -> Token {
+        let mut token = Token::new(key_ident.to_string(), TokenType::KeyIdentifier);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn access_ident_test_token(access_ident: &str, num_line: u16) -> Token {
+        let mut token = Token::new(access_ident.to_string(), TokenType::AccessIdent);
         token.set_num_line(num_line);
         token
     }

@@ -205,7 +205,7 @@ fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>
     field_token_parser()
         .then(identifier_parser(FIELD.to_string()))
         .then(left_angle_bracket_parser("el identificador".to_string()))
-        .then(identifier_parser("<".to_string()))
+        .then(identifier_parser("<".to_string()).or(key_identifier_parser()))
         .then(right_angle_bracket_parser("el identificador".to_string()))
         .map(|((((_, ident), _), access_ident), _)| FieldASTNode {
             field_identifier: ident.lexeme.clone(),
@@ -339,7 +339,7 @@ fn sql_type_parser() -> MapErr<
     )
 }
 
-/// Parsea el token IDENT en los tokens
+/// Parsea el token Ident en los tokens
 ///
 /// # Argumentos
 /// * `previous_token` - El token previo al identificador, que puede ser un PREFIX o un SOURCE
@@ -358,6 +358,23 @@ fn identifier_parser(
     general_parser(
         TokenType::Ident,
         format!("Se esperaba un identificador después de '{previous_token}' en la línea"),
+    )
+}
+
+/// Parsea el token KeyIdentifier en los tokens
+///
+/// # Retorna
+/// Un token de tipo KeyIdentifier si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Ident
+fn key_identifier_parser() -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
+    general_parser(
+        TokenType::KeyIdentifier,
+        format!("Se esperaba un identificador clave después de '<' en la línea"),
     )
 }
 
@@ -754,6 +771,24 @@ mod sintax_parsers_tests {
     fn not_parse_invalid_identifier() {
         let actual =
             identifier_parser("SOURCE".to_string()).parse(vec![TestUtilities::colon_test_token(1)]);
+        check_error(actual);
+    }
+
+    /// Comprueba que se parsean los tokens KeyIdentifier
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_key_identifier() {
+        let expected_token = TestUtilities::key_identifier_test_token("@ident", 1);
+        let actual = key_identifier_parser().parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens KeyIdentifier aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_key_identifier() {
+        let actual =
+            key_identifier_parser().parse(vec![TestUtilities::ident_test_token("invalid", 1)]);
         check_error(actual);
     }
 
@@ -1733,7 +1768,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(1),
             TestUtilities::ident_test_token("field", 1),
             TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::key_identifier_test_token("@field", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
@@ -1753,7 +1788,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             TestUtilities::ident_test_token("field", 1),
             TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::key_identifier_test_token("@field", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
@@ -1769,7 +1804,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             TestUtilities::field_test_token(1),
             TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::key_identifier_test_token("@field", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
@@ -1788,7 +1823,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             TestUtilities::field_test_token(1),
             TestUtilities::ident_test_token("field", 1),
-            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::key_identifier_test_token("@field", 1),
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
@@ -1827,7 +1862,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(1),
             TestUtilities::ident_test_token("field", 1),
             TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::key_identifier_test_token("@field", 1),
             TestUtilities::eof_test_token(1),
         ];
 
@@ -1845,7 +1880,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             TestUtilities::field_test_token(1),
             TestUtilities::ident_test_token("field", 1),
-            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::key_identifier_test_token("@field", 1),
             TestUtilities::eof_test_token(1),
         ];
 
@@ -1872,7 +1907,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -1884,6 +1919,50 @@ mod sintax_tests {
             fields: vec![FieldASTNode {
                 field_identifier: "field".to_string(),
                 access_field_identifier: "@field".to_string(),
+            }],
+        };
+        let actual = iterator_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de Iterator parsea la secuencia de tokens:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    /// con más de un field
+    #[doc(hidden)]
+    #[test]
+    fn valid_iterator_sintax_with_more_than_one_field() {
+        let tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::key_identifier_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::field_test_token(3),
+            TestUtilities::ident_test_token("field2", 3),
+            TestUtilities::left_angle_bracket_test_token(3),
+            TestUtilities::ident_test_token("field", 3),
+            TestUtilities::right_angle_bracket_test_token(3),
+            TestUtilities::closing_curly_brace_test_token(4),
+            TestUtilities::eof_test_token(4),
+        ];
+
+        let expected = IteratorASTNode {
+            identifier: "ident".to_string(),
+            iterator_access: "SELECT * FROM example;".to_string(),
+            fields: vec![FieldASTNode {
+                field_identifier: "field".to_string(),
+                access_field_identifier: "@field".to_string(),
+            },
+            FieldASTNode {
+                field_identifier: "field2".to_string(),
+                access_field_identifier: "field".to_string(),
             }],
         };
         let actual = iterator_parser().parse(tokens_vector.clone());
@@ -1905,7 +1984,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -1938,7 +2017,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -1971,7 +2050,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -1996,7 +2075,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -2024,7 +2103,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -2051,7 +2130,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -2079,7 +2158,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -2107,7 +2186,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -2157,7 +2236,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::eof_test_token(3),
         ];
@@ -2183,7 +2262,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::closing_curly_brace_test_token(3),
             TestUtilities::eof_test_token(3),
@@ -2211,7 +2290,7 @@ mod sintax_tests {
             TestUtilities::field_test_token(2),
             TestUtilities::ident_test_token("field", 2),
             TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::key_identifier_test_token("@field", 2),
             TestUtilities::right_angle_bracket_test_token(2),
             TestUtilities::eof_test_token(3),
         ];

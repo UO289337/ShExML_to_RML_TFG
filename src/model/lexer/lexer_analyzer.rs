@@ -195,6 +195,23 @@ fn field(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(FIELD.to_string(), TokenType::Field))
 }
 
+/// Encuentra el token Expression en la entrada
+///
+/// Acepta la entrada 'EXPRESSION'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Expression
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn expression(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(EXPRESSION).parse_next(input)?;
+    Ok(Token::new(EXPRESSION.to_string(), TokenType::Expression))
+}
+
 /// Encuentra el token SqlType en la entrada
 ///
 /// Acepta la entrada ':sql'
@@ -231,17 +248,73 @@ fn csv_per_row(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 
 /// Encuentra un token identificador en la entrada
 ///
-/// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '_'
+/// Acepta como entrada cualquier cadena de caracteres alfanuméricos; también acepta '_'
 ///
 /// # Argumentos
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
-/// Un token identificador
+/// Un token Ident
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let ident =
+        take_while(1.., |c: char| c.is_alphanumeric() || c == '_').parse_next(input)?;
+
+    if ident.chars().next().unwrap().is_numeric() {
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &ident.checkpoint(),
+            StrContext::Label("No se permiten números al comienzo de los identificadores"),
+        );
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+    Ok(Token::new(ident.to_string(), TokenType::Ident))
+}
+
+/// Encuentra un token identificador clave en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres alfanuméricos; también acepta '@' al principio
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token KeyIdentifier
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn key_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let key_ident =
+        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
+    let re_ident = Regex::new(r"^@[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
+
+    if !re_ident.is_match(key_ident) {
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &key_ident.checkpoint(),
+            StrContext::Label("Identificador clave incorrecto"),
+        );
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    Ok(Token::new(key_ident.to_string(), TokenType::KeyIdentifier))
+}
+
+/// Encuentra un token de acceso de identificador en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '.'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token AccessIdentifier
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn access_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let ident =
         take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
 
@@ -532,6 +605,7 @@ fn match_alternatives(
         path,
         jdbc_url,
         uri,
+        key_identifier,
         identifier,
     ))
     .parse_next(input)
@@ -775,7 +849,7 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) sin que tenga un '_'
+        /// Comprueba que se detecta el token KeyIdentifier sin que tenga un '_'
     #[doc(hidden)]
     #[test]
     fn valid_identifier_withouth_underscore() {
@@ -784,7 +858,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' en medio
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_' en medio
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_inside() {
@@ -793,7 +867,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_ ' al comienzo
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_ ' al comienzo
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_begining() {
@@ -802,7 +876,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' al final
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_' al final
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_end() {
@@ -811,7 +885,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' al comienzo y final
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_' al comienzo y final
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_begining_and_end() {
@@ -820,7 +894,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con números no al comienzo
+    /// Comprueba que se detecta el token Ident (identificadores) con números no al comienzo
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_numbers() {
@@ -829,11 +903,89 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token IDENT aquellas cadenas que empiezan por números
+    /// Comprueba que no se detecta como token Ident aquellas cadenas que empiezan por números
     #[doc(hidden)]
     #[test]
     fn invalid_identifier_with_numbers_at_the_begining() {
         let actual = identifier(&mut "123ident_invalid");
+        check_error(actual);
+    }
+
+    /// Comprueba que no se detecta como token Ident aquellas cadenas que contienen caracteres especiales
+    #[doc(hidden)]
+    #[test]
+    fn invalid_identifier_with_special_characters() {
+        let actual = identifier(&mut "@ident_invalid");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier sin que tenga un '_'
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_withouth_underscore() {
+        let expected = TestUtilities::key_identifier_test_token("@ident", 0);
+        let actual = key_identifier(&mut "@ident");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_' en medio
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_inside() {
+        let expected = TestUtilities::key_identifier_test_token("@Ident_valid", 0);
+        let actual = key_identifier(&mut "@Ident_valid");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_ ' al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_at_the_begining() {
+        let expected = TestUtilities::key_identifier_test_token("@_ident_valid", 0);
+        let actual = key_identifier(&mut "@_ident_valid");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_' al final
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_at_the_end() {
+        let expected = TestUtilities::key_identifier_test_token("@ident_valid_", 0);
+        let actual = key_identifier(&mut "@ident_valid_");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_' al comienzo y final
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_at_the_begining_and_end() {
+        let expected = TestUtilities::key_identifier_test_token("@_ident_valid_", 0);
+        let actual = key_identifier(&mut "@_ident_valid_");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con números no al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_numbers() {
+        let expected = TestUtilities::key_identifier_test_token("@ident1_2valid", 0);
+        let actual = key_identifier(&mut "@ident1_2valid");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token KeyIdentifier aquellas cadenas que empiezan por números
+    #[doc(hidden)]
+    #[test]
+    fn invalid_key_identifier_with_numbers_at_the_begining() {
+        let actual = key_identifier(&mut "@1invalid_identifier");
+        check_error(actual);
+    }
+
+    /// Comprueba que no se detecta como token KeyIdentifier aquellas cadenas que no comienzan por '@'
+    #[doc(hidden)]
+    #[test]
+    fn invalid_key_identifier_withouth_at_the_begining() {
+        let actual = key_identifier(&mut "ident_invalid");
         check_error(actual);
     }
 
@@ -1015,7 +1167,7 @@ mod lexer_tests {
             TestUtilities::field_test_token(5),
             TestUtilities::ident_test_token("field1", 5),
             TestUtilities::left_angle_bracket_test_token(5),
-            TestUtilities::ident_test_token("@key", 5),
+            TestUtilities::key_identifier_test_token("@key", 5),
             TestUtilities::right_angle_bracket_test_token(5),
             TestUtilities::field_test_token(6),
             TestUtilities::ident_test_token("field2", 6),
