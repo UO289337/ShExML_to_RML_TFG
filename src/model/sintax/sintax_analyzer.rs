@@ -25,15 +25,17 @@ use super::super::lexer::token::TokenType;
 fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
     prefixes_parser()
         .then(sources_parser())
-        .then(queries_parser().or_not())
-        .then(iterators_parser().or_not())
+        .then(query_parser().or_not())
+        .then(iterator_parser().or_not())
         .then(eof_parser())
-        .map(|((((prefixes, sources), queries), iterators), _)| FileASTNode {
-            prefixes,
-            sources,
-            queries,
-            iterators,
-        })
+        .map(
+            |((((prefixes, sources), queries), iterators), _)| FileASTNode {
+                prefixes,
+                sources,
+                queries,
+                iterators,
+            },
+        )
 }
 
 /// Parsea los tokens para generar el nodo Prefix del AST
@@ -49,9 +51,9 @@ fn prefixes_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<To
     prefix_parser()
         .then(identifier_parser(PREFIX.to_string()))
         .then(colon_parser())
-        .then(left_angle_bracket_parser("URI".to_string()))
+        .then(left_angle_bracket_parser("la URI".to_string()))
         .then(uri_parser())
-        .then(right_angle_bracket_parser("URI".to_string()))
+        .then(right_angle_bracket_parser("la URI".to_string()))
         .map(|(((((_, ident), _), _), uri), _)| PrefixASTNode {
             identifier: ident.lexeme.clone(),
             uri: uri.lexeme.clone(),
@@ -73,14 +75,14 @@ fn prefixes_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<To
 fn sources_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {
     source_parser()
         .then(identifier_parser(SOURCE.to_string()))
-        .then(left_angle_bracket_parser("URL o ruta".to_string()))
+        .then(left_angle_bracket_parser("la URL o ruta".to_string()))
         .then(
             uri_parser()
                 .or(file_path_parser())
                 .or(path_parser())
-                .or(jdbc_url_parser())
+                .or(jdbc_url_parser()),
         )
-        .then(right_angle_bracket_parser("URL o ruta".to_string()))
+        .then(right_angle_bracket_parser("la URL o ruta".to_string()))
         .map(|((((_, ident), _), source_definition), _)| SourceASTNode {
             identifier: ident.lexeme.clone(),
             source_definition: source_definition.lexeme.clone(),
@@ -99,13 +101,13 @@ fn sources_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Tok
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn queries_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>> {
-    query_parser()
+fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>> {
+    query_token_parser()
         .then(identifier_parser(QUERY.to_string()))
-        .then(left_angle_bracket_parser("consulta SQL".to_string()))
+        .then(left_angle_bracket_parser("la consulta SQL".to_string()))
         .then(sql_type_parser())
-        .then(sql_query_parser())
-        .then(right_angle_bracket_parser("consulta SQL".to_string()))
+        .then(sql_query_token_parser())
+        .then(right_angle_bracket_parser("la consulta SQL".to_string()))
         .map(|(((((_, ident), _), _), sql_query), _)| QueryASTNode {
             identifier: ident.lexeme.clone(),
             sql_query: sql_query.lexeme.clone(),
@@ -117,7 +119,7 @@ fn queries_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Toke
 
 /// Parsea los tokens para generar el nodo Iterator del AST
 ///
-/// Realiza el parseo de los tokens para parsear la secuencia: 
+/// Realiza el parseo de los tokens para parsear la secuencia:
 /// Iterator Ident LeftAngleBracket (CsvPerRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBrace Fields CLosingCurlyBrace
 ///
 /// # Retorna
@@ -125,41 +127,65 @@ fn queries_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Toke
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn iterators_parser() -> impl Parser<Token, Vec<IteratorASTNode>, Error = Simple<Token>> {
-    iterator_parser()
+fn iterator_parser() -> impl Parser<Token, Vec<IteratorASTNode>, Error = Simple<Token>> {
+    iterator_token_parser()
         .then(identifier_parser(ITERATOR.to_string()))
-        .then(left_angle_bracket_parser("consulta SQL".to_string()))
+        .then(left_angle_bracket_parser(
+            "la consulta SQL, identificador o csvperrow".to_string(),
+        ))
         .then(
             // Es necesario utilizar tuplas para poner concatenar el SqlType y el SqlQuery
-            identifier_parser("<".to_string()).map(|token| (token, None))
+            identifier_parser("<".to_string())
+                .map(|token| (token, None))
                 .or(csv_per_row_parser().map(|token| (token, None)))
-                .or(sql_type_parser().then(sql_query_parser()).map(|(token1, token2)| (token1, Some(token2))))
+                .or(sql_type_parser()
+                    .then(sql_query_token_parser())
+                    .map(|(token1, token2)| (token1, Some(token2)))),
         )
-        .then(right_angle_bracket_parser("consulta SQL, identificador o csvperrow".to_string()))
+        .then(right_angle_bracket_parser(
+            "la consulta SQL, identificador o csvperrow".to_string(),
+        ))
         .then(opening_curly_brace_parser("los fields".to_string()))
-        .then(fields_parser())
+        .then(field_parser())
         .then(closing_curly_brace_parser("los fields".to_string()))
-        .map(|(((((((_, ident), _), iterator_access), _), _), fields), _)| {
-            create_iterator_ast_node(ident, iterator_access, fields)
-        })
+        .map(
+            |(((((((_, ident), _), iterator_access), _), _), fields), _)| {
+                create_iterator_ast_node(ident, iterator_access, fields)
+            },
+        )
         .repeated()
         .at_least(1)
         .collect()
 }
 
-fn create_iterator_ast_node(ident: Token, iterator_access: (Token, Option<Token>), fields: Vec<FieldASTNode>) -> IteratorASTNode {
+/// Crea un nodo Iterator del AST
+///
+/// Crea, a partir de los datos del parser de Iterator, el nodo AST de este
+///
+/// # Argumentos
+/// * `ident` - El token identificador del Iterator
+/// * `iterator_access` - Una tupla con el token Ident o CsvPerRow o con los tokens SqlType y SqlQuery
+/// * `fields` - El vector de fields del Iterator
+///
+/// # Retorna
+/// Un nodo Iterator del AST
+fn create_iterator_ast_node(
+    ident: Token,
+    iterator_access: (Token, Option<Token>),
+    fields: Vec<FieldASTNode>,
+) -> IteratorASTNode {
     let (token1, token2): (Token, Option<Token>) = iterator_access;
-            
+
     if token2.is_none() {
         IteratorASTNode {
             identifier: ident.lexeme.clone(),
             iterator_access: token1.lexeme.clone(),
             fields: fields,
-        }   
+        }
     } else {
         IteratorASTNode {
             identifier: ident.lexeme.clone(),
-            iterator_access: token1.lexeme.clone() + " " + token2.unwrap().lexeme.clone().as_str(),
+            iterator_access: token2.unwrap().lexeme.clone().to_string(),
             fields: fields,
         }
     }
@@ -167,7 +193,7 @@ fn create_iterator_ast_node(ident: Token, iterator_access: (Token, Option<Token>
 
 /// Parsea los tokens para generar el nodo Field del AST
 ///
-/// Realiza el parseo de los tokens para parsear la secuencia: 
+/// Realiza el parseo de los tokens para parsear la secuencia:
 /// Field identifier LeftAngleBracket Identifier RightAngleBracket
 ///
 /// # Retorna
@@ -175,12 +201,12 @@ fn create_iterator_ast_node(ident: Token, iterator_access: (Token, Option<Token>
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn fields_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
-    field_parser()
-        .then(identifier_parser(ITERATOR.to_string()))
-        .then(left_angle_bracket_parser("identificador".to_string()))
+fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
+    field_token_parser()
+        .then(identifier_parser(FIELD.to_string()))
+        .then(left_angle_bracket_parser("el identificador".to_string()))
         .then(identifier_parser("<".to_string()))
-        .then(right_angle_bracket_parser("consulta SQL, identificador o csvperrow".to_string()))
+        .then(right_angle_bracket_parser("el identificador".to_string()))
         .map(|((((_, ident), _), access_ident), _)| FieldASTNode {
             field_identifier: ident.lexeme.clone(),
             access_field_identifier: access_ident.lexeme.clone(),
@@ -235,7 +261,7 @@ fn source_parser() -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Query
-fn query_parser() -> MapErr<
+fn query_token_parser() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
@@ -252,7 +278,7 @@ fn query_parser() -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Iterator
-fn iterator_parser() -> MapErr<
+fn iterator_token_parser() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
@@ -269,7 +295,7 @@ fn iterator_parser() -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Field
-fn field_parser() -> MapErr<
+fn field_token_parser() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
@@ -331,7 +357,7 @@ fn identifier_parser(
 > {
     general_parser(
         TokenType::Ident,
-        format!("Se esperaba un identificador después de {previous_token} en la línea"),
+        format!("Se esperaba un identificador después de '{previous_token}' en la línea"),
     )
 }
 
@@ -410,7 +436,7 @@ fn path_parser() -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Uri
-fn sql_query_parser() -> MapErr<
+fn sql_query_token_parser() -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
@@ -452,7 +478,7 @@ fn left_angle_bracket_parser(
 > {
     general_parser(
         TokenType::LeftAngleBracket,
-        format!("Se esperaba un '<' antes de la {next_token} en la línea"),
+        format!("Se esperaba un '<' antes de {next_token} en la línea"),
     )
 }
 
@@ -471,7 +497,7 @@ fn right_angle_bracket_parser(
 > {
     general_parser(
         TokenType::RightAngleBracket,
-        format!("Se esperaba un '>' después de la {previous_token} en la línea"),
+        format!("Se esperaba un '>' después de {previous_token} en la línea"),
     )
 }
 
@@ -528,7 +554,9 @@ fn eof_parser() -> MapErr<
 > {
     general_parser(
         TokenType::EOF,
-        format!("Se ha encontrado una cadena donde debería estar el final del fichero, en la línea"),
+        format!(
+            "Se ha encontrado una cadena donde debería estar el final del fichero, en la línea"
+        ),
     )
 }
 
@@ -630,7 +658,7 @@ mod sintax_parsers_tests {
     #[test]
     fn parse_valid_query() {
         let expected_token = TestUtilities::query_test_token(1);
-        let actual = query_parser().parse(vec![expected_token.clone()]);
+        let actual = query_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -638,7 +666,59 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_query() {
-        let actual = query_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = query_token_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        check_error(actual);
+    }
+
+    /// Comprueba que se parsean los tokens Iterator
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_iterator() {
+        let expected_token = TestUtilities::iterator_test_token(1);
+        let actual = iterator_token_parser().parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens Iterator aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_iterator() {
+        let actual = iterator_token_parser().parse(vec![TestUtilities::field_test_token(1)]);
+        check_error(actual);
+    }
+
+    /// Comprueba que se parsean los tokens Field
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_field() {
+        let expected_token = TestUtilities::field_test_token(1);
+        let actual = field_token_parser().parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens Field aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_field() {
+        let actual = field_token_parser().parse(vec![TestUtilities::ident_test_token("FIELD", 1)]);
+        check_error(actual);
+    }
+
+    /// Comprueba que se parsean los tokens CsvPerRow
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_csv_per_row() {
+        let expected_token = TestUtilities::csv_per_row_test_token(1);
+        let actual = csv_per_row_parser().parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens CsvPerRow aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_csv_per_row() {
+        let actual =
+            csv_per_row_parser().parse(vec![TestUtilities::ident_test_token("csvperrow", 1)]);
         check_error(actual);
     }
 
@@ -672,8 +752,8 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_identifier() {
-        let actual = identifier_parser("SOURCE".to_string())
-            .parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual =
+            identifier_parser("SOURCE".to_string()).parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
 
@@ -761,7 +841,7 @@ mod sintax_parsers_tests {
     #[test]
     fn parse_valid_sql_query() {
         let expected_token = TestUtilities::sql_query_test_token("SELECT * FROM example;", 1);
-        let actual = sql_query_parser().parse(vec![expected_token.clone()]);
+        let actual = sql_query_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -769,7 +849,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_sql_query() {
-        let actual = sql_query_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = sql_query_token_parser().parse(vec![TestUtilities::colon_test_token(1)]);
         check_error(actual);
     }
 
@@ -828,13 +908,50 @@ mod sintax_parsers_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se parsean los tokens OpeningCurlyBrackets ({)
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_opening_curly_bracket() {
+        let expected_token = TestUtilities::opening_curly_brace_test_token(1);
+        let actual =
+            opening_curly_brace_parser("ITERATOR".to_string()).parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens OpeningCurlyBracket ({) aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_opening_curly_bracket() {
+        let actual = opening_curly_brace_parser("ITERATOR".to_string())
+            .parse(vec![TestUtilities::closing_curly_brace_test_token(1)]);
+        check_error(actual);
+    }
+
+    /// Comprueba que se parsean los tokens ClosingCurlyBrackets (})
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_closing_curly_bracket() {
+        let expected_token = TestUtilities::closing_curly_brace_test_token(1);
+        let actual =
+            closing_curly_brace_parser("ITERATOR".to_string()).parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens ClosingCurlyBrackets (}) aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_closing_opening_curly_bracket() {
+        let actual = closing_curly_brace_parser("ITERATOR".to_string())
+            .parse(vec![TestUtilities::opening_curly_brace_test_token(1)]);
+        check_error(actual);
+    }
+
     /// Comprueba que se parsea el token EOF
     #[doc(hidden)]
     #[test]
     fn parse_eof() {
         let expected_token = TestUtilities::eof_test_token(1);
-        let actual =
-            eof_parser().parse(vec![expected_token.clone()]);
+        let actual = eof_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -911,6 +1028,7 @@ mod sintax_tests {
             }]),
             iterators: None,
         };
+
         let actual = file_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
@@ -946,6 +1064,7 @@ mod sintax_tests {
             queries: None,
             iterators: None,
         };
+
         let actual = file_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
@@ -962,6 +1081,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = file_parser().parse(tokens_vector.clone());
         // Es necesario crear el Result con el error porque es lo que espera check_error
         let actual = Err(actual.unwrap_err());
@@ -981,6 +1101,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = file_parser().parse(tokens_vector.clone());
         // Es necesario crear el Result con el error dentro porque es lo que espera check_error
         let actual = Err(actual.unwrap_err());
@@ -1040,6 +1161,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = prefixes_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba un PREFIX en la línea 1");
     }
@@ -1056,10 +1178,11 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = prefixes_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(
             actual,
-            "Se esperaba un identificador después de PREFIX en la línea 1",
+            "Se esperaba un identificador después de 'PREFIX' en la línea 1",
         );
     }
 
@@ -1075,6 +1198,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = prefixes_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(
             actual,
@@ -1094,6 +1218,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = prefixes_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba un '<' antes de la URI en la línea 1");
     }
@@ -1110,6 +1235,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = prefixes_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba una URI entre '<' y '>' en la línea 1");
     }
@@ -1126,6 +1252,7 @@ mod sintax_tests {
             TestUtilities::uri_test_token("https://ejemplo.com", 1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = prefixes_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba un '>' después de la URI en la línea 1");
     }
@@ -1141,6 +1268,7 @@ mod sintax_tests {
             TestUtilities::uri_test_token("https://ejemplo.com", 1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = prefixes_parser().parse(fail_tokens_vector);
         check_error::<PrefixASTNode>(actual, "Se esperaba un '<' antes de la URI en la línea 1");
     }
@@ -1324,6 +1452,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = sources_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(actual, "Se esperaba un PREFIX o un SOURCE en la línea 1");
     }
@@ -1339,10 +1468,11 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = sources_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(
             actual,
-            "Se esperaba un identificador después de SOURCE en la línea 1",
+            "Se esperaba un identificador después de 'SOURCE' en la línea 1",
         );
     }
 
@@ -1357,6 +1487,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = sources_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(
             actual,
@@ -1375,6 +1506,7 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = sources_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(actual, "Se esperaba una URI entre '<' y '>' en la línea 1");
     }
@@ -1390,6 +1522,7 @@ mod sintax_tests {
             TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = sources_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(
             actual,
@@ -1407,6 +1540,7 @@ mod sintax_tests {
             TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
             TestUtilities::eof_test_token(1),
         ];
+
         let actual = sources_parser().parse(fail_tokens_vector);
         check_error::<SourceASTNode>(
             actual,
@@ -1432,7 +1566,7 @@ mod sintax_tests {
             identifier: "ident".to_string(),
             sql_query: "SELECT * FROM example;".to_string(),
         };
-        let actual = queries_parser().parse(tokens_vector.clone());
+        let actual = query_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
         // Se añaden más QUERY
@@ -1454,7 +1588,7 @@ mod sintax_tests {
         };
 
         let expected_vector = vec![expected, expected2];
-        let actual = queries_parser().parse(tokens_vector);
+        let actual = query_parser().parse(tokens_vector);
         assert_eq!(expected_vector, actual.unwrap());
     }
 
@@ -1470,7 +1604,8 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
-        let actual = queries_parser().parse(fail_tokens_vector);
+
+        let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(actual, "Se esperaba un QUERY en la línea 1");
     }
 
@@ -1486,10 +1621,11 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
-        let actual = queries_parser().parse(fail_tokens_vector);
+
+        let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(
             actual,
-            "Se esperaba un identificador después de QUERY en la línea 1",
+            "Se esperaba un identificador después de 'QUERY' en la línea 1",
         );
     }
 
@@ -1505,7 +1641,8 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
-        let actual = queries_parser().parse(fail_tokens_vector);
+
+        let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(
             actual,
             "Se esperaba un '<' antes de la consulta SQL en la línea 1",
@@ -1524,11 +1661,9 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
-        let actual = queries_parser().parse(fail_tokens_vector);
-        check_error::<QueryASTNode>(
-            actual,
-            "Se esperaba 'sql:' después de '<' en la línea 1",
-        );
+
+        let actual = query_parser().parse(fail_tokens_vector);
+        check_error::<QueryASTNode>(actual, "Se esperaba 'sql:' después de '<' en la línea 1");
     }
 
     /// Comprueba que el parser de Query no parsea como tales aquellas secuencias de tokens que son: Query Ident LeftAngleBracket SqlType RightAngleBracket
@@ -1543,7 +1678,8 @@ mod sintax_tests {
             TestUtilities::right_angle_bracket_test_token(1),
             TestUtilities::eof_test_token(1),
         ];
-        let actual = queries_parser().parse(fail_tokens_vector);
+
+        let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(
             actual,
             "Se esperaba una consulta SQL entre '<' y '>' en la línea 1",
@@ -1562,7 +1698,8 @@ mod sintax_tests {
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::eof_test_token(1),
         ];
-        let actual = queries_parser().parse(fail_tokens_vector);
+
+        let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(
             actual,
             "Se esperaba un '>' después de la consulta SQL en la línea 1",
@@ -1580,10 +1717,509 @@ mod sintax_tests {
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
             TestUtilities::eof_test_token(1),
         ];
-        let actual = queries_parser().parse(fail_tokens_vector);
+
+        let actual = query_parser().parse(fail_tokens_vector);
         check_error::<QueryASTNode>(
             actual,
             "Se esperaba un '<' antes de la consulta SQL en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Field parsea la secuencia de tokens: Field Ident LeftAngleBracket Ident RightAngleBracket
+    #[doc(hidden)]
+    #[test]
+    fn valid_field_sintax() {
+        let tokens_vector = vec![
+            TestUtilities::field_test_token(1),
+            TestUtilities::ident_test_token("field", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::eof_test_token(1),
+        ];
+
+        let expected = FieldASTNode {
+            field_identifier: "field".to_string(),
+            access_field_identifier: "@field".to_string(),
+        };
+        let actual = field_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de Field no parsea como tales aquellas secuencias de tokens que son: Ident LeftAngleBracket Ident RightAngleBracket
+    #[doc(hidden)]
+    #[test]
+    fn field_sintax_withouth_field() {
+        let fail_tokens_vector = vec![
+            TestUtilities::ident_test_token("field", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::eof_test_token(1),
+        ];
+
+        let actual = field_parser().parse(fail_tokens_vector);
+        check_error::<FieldASTNode>(actual, "Se esperaba un FIELD en la línea 1");
+    }
+
+    /// Comprueba que el parser de Field no parsea como tales aquellas secuencias de tokens que son: Field LeftAngleBracket Ident RightAngleBracket
+    #[doc(hidden)]
+    #[test]
+    fn field_sintax_withouth_identifier() {
+        let fail_tokens_vector = vec![
+            TestUtilities::field_test_token(1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::eof_test_token(1),
+        ];
+
+        let actual = field_parser().parse(fail_tokens_vector);
+        check_error::<FieldASTNode>(
+            actual,
+            "Se esperaba un identificador después de 'FIELD' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Field no parsea como tales aquellas secuencias de tokens que son: Field Ident Ident RightAngleBracket
+    #[doc(hidden)]
+    #[test]
+    fn field_sintax_withouth_left_angle_bracket() {
+        let fail_tokens_vector = vec![
+            TestUtilities::field_test_token(1),
+            TestUtilities::ident_test_token("field", 1),
+            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::eof_test_token(1),
+        ];
+
+        let actual = field_parser().parse(fail_tokens_vector);
+        check_error::<FieldASTNode>(
+            actual,
+            "Se esperaba un '<' antes de el identificador en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Field no parsea como tales aquellas secuencias de tokens que son: Field Ident LeftAngleBracket RightAngleBracket
+    #[doc(hidden)]
+    #[test]
+    fn field_sintax_withouth_access_field() {
+        let fail_tokens_vector = vec![
+            TestUtilities::field_test_token(1),
+            TestUtilities::ident_test_token("field", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::eof_test_token(1),
+        ];
+
+        let actual = field_parser().parse(fail_tokens_vector);
+        check_error::<FieldASTNode>(
+            actual,
+            "Se esperaba un identificador después de '<' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Field no parsea como tales aquellas secuencias de tokens que son: Field Ident LeftAngleBracket Ident
+    #[doc(hidden)]
+    #[test]
+    fn field_sintax_withouth_right_angle_bracket() {
+        let fail_tokens_vector = vec![
+            TestUtilities::field_test_token(1),
+            TestUtilities::ident_test_token("field", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::eof_test_token(1),
+        ];
+
+        let actual = field_parser().parse(fail_tokens_vector);
+        check_error::<FieldASTNode>(
+            actual,
+            "Se esperaba un '>' después de el identificador en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Field no parsea como tales aquellas secuencias de tokens que son: Field Ident Ident
+    #[doc(hidden)]
+    #[test]
+    fn field_sintax_withouth_angle_brackets() {
+        let fail_tokens_vector = vec![
+            TestUtilities::field_test_token(1),
+            TestUtilities::ident_test_token("field", 1),
+            TestUtilities::ident_test_token("@field", 1),
+            TestUtilities::eof_test_token(1),
+        ];
+
+        let actual = field_parser().parse(fail_tokens_vector);
+        check_error::<FieldASTNode>(
+            actual,
+            "Se esperaba un '<' antes de el identificador en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator parsea la secuencia de tokens:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn valid_iterator_sintax_with_sql_query() {
+        let tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let expected = IteratorASTNode {
+            identifier: "ident".to_string(),
+            iterator_access: "SELECT * FROM example;".to_string(),
+            fields: vec![FieldASTNode {
+                field_identifier: "field".to_string(),
+                access_field_identifier: "@field".to_string(),
+            }],
+        };
+        let actual = iterator_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de Iterator parsea la secuencia de tokens:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn valid_iterator_sintax_with_ident() {
+        let tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::ident_test_token("inline_query", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let expected = IteratorASTNode {
+            identifier: "ident".to_string(),
+            iterator_access: "inline_query".to_string(),
+            fields: vec![FieldASTNode {
+                field_identifier: "field".to_string(),
+                access_field_identifier: "@field".to_string(),
+            }],
+        };
+        let actual = iterator_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de Iterator parsea la secuencia de tokens:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn valid_iterator_sintax_with_csv_per_row() {
+        let tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::csv_per_row_test_token(1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let expected = IteratorASTNode {
+            identifier: "ident".to_string(),
+            iterator_access: "csvperrow".to_string(),
+            fields: vec![FieldASTNode {
+                field_identifier: "field".to_string(),
+                access_field_identifier: "@field".to_string(),
+            }],
+        };
+        let actual = iterator_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_iterator() {
+        let fail_tokens_vector = vec![
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(actual, "Se esperaba un ITERATOR en la línea 1");
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_identifier() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un identificador después de 'ITERATOR' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_left_angle_bracket() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un '<' antes de la consulta SQL, identificador o csvperrow en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident LeftAngleBracket RightAngleBracket OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_access() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un identificador después de '<' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_right_angle_bracket() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un '>' después de la consulta SQL, identificador o csvperrow en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_opening_curly_bracket() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un '{' antes de los fields en la línea 2",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_fields() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::closing_curly_brace_test_token(2),
+            TestUtilities::eof_test_token(2),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(actual, "Se esperaba un FIELD en la línea 2");
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket OpeningCurlyBracket Field*
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_closing_curly_bracket() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un '}' después de los fields en la línea 3",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident (CsvperRow|Ident|SqlType SqlQuery) OpeningCurlyBracket Field* ClosingCurlyBracket
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_angle_brackets() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::opening_curly_brace_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::closing_curly_brace_test_token(3),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un '<' antes de la consulta SQL, identificador o csvperrow en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de Iterator no parsea como tales aquellas secuencias de tokens que son:
+    /// Iterator Ident LeftAngleBracket (CsvperRow|Ident|SqlType SqlQuery) RightAngleBracket Field*
+    #[doc(hidden)]
+    #[test]
+    fn iterator_sintax_withouth_curly_brackets() {
+        let fail_tokens_vector = vec![
+            TestUtilities::iterator_test_token(1),
+            TestUtilities::ident_test_token("ident", 1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::sql_type_test_token(1),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+            TestUtilities::field_test_token(2),
+            TestUtilities::ident_test_token("field", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::ident_test_token("@field", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            TestUtilities::eof_test_token(3),
+        ];
+
+        let actual = iterator_parser().parse(fail_tokens_vector);
+        check_error::<IteratorASTNode>(
+            actual,
+            "Se esperaba un '{' antes de los fields en la línea 2",
         );
     }
 
@@ -1606,7 +2242,7 @@ mod sintax_tests {
                     _ => "Otro error",
                 };
 
-                // println!("{}", actual_error);
+                println!("{}", actual_error);
                 if actual_error == expected_error_message {
                     error_message_find = true;
                     break;

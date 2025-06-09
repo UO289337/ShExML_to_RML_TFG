@@ -242,7 +242,8 @@ fn csv_per_row(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let ident = take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
+    let ident =
+        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
 
     if ident.chars().next().unwrap().is_numeric() {
         let error = &ContextError::new().add_context(
@@ -994,39 +995,33 @@ mod lexer_tests {
             TestUtilities::left_angle_bracket_test_token(1),
             TestUtilities::uri_test_token("http://example.com/", 1),
             TestUtilities::right_angle_bracket_test_token(1),
-
             TestUtilities::source_test_token(2),
             TestUtilities::ident_test_token("films_csv_file", 2),
             TestUtilities::left_angle_bracket_test_token(2),
             TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
             TestUtilities::right_angle_bracket_test_token(2),
-
             TestUtilities::query_test_token(3),
             TestUtilities::ident_test_token("query_sql", 3),
             TestUtilities::left_angle_bracket_test_token(3),
             TestUtilities::sql_type_test_token(3),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
             TestUtilities::right_angle_bracket_test_token(3),
-
             TestUtilities::iterator_test_token(4),
             TestUtilities::ident_test_token("iterator", 4),
             TestUtilities::left_angle_bracket_test_token(4),
             TestUtilities::ident_test_token("query_sql", 4),
             TestUtilities::right_angle_bracket_test_token(4),
             TestUtilities::opening_curly_brace_test_token(4),
-
             TestUtilities::field_test_token(5),
             TestUtilities::ident_test_token("field1", 5),
             TestUtilities::left_angle_bracket_test_token(5),
             TestUtilities::ident_test_token("@key", 5),
             TestUtilities::right_angle_bracket_test_token(5),
-
             TestUtilities::field_test_token(6),
             TestUtilities::ident_test_token("field2", 6),
             TestUtilities::left_angle_bracket_test_token(6),
             TestUtilities::ident_test_token("attribute", 6),
             TestUtilities::right_angle_bracket_test_token(6),
-
             TestUtilities::closing_curly_brace_test_token(7),
             TestUtilities::eof_test_token(7),
         ];

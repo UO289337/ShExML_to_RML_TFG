@@ -67,7 +67,10 @@ impl TestUtilities {
     }
 
     pub fn opening_curly_brace_test_token(num_line: u16) -> Token {
-        let mut token = Token::new(OPENING_CURLY_BRACE.to_string(), TokenType::OpeningCurlyBrace);
+        let mut token = Token::new(
+            OPENING_CURLY_BRACE.to_string(),
+            TokenType::OpeningCurlyBrace,
+        );
         token.set_num_line(num_line);
         token
     }

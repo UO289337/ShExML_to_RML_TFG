@@ -45,7 +45,7 @@ pub struct QueryASTNode {
 pub struct IteratorASTNode {
     pub identifier: String,
     pub iterator_access: String,
-    pub fields: Vec<FieldASTNode>
+    pub fields: Vec<FieldASTNode>,
 }
 
 /// Nodo de tipo Field del AST
