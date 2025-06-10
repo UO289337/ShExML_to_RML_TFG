@@ -39,6 +39,30 @@ impl TestUtilities {
         token
     }
 
+    pub fn union_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(UNION.to_string(), TokenType::Union);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn join_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(JOIN.to_string(), TokenType::Join);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn on_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(ON.to_string(), TokenType::On);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn substituting_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(SUBSTITUTING.to_string(), TokenType::Substituting);
+        token.set_num_line(num_line);
+        token
+    }
+
     pub fn sql_type_test_token(num_line: u16) -> Token {
         let mut token = Token::new(SQL_TYPE.to_string(), TokenType::SqlType);
         token.set_num_line(num_line);
@@ -53,6 +77,24 @@ impl TestUtilities {
 
     pub fn colon_test_token(num_line: u16) -> Token {
         let mut token = Token::new(COLON.to_string(), TokenType::Colon);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn equal_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(EQUAL.to_string(), TokenType::Equal);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn concatenate_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(CONCATENATE.to_string(), TokenType::Concatenate);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn access_point_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(ACCESS_POINT.to_string(), TokenType::AccessPoint);
         token.set_num_line(num_line);
         token
     }
@@ -98,12 +140,6 @@ impl TestUtilities {
 
     pub fn key_identifier_test_token(key_ident: &str, num_line: u16) -> Token {
         let mut token = Token::new(key_ident.to_string(), TokenType::KeyIdentifier);
-        token.set_num_line(num_line);
-        token
-    }
-
-    pub fn access_ident_test_token(access_ident: &str, num_line: u16) -> Token {
-        let mut token = Token::new(access_ident.to_string(), TokenType::AccessIdent);
         token.set_num_line(num_line);
         token
     }

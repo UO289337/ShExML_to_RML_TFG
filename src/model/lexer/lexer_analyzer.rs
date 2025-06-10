@@ -47,6 +47,57 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(COLON.to_string(), TokenType::Colon))
 }
 
+/// Encuentra el token Equal en la entrada
+///
+/// Acepta la entrada '='
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token =
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn equal(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(EQUAL).parse_next(input)?;
+    Ok(Token::new(EQUAL.to_string(), TokenType::Equal))
+}
+
+/// Encuentra el token Concatenate en la entrada
+///
+/// Acepta la entrada '+'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token +
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn concatenate(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(CONCATENATE).parse_next(input)?;
+    Ok(Token::new(CONCATENATE.to_string(), TokenType::Concatenate))
+}
+
+/// Encuentra el token AccessPoint en la entrada
+///
+/// Acepta la entrada '.'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token .
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn access_point(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(ACCESS_POINT).parse_next(input)?;
+    Ok(Token::new(ACCESS_POINT.to_string(), TokenType::AccessPoint))
+}
+
 /// Encuentra el token LeftAngleBracket en la entrada
 ///
 /// Acepta la entrada '<'
@@ -212,6 +263,74 @@ fn expression(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(EXPRESSION.to_string(), TokenType::Expression))
 }
 
+/// Encuentra el token Union en la entrada
+///
+/// Acepta la entrada 'UNION'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Union
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn union(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(UNION).parse_next(input)?;
+    Ok(Token::new(UNION.to_string(), TokenType::Union))
+}
+
+/// Encuentra el token Join en la entrada
+///
+/// Acepta la entrada 'JOIN'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Join
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn join(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(JOIN).parse_next(input)?;
+    Ok(Token::new(JOIN.to_string(), TokenType::Join))
+}
+
+/// Encuentra el token On en la entrada
+///
+/// Acepta la entrada 'ON'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token On
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn on(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(ON).parse_next(input)?;
+    Ok(Token::new(ON.to_string(), TokenType::On))
+}
+
+/// Encuentra el token Substituting en la entrada
+///
+/// Acepta la entrada 'SUBSTITUTING'
+///
+/// # Argumentos
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Substituting
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn substituting(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(SUBSTITUTING).parse_next(input)?;
+    Ok(Token::new(SUBSTITUTING.to_string(), TokenType::Substituting))
+}
+
 /// Encuentra el token SqlType en la entrada
 ///
 /// Acepta la entrada ':sql'
@@ -300,33 +419,6 @@ fn key_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     }
 
     Ok(Token::new(key_ident.to_string(), TokenType::KeyIdentifier))
-}
-
-/// Encuentra un token de acceso de identificador en la entrada
-///
-/// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '.'
-///
-/// # Argumentos
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token AccessIdentifier
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn access_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let ident =
-        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
-
-    if ident.chars().next().unwrap().is_numeric() {
-        let error = &ContextError::new().add_context(
-            &"Formato incorrecto",
-            &ident.checkpoint(),
-            StrContext::Label("No se permiten números al comienzo de los identificadores"),
-        );
-        return Err(ErrMode::Backtrack(error.clone()));
-    }
-    Ok(Token::new(ident.to_string(), TokenType::Ident))
 }
 
 /// Encuentra un token URI en la entrada
@@ -587,26 +679,46 @@ fn match_alternatives(
     num_line: u16,
     errors: &mut Vec<CompilerError>,
 ) {
+    // alt tiene un límite de 21 parámetros, por lo que es necesario crear más alt dentro de uno
     match alt((
-        colon,
-        left_angle_bracket,
-        right_angle_bracket,
-        opening_curly_brace,
-        closing_curly_brace,
-        prefix,
-        source,
-        iterator,
-        field,
-        sql_type,
-        csv_per_row,
-        query,
-        sql_query,
-        file_path,
-        path,
-        jdbc_url,
-        uri,
-        key_identifier,
-        identifier,
+        // Elementos básicos
+        alt((
+            colon,
+            equal,
+            concatenate,
+            access_point,
+            left_angle_bracket,
+            right_angle_bracket,
+            opening_curly_brace,
+            closing_curly_brace
+        )),
+
+        // Palabras reservadas
+        alt((
+            prefix,
+            source,
+            query,
+            iterator,
+            field,
+            expression,
+            union,
+            join,
+            on,
+            substituting,
+            sql_type,
+            csv_per_row
+        )),
+
+        // Elementos variables; no tienen un valor fijo
+        alt((
+            sql_query,
+            file_path,
+            path,
+            jdbc_url,
+            uri,
+            key_identifier,
+            identifier
+        )),
     ))
     .parse_next(input)
     {
@@ -676,6 +788,57 @@ mod lexer_tests {
     #[test]
     fn invalid_colon() {
         let actual = colon(&mut ";");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token =
+    #[doc(hidden)]
+    #[test]
+    fn valid_equal() {
+        let expected = TestUtilities::equal_test_token(0);
+        let actual = equal(&mut "=");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token = aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_equal() {
+        let actual = equal(&mut ":");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token Concatenate
+    #[doc(hidden)]
+    #[test]
+    fn valid_concatenate() {
+        let expected = TestUtilities::concatenate_test_token(0);
+        let actual = concatenate(&mut "+");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token + aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_concatenate() {
+        let actual = concatenate(&mut "=");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token .
+    #[doc(hidden)]
+    #[test]
+    fn valid_access_point() {
+        let expected = TestUtilities::access_point_test_token(0);
+        let actual = access_point(&mut ".");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token . aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_access_point() {
+        let actual = access_point(&mut ":");
         check_error(actual);
     }
 
@@ -812,6 +975,91 @@ mod lexer_tests {
     #[test]
     fn invalid_field() {
         let actual = field(&mut "ITR");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token Expression
+    #[doc(hidden)]
+    #[test]
+    fn valid_expression() {
+        let expected = TestUtilities::expression_test_token(0);
+        let actual = expression(&mut "EXPRESSION");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Expression aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_expression() {
+        let actual = expression(&mut "FIELD");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token Union
+    #[doc(hidden)]
+    #[test]
+    fn valid_union() {
+        let expected = TestUtilities::union_test_token(0);
+        let actual = union(&mut "UNION");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Union aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_union() {
+        let actual = union(&mut "FIELD");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token Join
+    #[doc(hidden)]
+    #[test]
+    fn valid_join() {
+        let expected = TestUtilities::join_test_token(0);
+        let actual = join(&mut "JOIN");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Join aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_join() {
+        let actual = join(&mut "UNION");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token On
+    #[doc(hidden)]
+    #[test]
+    fn valid_on() {
+        let expected = TestUtilities::on_test_token(0);
+        let actual = on(&mut "ON");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token On aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_on() {
+        let actual = on(&mut "UNION");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token Substituting
+    #[doc(hidden)]
+    #[test]
+    fn valid_substituting() {
+        let expected = TestUtilities::substituting_test_token(0);
+        let actual = substituting(&mut "SUBSTITUTING");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Substituting aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_substituting() {
+        let actual = substituting(&mut "ITERATOR");
         check_error(actual);
     }
 

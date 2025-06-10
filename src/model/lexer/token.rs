@@ -11,17 +11,23 @@ pub enum TokenType {
     Iterator,
     Field,
     Expression,
+    Union,
+    Join,
+    On,
+    Substituting,
     SqlType,
     CsvPerRow,
     Ident,
     KeyIdentifier,
-    AccessIdent,
     Uri,
     JdbcUrl,
     FilePath,
     Path,
     SqlQuery,
     Colon,
+    Equal,
+    Concatenate,
+    AccessPoint,
     LeftAngleBracket,
     RightAngleBracket,
     OpeningCurlyBrace,
@@ -35,9 +41,16 @@ pub const QUERY: &str = "QUERY";
 pub const ITERATOR: &str = "ITERATOR";
 pub const FIELD: &str = "FIELD";
 pub const EXPRESSION: &str = "EXPRESSION";
+pub const UNION: &str = "UNION";
+pub const JOIN: &str = "JOIN";
+pub const ON: &str = "ON";
+pub const SUBSTITUTING: &str = "SUBSTITUTING";
 pub const SQL_TYPE: &str = "sql:";
 pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";
+pub const EQUAL: &str = "=";
+pub const CONCATENATE: &str = "+";
+pub const ACCESS_POINT: &str = ".";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";
 pub const OPENING_CURLY_BRACE: &str = "{";
