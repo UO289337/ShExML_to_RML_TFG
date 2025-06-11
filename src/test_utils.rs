@@ -57,12 +57,6 @@ impl TestUtilities {
         token
     }
 
-    pub fn substituting_test_token(num_line: u16) -> Token {
-        let mut token = Token::new(SUBSTITUTING.to_string(), TokenType::Substituting);
-        token.set_num_line(num_line);
-        token
-    }
-
     pub fn sql_type_test_token(num_line: u16) -> Token {
         let mut token = Token::new(SQL_TYPE.to_string(), TokenType::SqlType);
         token.set_num_line(num_line);
@@ -93,8 +87,8 @@ impl TestUtilities {
         token
     }
 
-    pub fn access_point_test_token(num_line: u16) -> Token {
-        let mut token = Token::new(ACCESS_POINT.to_string(), TokenType::AccessPoint);
+    pub fn access_dot_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(ACCESS_DOT.to_string(), TokenType::AccessDot);
         token.set_num_line(num_line);
         token
     }

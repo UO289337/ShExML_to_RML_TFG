@@ -14,7 +14,6 @@ pub enum TokenType {
     Union,
     Join,
     On,
-    Substituting,
     SqlType,
     CsvPerRow,
     Ident,
@@ -27,7 +26,7 @@ pub enum TokenType {
     Colon,
     Equal,
     Concatenate,
-    AccessPoint,
+    AccessDot,
     LeftAngleBracket,
     RightAngleBracket,
     OpeningCurlyBrace,
@@ -44,13 +43,12 @@ pub const EXPRESSION: &str = "EXPRESSION";
 pub const UNION: &str = "UNION";
 pub const JOIN: &str = "JOIN";
 pub const ON: &str = "ON";
-pub const SUBSTITUTING: &str = "SUBSTITUTING";
 pub const SQL_TYPE: &str = "sql:";
 pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";
 pub const EQUAL: &str = "=";
 pub const CONCATENATE: &str = "+";
-pub const ACCESS_POINT: &str = ".";
+pub const ACCESS_DOT: &str = ".";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";
 pub const OPENING_CURLY_BRACE: &str = "{";

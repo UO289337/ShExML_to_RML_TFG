@@ -81,7 +81,7 @@ fn concatenate(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(CONCATENATE.to_string(), TokenType::Concatenate))
 }
 
-/// Encuentra el token AccessPoint en la entrada
+/// Encuentra el token AccessDot en la entrada
 ///
 /// Acepta la entrada '.'
 ///
@@ -93,9 +93,9 @@ fn concatenate(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn access_point(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal(ACCESS_POINT).parse_next(input)?;
-    Ok(Token::new(ACCESS_POINT.to_string(), TokenType::AccessPoint))
+fn access_dot(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(ACCESS_DOT).parse_next(input)?;
+    Ok(Token::new(ACCESS_DOT.to_string(), TokenType::AccessDot))
 }
 
 /// Encuentra el token LeftAngleBracket en la entrada
@@ -314,23 +314,6 @@ fn on(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(ON.to_string(), TokenType::On))
 }
 
-/// Encuentra el token Substituting en la entrada
-///
-/// Acepta la entrada 'SUBSTITUTING'
-///
-/// # Argumentos
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token Substituting
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn substituting(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal(SUBSTITUTING).parse_next(input)?;
-    Ok(Token::new(SUBSTITUTING.to_string(), TokenType::Substituting))
-}
-
 /// Encuentra el token SqlType en la entrada
 ///
 /// Acepta la entrada ':sql'
@@ -378,8 +361,7 @@ fn csv_per_row(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let ident =
-        take_while(1.., |c: char| c.is_alphanumeric() || c == '_').parse_next(input)?;
+    let ident = take_while(1.., |c: char| c.is_alphanumeric() || c == '_').parse_next(input)?;
 
     if ident.chars().next().unwrap().is_numeric() {
         let error = &ContextError::new().add_context(
@@ -686,13 +668,12 @@ fn match_alternatives(
             colon,
             equal,
             concatenate,
-            access_point,
+            access_dot,
             left_angle_bracket,
             right_angle_bracket,
             opening_curly_brace,
-            closing_curly_brace
+            closing_curly_brace,
         )),
-
         // Palabras reservadas
         alt((
             prefix,
@@ -704,11 +685,9 @@ fn match_alternatives(
             union,
             join,
             on,
-            substituting,
             sql_type,
-            csv_per_row
+            csv_per_row,
         )),
-
         // Elementos variables; no tienen un valor fijo
         alt((
             sql_query,
@@ -717,7 +696,7 @@ fn match_alternatives(
             jdbc_url,
             uri,
             key_identifier,
-            identifier
+            identifier,
         )),
     ))
     .parse_next(input)
@@ -828,17 +807,17 @@ mod lexer_tests {
     /// Comprueba que se detecta el token .
     #[doc(hidden)]
     #[test]
-    fn valid_access_point() {
-        let expected = TestUtilities::access_point_test_token(0);
-        let actual = access_point(&mut ".");
+    fn valid_access_dot() {
+        let expected = TestUtilities::access_dot_test_token(0);
+        let actual = access_dot(&mut ".");
         check_ok(expected, actual);
     }
 
     /// Comprueba que no se detecta como token . aquellas cadenas que no lo sean
     #[doc(hidden)]
     #[test]
-    fn invalid_access_point() {
-        let actual = access_point(&mut ":");
+    fn invalid_access_dot() {
+        let actual = access_dot(&mut ":");
         check_error(actual);
     }
 
@@ -1046,23 +1025,6 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token Substituting
-    #[doc(hidden)]
-    #[test]
-    fn valid_substituting() {
-        let expected = TestUtilities::substituting_test_token(0);
-        let actual = substituting(&mut "SUBSTITUTING");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token Substituting aquellas cadenas que no lo sean
-    #[doc(hidden)]
-    #[test]
-    fn invalid_substituting() {
-        let actual = substituting(&mut "ITERATOR");
-        check_error(actual);
-    }
-
     /// Comprueba que se detecta el token SqlType
     #[doc(hidden)]
     #[test]
@@ -1097,7 +1059,7 @@ mod lexer_tests {
         check_error(actual);
     }
 
-        /// Comprueba que se detecta el token KeyIdentifier sin que tenga un '_'
+    /// Comprueba que se detecta el token KeyIdentifier sin que tenga un '_'
     #[doc(hidden)]
     #[test]
     fn valid_identifier_withouth_underscore() {

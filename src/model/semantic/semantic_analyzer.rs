@@ -136,6 +136,7 @@ mod lexer_tests {
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -171,6 +172,7 @@ mod lexer_tests {
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -205,6 +207,7 @@ mod lexer_tests {
                 },
             ]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -233,6 +236,7 @@ mod lexer_tests {
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
