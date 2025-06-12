@@ -5,10 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::model::{
-    ast::*,
-    compiler_error::CompilerError,
-};
+use crate::model::{ast::*, compiler_error::CompilerError};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -138,22 +135,24 @@ mod lexer_tests {
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
-                fields: vec![FieldASTNode {
-                    field_identifier: "id".to_string(),
-                    access_field_identifier: "@id".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "name".to_string(),
-                    access_field_identifier: "name".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "year".to_string(),
-                    access_field_identifier: "year".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "country".to_string(),
-                    access_field_identifier: "country".to_string(),
-                }]
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
             }],
             expressions: None,
         };
@@ -193,22 +192,24 @@ mod lexer_tests {
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
-                fields: vec![FieldASTNode {
-                    field_identifier: "id".to_string(),
-                    access_field_identifier: "@id".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "name".to_string(),
-                    access_field_identifier: "name".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "year".to_string(),
-                    access_field_identifier: "year".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "country".to_string(),
-                    access_field_identifier: "country".to_string(),
-                }]
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
             }],
             expressions: None,
         };
@@ -247,22 +248,24 @@ mod lexer_tests {
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
-                fields: vec![FieldASTNode {
-                    field_identifier: "id".to_string(),
-                    access_field_identifier: "@id".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "name".to_string(),
-                    access_field_identifier: "name".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "year".to_string(),
-                    access_field_identifier: "year".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "country".to_string(),
-                    access_field_identifier: "country".to_string(),
-                }]
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
             }],
             expressions: None,
         };
@@ -295,22 +298,24 @@ mod lexer_tests {
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
-                fields: vec![FieldASTNode {
-                    field_identifier: "id".to_string(),
-                    access_field_identifier: "@id".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "name".to_string(),
-                    access_field_identifier: "name".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "year".to_string(),
-                    access_field_identifier: "year".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "country".to_string(),
-                    access_field_identifier: "country".to_string(),
-                }]
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
             }],
             expressions: None,
         };

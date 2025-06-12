@@ -104,7 +104,7 @@ impl Token {
     ///
     /// # Parámetros
     /// * `num_line` - El número de línea en el que se encuentra el token
-    /// 
+    ///
     /// # Retorna
     /// A si mismo
     pub fn create_eof_token(num_line: u16) -> Self {
@@ -116,7 +116,7 @@ impl Token {
     }
 
     /// Crea un token para ser utilizado en los tests
-    /// 
+    ///
     /// # Parámetros
     /// * `lexeme` - El lexeme (valor) del token
     /// * `num_line` - El número de línea en el que se encuentra el token

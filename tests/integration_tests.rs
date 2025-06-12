@@ -23,12 +23,12 @@ mod integration_lexer_syntax_analyzers_tests {
         assert!(semantic_result.is_empty());
         assert!(sintax_result
             .as_ref()
-            .is_ok_and(|file| !file.prefixes.is_empty()
+            .is_ok_and(|file| !file.prefixes.as_deref().unwrap().is_empty()
                 && !file.sources.is_empty()
                 && file.queries.is_some()));
 
         let _ = sintax_result.as_ref().map(|file| {
-            assert_eq!(file.prefixes.len(), 1);
+            assert_eq!(file.prefixes.as_deref().unwrap().len(), 1);
             assert_eq!(file.sources.len(), 1);
             assert_eq!(file.queries.as_ref().unwrap().len(), 1);
         });
@@ -58,7 +58,7 @@ mod integration_lexer_syntax_analyzers_tests {
         assert!(sintax_result.as_ref().is_err());
 
         let _ = sintax_result.as_ref().map(|file| {
-            assert_eq!(file.prefixes.len(), 0);
+            assert_eq!(file.prefixes.as_deref().unwrap().len(), 0);
             assert_eq!(file.sources.len(), 0);
         });
     }

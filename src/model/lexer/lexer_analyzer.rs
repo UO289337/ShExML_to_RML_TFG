@@ -192,10 +192,7 @@ fn closing_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn left_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(LEFT_BRACKET).parse_next(input)?;
-    Ok(Token::new(
-        LEFT_BRACKET.to_string(),
-        TokenType::LeftBracket,
-    ))
+    Ok(Token::new(LEFT_BRACKET.to_string(), TokenType::LeftBracket))
 }
 
 /// Encuentra el token RightBracket en la entrada
@@ -883,7 +880,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_right_angle_bracket() {
-        let expected = Token::create_test_token(RIGHT_ANGLE_BRACKET, 0, TokenType::RightAngleBracket);
+        let expected =
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 0, TokenType::RightAngleBracket);
         let actual = right_angle_bracket(&mut ">");
         check_ok(expected, actual);
     }
@@ -900,7 +898,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_opening_curly_brace() {
-        let expected = Token::create_test_token(OPENING_CURLY_BRACE, 0, TokenType::OpeningCurlyBrace);
+        let expected =
+            Token::create_test_token(OPENING_CURLY_BRACE, 0, TokenType::OpeningCurlyBrace);
         let actual = opening_curly_brace(&mut "{");
         check_ok(expected, actual);
     }
@@ -917,7 +916,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_closing_curly_brace() {
-        let expected = Token::create_test_token(CLOSING_CURLY_BRACE, 0, TokenType::ClosingCurlyBrace);
+        let expected =
+            Token::create_test_token(CLOSING_CURLY_BRACE, 0, TokenType::ClosingCurlyBrace);
         let actual = closing_curly_brace(&mut "}");
         check_ok(expected, actual);
     }
@@ -1305,7 +1305,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn uri_to_a_csv_remote_file() {
-        let expected = Token::create_test_token("https://ejemplo.com/fichero.csv", 0, TokenType::Uri);
+        let expected =
+            Token::create_test_token("https://ejemplo.com/fichero.csv", 0, TokenType::Uri);
         let actual = uri(&mut "https://ejemplo.com/fichero.csv");
         check_ok(expected, actual);
     }
@@ -1322,7 +1323,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_jdbc_url() {
-        let expected = Token::create_test_token("jdbc:mysql://localhost:3306/mydb", 0, TokenType::JdbcUrl);
+        let expected =
+            Token::create_test_token("jdbc:mysql://localhost:3306/mydb", 0, TokenType::JdbcUrl);
         let actual = jdbc_url(&mut "jdbc:mysql://localhost:3306/mydb");
         check_ok(expected, actual);
     }
@@ -1339,8 +1341,11 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_file_path() {
-        let expected =
-            Token::create_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0, TokenType::FilePath);
+        let expected = Token::create_test_token(
+            "file:///ejemplo/path/a/fichero/fichero.csv",
+            0,
+            TokenType::FilePath,
+        );
         let actual = file_path(&mut "file:///ejemplo/path/a/fichero/fichero.csv");
         check_ok(expected, actual);
     }
@@ -1366,8 +1371,11 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_absolute_path() {
-        let expected =
-            Token::create_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0, TokenType::Path);
+        let expected = Token::create_test_token(
+            "C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
+            0,
+            TokenType::Path,
+        );
         let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_ok(expected, actual);
     }
@@ -1392,7 +1400,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_sql_query() {
-        let expected = Token::create_test_token("SELECT * FROM tabla WHERE id = '1'", 0, TokenType::SqlQuery);
+        let expected =
+            Token::create_test_token("SELECT * FROM tabla WHERE id = '1'", 0, TokenType::SqlQuery);
         let actual = sql_query(&mut "SELECT * FROM tabla WHERE id = '1'");
         check_ok(expected, actual);
     }
@@ -1432,39 +1441,37 @@ mod lexer_tests {
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
             Token::create_test_token("http://example.com/", 1, TokenType::Uri),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-
             Token::create_test_token(SOURCE, 2, TokenType::Source),
             Token::create_test_token("films_csv_file", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2, TokenType::Uri),
+            Token::create_test_token(
+                "https://shexml.herminiogarcia.com/files/films.csv",
+                2,
+                TokenType::Uri,
+            ),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-
             Token::create_test_token(QUERY, 3, TokenType::Query),
             Token::create_test_token("query_sql", 3, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
             Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
             Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-
             Token::create_test_token(ITERATOR, 4, TokenType::Iterator),
             Token::create_test_token("iterator", 4, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
             Token::create_test_token("query_sql", 4, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, 4, TokenType::OpeningCurlyBrace),
-
             Token::create_test_token(FIELD, 5, TokenType::Field),
             Token::create_test_token("field1", 5, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
             Token::create_test_token("@key", 5, TokenType::KeyIdentifier),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
-
             Token::create_test_token(FIELD, 6, TokenType::Field),
             Token::create_test_token("field2", 6, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
             Token::create_test_token("attribute", 6, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
-
             Token::create_test_token(CLOSING_CURLY_BRACE, 7, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 7, TokenType::EOF),
         ];
