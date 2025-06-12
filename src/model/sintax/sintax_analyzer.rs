@@ -910,7 +910,6 @@ pub fn parser(tokens: Vec<Token>) -> Result<FileASTNode, Vec<Simple<Token>>> {
 /// Contiene los tests de los parsers que se encargan de parsear los tokens provenientes del análisis léxico
 #[cfg(test)]
 mod sintax_parsers_tests {
-    use crate::test_utils::TestUtilities;
 
     use super::*;
 
@@ -918,7 +917,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_prefix() {
-        let expected_token = TestUtilities::prefix_test_token(1);
+        let expected_token = Token::create_test_token(PREFIX, 1, TokenType::Prefix);
         let actual = prefix_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -927,7 +926,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_prefix() {
-        let actual = prefix_token_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = prefix_token_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -935,7 +934,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_source() {
-        let expected_token = TestUtilities::source_test_token(1);
+        let expected_token = Token::create_test_token(SOURCE, 1, TokenType::Source);
         let actual = source_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -944,7 +943,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_source() {
-        let actual = source_token_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = source_token_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -952,7 +951,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_query() {
-        let expected_token = TestUtilities::query_test_token(1);
+        let expected_token = Token::create_test_token(QUERY, 1, TokenType::Query);
         let actual = query_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -961,7 +960,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_query() {
-        let actual = query_token_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = query_token_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -969,7 +968,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_iterator() {
-        let expected_token = TestUtilities::iterator_test_token(1);
+        let expected_token = Token::create_test_token(ITERATOR, 1, TokenType::Iterator);
         let actual = iterator_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -978,7 +977,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_iterator() {
-        let actual = iterator_token_parser().parse(vec![TestUtilities::field_test_token(1)]);
+        let actual = iterator_token_parser().parse(vec![Token::create_test_token(FIELD, 1, TokenType::Field)]);
         check_error(actual);
     }
 
@@ -986,7 +985,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_field() {
-        let expected_token = TestUtilities::field_test_token(1);
+        let expected_token = Token::create_test_token(FIELD, 1, TokenType::Field);
         let actual = field_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -995,7 +994,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_field() {
-        let actual = field_token_parser().parse(vec![TestUtilities::ident_test_token("FELD", 1)]);
+        let actual = field_token_parser().parse(vec![Token::create_test_token("FELD", 1, TokenType::Ident)]);
         check_error(actual);
     }
 
@@ -1003,7 +1002,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_expression() {
-        let expected_token = TestUtilities::expression_test_token(1);
+        let expected_token = Token::create_test_token(EXPRESSION, 1, TokenType::Expression);
         let actual = expression_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1012,7 +1011,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_expression() {
-        let actual = expression_token_parser().parse(vec![TestUtilities::field_test_token(1)]);
+        let actual = expression_token_parser().parse(vec![Token::create_test_token(FIELD, 1, TokenType::Field)]);
         check_error(actual);
     }
 
@@ -1020,7 +1019,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_union() {
-        let expected_token = TestUtilities::union_test_token(1);
+        let expected_token = Token::create_test_token(UNION, 1, TokenType::Union);
         let actual = union_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1029,7 +1028,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_union() {
-        let actual = union_parser().parse(vec![TestUtilities::join_test_token(1)]);
+        let actual = union_parser().parse(vec![Token::create_test_token(JOIN, 1, TokenType::Join)]);
         check_error(actual);
     }
 
@@ -1037,7 +1036,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_join() {
-        let expected_token = TestUtilities::join_test_token(1);
+        let expected_token = Token::create_test_token(JOIN, 1, TokenType::Join);
         let actual = join_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1046,7 +1045,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_join() {
-        let actual = join_parser().parse(vec![TestUtilities::union_test_token(1)]);
+        let actual = join_parser().parse(vec![Token::create_test_token(UNION, 1, TokenType::Union)]);
         check_error(actual);
     }
 
@@ -1054,7 +1053,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_on() {
-        let expected_token = TestUtilities::on_test_token(1);
+        let expected_token = Token::create_test_token(ON, 1, TokenType::On);
         let actual = on_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1063,7 +1062,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_on() {
-        let actual = on_parser().parse(vec![TestUtilities::union_test_token(1)]);
+        let actual = on_parser().parse(vec![Token::create_test_token(UNION, 1, TokenType::Union)]);
         check_error(actual);
     }
 
@@ -1071,7 +1070,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_csv_per_row() {
-        let expected_token = TestUtilities::csv_per_row_test_token(1);
+        let expected_token = Token::create_test_token(CSV_PER_ROW, 1, TokenType::CsvPerRow);
         let actual = csv_per_row_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1081,7 +1080,7 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_invalid_csv_per_row() {
         let actual =
-            csv_per_row_parser().parse(vec![TestUtilities::ident_test_token("csvperrow", 1)]);
+            csv_per_row_parser().parse(vec![Token::create_test_token("csvperrow", 1, TokenType::Ident)]);
         check_error(actual);
     }
 
@@ -1089,7 +1088,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_sql_type() {
-        let expected_token = TestUtilities::sql_type_test_token(1);
+        let expected_token = Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType);
         let actual = sql_type_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1098,7 +1097,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_sql_type() {
-        let actual = sql_type_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = sql_type_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -1106,7 +1105,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_identifier() {
-        let expected_token = TestUtilities::ident_test_token("ident", 1);
+        let expected_token = Token::create_test_token("ident", 1, TokenType::Ident);
         let actual = identifier_parser("PREFIX".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1116,7 +1115,7 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_invalid_identifier() {
         let actual =
-            identifier_parser("SOURCE".to_string()).parse(vec![TestUtilities::colon_test_token(1)]);
+            identifier_parser("SOURCE".to_string()).parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -1124,7 +1123,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_key_identifier() {
-        let expected_token = TestUtilities::key_identifier_test_token("@ident", 1);
+        let expected_token = Token::create_test_token("@ident", 1, TokenType::KeyIdentifier);
         let actual = key_identifier_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1134,7 +1133,7 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_invalid_key_identifier() {
         let actual =
-            key_identifier_parser().parse(vec![TestUtilities::ident_test_token("invalid", 1)]);
+            key_identifier_parser().parse(vec![Token::create_test_token("invalid", 1, TokenType::Ident)]);
         check_error(actual);
     }
 
@@ -1142,7 +1141,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_uri() {
-        let expected_token = TestUtilities::uri_test_token("https://ejemplo.com", 1);
+        let expected_token = Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri);
         let actual = uri_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1151,7 +1150,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_uri() {
-        let actual = uri_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = uri_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -1160,7 +1159,7 @@ mod sintax_parsers_tests {
     #[test]
     fn parse_valid_jdbc_url() {
         let expected_token =
-            TestUtilities::jdbc_url_test_token("jdbc:mysql://localhost:3306/mydb", 1);
+            Token::create_test_token("jdbc:mysql://localhost:3306/mydb", 1, TokenType::JdbcUrl);
         let actual = jdbc_url_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1169,10 +1168,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_jdbc_url() {
-        let actual = jdbc_url_parser().parse(vec![TestUtilities::uri_test_token(
-            "https://ejemplo.com",
-            1,
-        )]);
+        let actual = jdbc_url_parser().parse(vec![Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri)]);
         check_error(actual);
     }
 
@@ -1181,7 +1177,7 @@ mod sintax_parsers_tests {
     #[test]
     fn parse_valid_file_path() {
         let expected_token =
-            TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1);
+            Token::create_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1, TokenType::FilePath);
         let actual = file_path_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1190,10 +1186,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_file_path() {
-        let actual = jdbc_url_parser().parse(vec![TestUtilities::uri_test_token(
-            "https://ejemplo.com",
-            1,
-        )]);
+        let actual = jdbc_url_parser().parse(vec![Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri)]);
         check_error(actual);
     }
 
@@ -1201,7 +1194,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_path() {
-        let expected_token = TestUtilities::path_test_token("ejemplo/fichero.csv", 1);
+        let expected_token = Token::create_test_token("ejemplo/fichero.csv", 1, TokenType::Path);
         let actual = path_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1210,10 +1203,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_path() {
-        let actual = path_parser().parse(vec![TestUtilities::file_path_test_token(
-            "file:///ejemplo/path/a/fichero/fichero.csv",
-            1,
-        )]);
+        let actual = path_parser().parse(vec![Token::create_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1, TokenType::FilePath)]);
         check_error(actual);
     }
 
@@ -1221,7 +1211,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_sql_query() {
-        let expected_token = TestUtilities::sql_query_test_token("SELECT * FROM example;", 1);
+        let expected_token = Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery);
         let actual = sql_query_token_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1230,7 +1220,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_sql_query() {
-        let actual = sql_query_token_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = sql_query_token_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -1238,7 +1228,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_colon() {
-        let expected_token = TestUtilities::colon_test_token(1);
+        let expected_token = Token::create_test_token(COLON, 1, TokenType::Colon);
         let actual = colon_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1247,7 +1237,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_colon() {
-        let actual = colon_parser().parse(vec![TestUtilities::ident_test_token("ident", 1)]);
+        let actual = colon_parser().parse(vec![Token::create_test_token("ident", 1, TokenType::Ident)]);
         check_error(actual);
     }
 
@@ -1255,7 +1245,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_access_dot_parser() {
-        let expected_token = TestUtilities::access_dot_test_token(1);
+        let expected_token = Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot);
         let actual = access_dot_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1264,7 +1254,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_access_dot() {
-        let actual = access_dot_parser().parse(vec![TestUtilities::ident_test_token("ident", 1)]);
+        let actual = access_dot_parser().parse(vec![Token::create_test_token("ident", 1, TokenType::Ident)]);
         check_error(actual);
     }
 
@@ -1272,7 +1262,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_equal() {
-        let expected_token = TestUtilities::equal_test_token(1);
+        let expected_token = Token::create_test_token(EQUAL, 1, TokenType::Equal);
         let actual = equal_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1281,7 +1271,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_equal() {
-        let actual = equal_parser().parse(vec![TestUtilities::colon_test_token(1)]);
+        let actual = equal_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -1289,7 +1279,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_left_angle_bracket() {
-        let expected_token = TestUtilities::left_angle_bracket_test_token(1);
+        let expected_token = Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket);
         let actual =
             left_angle_bracket_parser("URI".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -1300,7 +1290,7 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_invalid_left_angle_bracket() {
         let actual = left_angle_bracket_parser("URI".to_string())
-            .parse(vec![TestUtilities::right_angle_bracket_test_token(1)]);
+            .parse(vec![Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket)]);
         check_error(actual);
     }
 
@@ -1308,7 +1298,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_right_angle_bracket() {
-        let expected_token = TestUtilities::right_angle_bracket_test_token(1);
+        let expected_token = Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket);
         let actual =
             right_angle_bracket_parser("URI".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -1319,7 +1309,7 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_invalid_right_angle_bracket() {
         let actual = right_angle_bracket_parser("URI".to_string())
-            .parse(vec![TestUtilities::left_angle_bracket_test_token(1)]);
+            .parse(vec![Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket)]);
         check_error(actual);
     }
 
@@ -1327,7 +1317,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_opening_curly_bracket() {
-        let expected_token = TestUtilities::opening_curly_brace_test_token(1);
+        let expected_token = Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace);
         let actual =
             opening_curly_brace_parser("ITERATOR".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -1338,7 +1328,7 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_invalid_opening_curly_bracket() {
         let actual = opening_curly_brace_parser("ITERATOR".to_string())
-            .parse(vec![TestUtilities::closing_curly_brace_test_token(1)]);
+            .parse(vec![Token::create_test_token(CLOSING_CURLY_BRACE, 1, TokenType::ClosingCurlyBrace)]);
         check_error(actual);
     }
 
@@ -1346,7 +1336,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_valid_closing_curly_bracket() {
-        let expected_token = TestUtilities::closing_curly_brace_test_token(1);
+        let expected_token = Token::create_test_token(CLOSING_CURLY_BRACE, 1, TokenType::ClosingCurlyBrace);
         let actual =
             closing_curly_brace_parser("ITERATOR".to_string()).parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
@@ -1357,7 +1347,7 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_closing_opening_curly_bracket() {
         let actual = closing_curly_brace_parser("ITERATOR".to_string())
-            .parse(vec![TestUtilities::opening_curly_brace_test_token(1)]);
+            .parse(vec![Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace)]);
         check_error(actual);
     }
 
@@ -1365,7 +1355,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn parse_eof() {
-        let expected_token = TestUtilities::eof_test_token(1);
+        let expected_token = Token::create_test_token(EOF, 1, TokenType::EOF);
         let actual = eof_parser().parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
@@ -1399,8 +1389,6 @@ mod sintax_parsers_tests {
 mod sintax_tests {
     use chumsky::error::{SimpleReason};
 
-    use crate::test_utils::TestUtilities;
-
     use super::*;
 
     /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST
@@ -1408,68 +1396,68 @@ mod sintax_tests {
     #[test]
     fn file_parser_with_valid_sintax() {
         let tokens_vector: Vec<Token> = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("example", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://example.com/", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
 
-            TestUtilities::source_test_token(2),
-            TestUtilities::ident_test_token("films_csv_file", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
+            Token::create_test_token(SOURCE, 2, TokenType::Source),
+            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
 
-            TestUtilities::query_test_token(3),
-            TestUtilities::ident_test_token("query_sql", 3),
-            TestUtilities::left_angle_bracket_test_token(3),
-            TestUtilities::sql_type_test_token(3),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
-            TestUtilities::right_angle_bracket_test_token(3),
+            Token::create_test_token(QUERY, 3, TokenType::Query),
+            Token::create_test_token("query_sql", 3, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
 
-            TestUtilities::iterator_test_token(4),
-            TestUtilities::ident_test_token("film_csv", 4),
-            TestUtilities::left_angle_bracket_test_token(4),
-            TestUtilities::ident_test_token("query_sql", 4),
-            TestUtilities::right_angle_bracket_test_token(4),
-            TestUtilities::opening_curly_brace_test_token(4),
+            Token::create_test_token(ITERATOR, 4, TokenType::Iterator),
+            Token::create_test_token("film_csv", 4, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
+            Token::create_test_token("query_sql", 4, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 4, TokenType::OpeningCurlyBrace),
 
-            TestUtilities::field_test_token(5),
-            TestUtilities::ident_test_token("id", 5),
-            TestUtilities::left_angle_bracket_test_token(5),
-            TestUtilities::key_identifier_test_token("@id", 5),
-            TestUtilities::right_angle_bracket_test_token(5),
+            Token::create_test_token(FIELD, 5, TokenType::Field),
+            Token::create_test_token("id", 5, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
+            Token::create_test_token("@id", 5, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(6),
-            TestUtilities::ident_test_token("name", 6),
-            TestUtilities::left_angle_bracket_test_token(6),
-            TestUtilities::key_identifier_test_token("name", 6),
-            TestUtilities::right_angle_bracket_test_token(6),
+            Token::create_test_token(FIELD, 6, TokenType::Field),
+            Token::create_test_token("name", 6, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
+            Token::create_test_token("name", 6, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(7),
-            TestUtilities::ident_test_token("year", 7),
-            TestUtilities::left_angle_bracket_test_token(7),
-            TestUtilities::ident_test_token("year", 7),
-            TestUtilities::right_angle_bracket_test_token(7),
+            Token::create_test_token(FIELD, 7, TokenType::Field),
+            Token::create_test_token("year", 7, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
+            Token::create_test_token("year", 7, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(8),
-            TestUtilities::ident_test_token("country", 8),
-            TestUtilities::left_angle_bracket_test_token(8),
-            TestUtilities::key_identifier_test_token("country", 8),
-            TestUtilities::right_angle_bracket_test_token(8),
+            Token::create_test_token(FIELD, 8, TokenType::Field),
+            Token::create_test_token("country", 8, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 8, TokenType::LeftAngleBracket),
+            Token::create_test_token("country", 8, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 8, TokenType::RightAngleBracket),
 
-            TestUtilities::closing_curly_brace_test_token(9),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 9, TokenType::ClosingCurlyBrace),
 
-            TestUtilities::expression_test_token(10),
-            TestUtilities::ident_test_token("films", 10),
-            TestUtilities::left_angle_bracket_test_token(10),
-            TestUtilities::ident_test_token("films_csv_file", 10),
-            TestUtilities::access_dot_test_token(10),
-            TestUtilities::ident_test_token("film_csv", 10),
-            TestUtilities::right_angle_bracket_test_token(10),
+            Token::create_test_token(EXPRESSION, 10, TokenType::Expression),
+            Token::create_test_token("films", 10, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 10, TokenType::LeftAngleBracket),
+            Token::create_test_token("films_csv_file", 10, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 10, TokenType::AccessDot),
+            Token::create_test_token("film_csv", 10, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 10, TokenType::RightAngleBracket),
 
-            TestUtilities::eof_test_token(10),
+            Token::create_test_token(EOF, 10, TokenType::EOF),
         ];
 
         let expected = FileASTNode {
@@ -1525,61 +1513,61 @@ mod sintax_tests {
     #[test]
     fn file_parser_with_valid_sintax_and_withouth_query() {
         let tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("example", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://example.com/", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
 
-            TestUtilities::source_test_token(2),
-            TestUtilities::ident_test_token("films_csv_file", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
+            Token::create_test_token(SOURCE, 2, TokenType::Source),
+            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             
-            TestUtilities::iterator_test_token(3),
-            TestUtilities::ident_test_token("film_csv", 3),
-            TestUtilities::left_angle_bracket_test_token(3),
-            TestUtilities::ident_test_token("query_sql", 3),
-            TestUtilities::right_angle_bracket_test_token(3),
-            TestUtilities::opening_curly_brace_test_token(3),
+            Token::create_test_token(ITERATOR, 3, TokenType::Iterator),
+            Token::create_test_token("film_csv", 3, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
+            Token::create_test_token("query_sql", 3, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 3, TokenType::OpeningCurlyBrace),
 
-            TestUtilities::field_test_token(4),
-            TestUtilities::ident_test_token("id", 4),
-            TestUtilities::left_angle_bracket_test_token(4),
-            TestUtilities::key_identifier_test_token("@id", 4),
-            TestUtilities::right_angle_bracket_test_token(4),
+            Token::create_test_token(FIELD, 4, TokenType::Field),
+            Token::create_test_token("id", 4, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
+            Token::create_test_token("@id", 4, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(5),
-            TestUtilities::ident_test_token("name", 5),
-            TestUtilities::left_angle_bracket_test_token(5),
-            TestUtilities::key_identifier_test_token("name", 5),
-            TestUtilities::right_angle_bracket_test_token(5),
+            Token::create_test_token(FIELD, 5, TokenType::Field),
+            Token::create_test_token("name", 5, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
+            Token::create_test_token("name", 5, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(6),
-            TestUtilities::ident_test_token("year", 6),
-            TestUtilities::left_angle_bracket_test_token(6),
-            TestUtilities::ident_test_token("year", 6),
-            TestUtilities::right_angle_bracket_test_token(6),
+            Token::create_test_token(FIELD, 6, TokenType::Field),
+            Token::create_test_token("year", 6, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
+            Token::create_test_token("year", 6, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(7),
-            TestUtilities::ident_test_token("country", 7),
-            TestUtilities::left_angle_bracket_test_token(7),
-            TestUtilities::key_identifier_test_token("country", 7),
-            TestUtilities::right_angle_bracket_test_token(7),
+            Token::create_test_token(FIELD, 7, TokenType::Field),
+            Token::create_test_token("country", 7, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
+            Token::create_test_token("country", 7, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
 
-            TestUtilities::closing_curly_brace_test_token(8),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 8, TokenType::ClosingCurlyBrace),
 
-            TestUtilities::expression_test_token(9),
-            TestUtilities::ident_test_token("films", 9),
-            TestUtilities::left_angle_bracket_test_token(9),
-            TestUtilities::ident_test_token("films_csv_file", 9),
-            TestUtilities::access_dot_test_token(9),
-            TestUtilities::ident_test_token("film_csv", 9),
-            TestUtilities::right_angle_bracket_test_token(9),
+            Token::create_test_token(EXPRESSION, 9, TokenType::Expression),
+            Token::create_test_token("films", 9, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 9, TokenType::LeftAngleBracket),
+            Token::create_test_token("films_csv_file", 9, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 9, TokenType::AccessDot),
+            Token::create_test_token("film_csv", 9, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 9, TokenType::RightAngleBracket),
 
-            TestUtilities::eof_test_token(9),
+            Token::create_test_token(EOF, 9, TokenType::EOF),
         ];
 
         let expected = FileASTNode {
@@ -1632,35 +1620,35 @@ mod sintax_tests {
     #[test]
     fn file_parser_with_valid_sintax_and_withouth_iterator() {
         let tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("example", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://example.com/", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
 
-            TestUtilities::source_test_token(2),
-            TestUtilities::ident_test_token("films_csv_file", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
+            Token::create_test_token(SOURCE, 2, TokenType::Source),
+            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             
-            TestUtilities::query_test_token(3),
-            TestUtilities::ident_test_token("query_sql", 3),
-            TestUtilities::left_angle_bracket_test_token(3),
-            TestUtilities::sql_type_test_token(3),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
-            TestUtilities::right_angle_bracket_test_token(3),
+            Token::create_test_token(QUERY, 3, TokenType::Query),
+            Token::create_test_token("query_sql", 3, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
 
-            TestUtilities::expression_test_token(4),
-            TestUtilities::ident_test_token("films", 4),
-            TestUtilities::left_angle_bracket_test_token(4),
-            TestUtilities::ident_test_token("films_csv_file", 4),
-            TestUtilities::access_dot_test_token(4),
-            TestUtilities::ident_test_token("film_csv", 4),
-            TestUtilities::right_angle_bracket_test_token(4),
+            Token::create_test_token(EXPRESSION, 4, TokenType::Expression),
+            Token::create_test_token("films", 4, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
+            Token::create_test_token("films_csv_file", 4, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 4, TokenType::AccessDot),
+            Token::create_test_token("film_csv", 4, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
 
-            TestUtilities::eof_test_token(4),
+            Token::create_test_token(EOF, 4, TokenType::EOF),
         ];
 
         let expected = FileASTNode {
@@ -1697,59 +1685,59 @@ mod sintax_tests {
     #[test]
     fn file_parser_with_valid_sintax_and_withouth_expression() {
         let tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("example", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://example.com/", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
 
-            TestUtilities::source_test_token(2),
-            TestUtilities::ident_test_token("films_csv_file", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
+            Token::create_test_token(SOURCE, 2, TokenType::Source),
+            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
 
-            TestUtilities::query_test_token(3),
-            TestUtilities::ident_test_token("query_sql", 3),
-            TestUtilities::left_angle_bracket_test_token(3),
-            TestUtilities::sql_type_test_token(3),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
-            TestUtilities::right_angle_bracket_test_token(3),
+            Token::create_test_token(QUERY, 3, TokenType::Query),
+            Token::create_test_token("query_sql", 3, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
 
-            TestUtilities::iterator_test_token(4),
-            TestUtilities::ident_test_token("film_csv", 4),
-            TestUtilities::left_angle_bracket_test_token(4),
-            TestUtilities::ident_test_token("query_sql", 4),
-            TestUtilities::right_angle_bracket_test_token(4),
-            TestUtilities::opening_curly_brace_test_token(4),
+            Token::create_test_token(ITERATOR, 4, TokenType::Iterator),
+            Token::create_test_token("film_csv", 4, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
+            Token::create_test_token("query_sql", 4, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 4, TokenType::OpeningCurlyBrace),
 
-            TestUtilities::field_test_token(5),
-            TestUtilities::ident_test_token("id", 5),
-            TestUtilities::left_angle_bracket_test_token(5),
-            TestUtilities::key_identifier_test_token("@id", 5),
-            TestUtilities::right_angle_bracket_test_token(5),
+            Token::create_test_token(FIELD, 5, TokenType::Field),
+            Token::create_test_token("id", 5, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
+            Token::create_test_token("@id", 5, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(6),
-            TestUtilities::ident_test_token("name", 6),
-            TestUtilities::left_angle_bracket_test_token(6),
-            TestUtilities::key_identifier_test_token("name", 6),
-            TestUtilities::right_angle_bracket_test_token(6),
+            Token::create_test_token(FIELD, 6, TokenType::Field),
+            Token::create_test_token("name", 6, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
+            Token::create_test_token("name", 6, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(7),
-            TestUtilities::ident_test_token("year", 7),
-            TestUtilities::left_angle_bracket_test_token(7),
-            TestUtilities::ident_test_token("year", 7),
-            TestUtilities::right_angle_bracket_test_token(7),
+            Token::create_test_token(FIELD, 7, TokenType::Field),
+            Token::create_test_token("year", 7, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
+            Token::create_test_token("year", 7, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
 
-            TestUtilities::field_test_token(8),
-            TestUtilities::ident_test_token("country", 8),
-            TestUtilities::left_angle_bracket_test_token(8),
-            TestUtilities::key_identifier_test_token("country", 8),
-            TestUtilities::right_angle_bracket_test_token(8),
+            Token::create_test_token(FIELD, 8, TokenType::Field),
+            Token::create_test_token("country", 8, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 8, TokenType::LeftAngleBracket),
+            Token::create_test_token("country", 8, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 8, TokenType::RightAngleBracket),
 
-            TestUtilities::closing_curly_brace_test_token(9),
-            TestUtilities::eof_test_token(9),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 9, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 9, TokenType::EOF),
         ];
 
         let expected = FileASTNode {
@@ -1797,12 +1785,12 @@ mod sintax_tests {
     #[test]
     fn file_parser_withouth_prefixes() {
         let fail_tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<FileASTNode>(file_parser(), fail_tokens_vector, "Se esperaba un PREFIX en la línea 1");
@@ -1813,13 +1801,13 @@ mod sintax_tests {
     #[test]
     fn file_parser_withouth_sources() {
         let fail_tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<FileASTNode>(file_parser(), fail_tokens_vector, "Se esperaba un PREFIX o un SOURCE en la línea 1");
@@ -1830,13 +1818,13 @@ mod sintax_tests {
     #[test]
     fn valid_prefix_sintax() {
         let mut tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = PrefixASTNode {
@@ -1848,12 +1836,12 @@ mod sintax_tests {
 
         // Se añaden más PREFIX
         let eof_node = tokens_vector.pop();
-        tokens_vector.push(TestUtilities::prefix_test_token(2));
-        tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::colon_test_token(2));
-        tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::uri_test_token("https://ejemplo2.com", 2));
-        tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
+        tokens_vector.push(Token::create_test_token(PREFIX, 2, TokenType::Prefix));
+        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(Token::create_test_token(COLON, 2, TokenType::Colon));
+        tokens_vector.push(Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket));
+        tokens_vector.push(Token::create_test_token("https://ejemplo2.com", 2, TokenType::Uri));
+        tokens_vector.push(Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = PrefixASTNode {
@@ -1871,12 +1859,12 @@ mod sintax_tests {
     #[test]
     fn prefix_sintax_withouth_prefix() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<PrefixASTNode>>(prefix_parser(), fail_tokens_vector, "Se esperaba un PREFIX en la línea 1");
@@ -1887,12 +1875,12 @@ mod sintax_tests {
     #[test]
     fn prefix_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<PrefixASTNode>>(prefix_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'PREFIX' en la línea 1");
@@ -1903,12 +1891,12 @@ mod sintax_tests {
     #[test]
     fn prefix_sintax_withouth_colon() {
         let fail_tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<PrefixASTNode>>(prefix_parser(), fail_tokens_vector, "Faltan los ':' después del identificador en la línea 1");
@@ -1919,12 +1907,12 @@ mod sintax_tests {
     #[test]
     fn prefix_sintax_withouth_left_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<PrefixASTNode>>(prefix_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la URI en la línea 1");
@@ -1935,12 +1923,12 @@ mod sintax_tests {
     #[test]
     fn prefix_sintax_withouth_uri() {
         let fail_tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<PrefixASTNode>>(prefix_parser(), fail_tokens_vector, "Se esperaba una URI entre '<' y '>' en la línea 1");
@@ -1951,12 +1939,12 @@ mod sintax_tests {
     #[test]
     fn prefix_sintax_withouth_right_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<PrefixASTNode>>(prefix_parser(), fail_tokens_vector, "Se esperaba un '>' después de la URI en la línea 1");
@@ -1967,11 +1955,11 @@ mod sintax_tests {
     #[test]
     fn prefix_sintax_withouth_angle_brackets() {
         let fail_tokens_vector = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<PrefixASTNode>>(prefix_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la URI en la línea 1");
@@ -1982,12 +1970,12 @@ mod sintax_tests {
     #[test]
     fn valid_source_sintax_with_uri() {
         let mut tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = SourceASTNode {
@@ -1999,14 +1987,11 @@ mod sintax_tests {
 
         // Se añaden más SOURCE
         let eof_node = tokens_vector.pop();
-        tokens_vector.push(TestUtilities::source_test_token(2));
-        tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::uri_test_token(
-            "https://ejemplo2.com/fichero.csv",
-            2,
-        ));
-        tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
+        tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
+        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket));
+        tokens_vector.push(Token::create_test_token("https://ejemplo2.com/fichero.csv", 2, TokenType::Uri));
+        tokens_vector.push(Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = SourceASTNode {
@@ -2024,12 +2009,12 @@ mod sintax_tests {
     #[test]
     fn valid_source_sintax_with_jdbc_url() {
         let mut tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::jdbc_url_test_token("jdbc:mysql://localhost:3306/mydb", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("jdbc:mysql://localhost:3306/mydb", 1, TokenType::JdbcUrl),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = SourceASTNode {
@@ -2041,14 +2026,11 @@ mod sintax_tests {
 
         // Se añaden más SOURCE
         let eof_node = tokens_vector.pop();
-        tokens_vector.push(TestUtilities::source_test_token(2));
-        tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::jdbc_url_test_token(
-            "jdbc:mysql://localhost:3356/anotherdb",
-            2,
-        ));
-        tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
+        tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
+        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket));
+        tokens_vector.push(Token::create_test_token("jdbc:mysql://localhost:3356/anotherdb", 2, TokenType::JdbcUrl));
+        tokens_vector.push(Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = SourceASTNode {
@@ -2066,12 +2048,12 @@ mod sintax_tests {
     #[test]
     fn valid_source_sintax_with_file_path() {
         let mut tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1, TokenType::FilePath),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = SourceASTNode {
@@ -2083,14 +2065,11 @@ mod sintax_tests {
 
         // Se añaden más SOURCE
         let eof_node = tokens_vector.pop();
-        tokens_vector.push(TestUtilities::source_test_token(2));
-        tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::file_path_test_token(
-            "file:///otroejemplo/path/a/fichero/otrofichero.csv",
-            2,
-        ));
-        tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
+        tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
+        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket));
+        tokens_vector.push(Token::create_test_token("file:///otroejemplo/path/a/fichero/otrofichero.csv", 2, TokenType::FilePath));
+        tokens_vector.push(Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = SourceASTNode {
@@ -2108,12 +2087,12 @@ mod sintax_tests {
     #[test]
     fn valid_source_sintax_with_path() {
         let mut tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::path_test_token("ejemplo/fichero.csv", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("ejemplo/fichero.csv", 1, TokenType::Path),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = SourceASTNode {
@@ -2125,14 +2104,11 @@ mod sintax_tests {
 
         // Se añaden más SOURCE
         let eof_node = tokens_vector.pop();
-        tokens_vector.push(TestUtilities::source_test_token(2));
-        tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::path_test_token(
-            "C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
-            2,
-        ));
-        tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
+        tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
+        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket));
+        tokens_vector.push(Token::create_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 2, TokenType::Path));
+        tokens_vector.push(Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = SourceASTNode {
@@ -2150,11 +2126,11 @@ mod sintax_tests {
     #[test]
     fn source_sintax_withouth_source() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<SourceASTNode>>(source_parser(), fail_tokens_vector, "Se esperaba un PREFIX o un SOURCE en la línea 1");
@@ -2165,11 +2141,11 @@ mod sintax_tests {
     #[test]
     fn source_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<SourceASTNode>>(source_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'SOURCE' en la línea 1");
@@ -2180,11 +2156,11 @@ mod sintax_tests {
     #[test]
     fn source_sintax_withouth_left_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<SourceASTNode>>(source_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la URL o ruta en la línea 1");
@@ -2195,11 +2171,11 @@ mod sintax_tests {
     #[test]
     fn source_sintax_withouth_url_or_path() {
         let fail_tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<SourceASTNode>>(source_parser(), fail_tokens_vector, "Se esperaba una URI entre '<' y '>' en la línea 1");
@@ -2210,11 +2186,11 @@ mod sintax_tests {
     #[test]
     fn source_sintax_withouth_right_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<SourceASTNode>>(source_parser(), fail_tokens_vector, "Se esperaba un '>' después de la URL o ruta en la línea 1");
@@ -2225,10 +2201,10 @@ mod sintax_tests {
     #[test]
     fn source_sintax_withouth_angle_brackets() {
         let fail_tokens_vector = vec![
-            TestUtilities::source_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(SOURCE, 1, TokenType::Source),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<SourceASTNode>>(source_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la URL o ruta en la línea 1");
@@ -2239,13 +2215,13 @@ mod sintax_tests {
     #[test]
     fn valid_query_sintax() {
         let mut tokens_vector = vec![
-            TestUtilities::query_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(QUERY, 1, TokenType::Query),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = QueryASTNode {
@@ -2257,15 +2233,12 @@ mod sintax_tests {
 
         // Se añaden más QUERY
         let eof_node = tokens_vector.pop();
-        tokens_vector.push(TestUtilities::query_test_token(2));
-        tokens_vector.push(TestUtilities::ident_test_token("ident2", 2));
-        tokens_vector.push(TestUtilities::left_angle_bracket_test_token(2));
-        tokens_vector.push(TestUtilities::sql_type_test_token(2));
-        tokens_vector.push(TestUtilities::sql_query_test_token(
-            "SELECT * FROM example;",
-            2,
-        ));
-        tokens_vector.push(TestUtilities::right_angle_bracket_test_token(2));
+        tokens_vector.push(Token::create_test_token(QUERY, 2, TokenType::Query));
+        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket));
+        tokens_vector.push(Token::create_test_token(SQL_TYPE, 2, TokenType::SqlType));
+        tokens_vector.push(Token::create_test_token("SELECT * FROM example;", 2, TokenType::SqlQuery));
+        tokens_vector.push(Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket));
         tokens_vector.push(eof_node.unwrap());
 
         let expected2 = QueryASTNode {
@@ -2283,12 +2256,12 @@ mod sintax_tests {
     #[test]
     fn query_sintax_withouth_query() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<QueryASTNode>>(query_parser(), fail_tokens_vector, "Se esperaba un QUERY en la línea 1");
@@ -2299,12 +2272,12 @@ mod sintax_tests {
     #[test]
     fn query_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::query_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(QUERY, 1, TokenType::Query),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<QueryASTNode>>(query_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'QUERY' en la línea 1");
@@ -2315,12 +2288,12 @@ mod sintax_tests {
     #[test]
     fn query_sintax_withouth_left_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::query_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(QUERY, 1, TokenType::Query),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<QueryASTNode>>(query_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la consulta SQL en la línea 1");
@@ -2331,12 +2304,12 @@ mod sintax_tests {
     #[test]
     fn query_sintax_withouth_sql_type() {
         let fail_tokens_vector = vec![
-            TestUtilities::query_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(QUERY, 1, TokenType::Query),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<QueryASTNode>>(query_parser(), fail_tokens_vector, "Se esperaba 'sql:' después de '<' en la línea 1");
@@ -2347,12 +2320,12 @@ mod sintax_tests {
     #[test]
     fn query_sintax_withouth_sql_query() {
         let fail_tokens_vector = vec![
-            TestUtilities::query_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(QUERY, 1, TokenType::Query),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<QueryASTNode>>(query_parser(), fail_tokens_vector, "Se esperaba una consulta SQL entre '<' y '>' en la línea 1");
@@ -2363,12 +2336,12 @@ mod sintax_tests {
     #[test]
     fn query_sintax_withouth_right_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::query_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(QUERY, 1, TokenType::Query),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<QueryASTNode>>(query_parser(), fail_tokens_vector, "Se esperaba un '>' después de la consulta SQL en la línea 1");
@@ -2379,11 +2352,11 @@ mod sintax_tests {
     #[test]
     fn query_sintax_withouth_right_angle_brackets() {
         let fail_tokens_vector = vec![
-            TestUtilities::query_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(QUERY, 1, TokenType::Query),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<QueryASTNode>>(query_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la consulta SQL en la línea 1");
@@ -2394,12 +2367,12 @@ mod sintax_tests {
     #[test]
     fn valid_field_sintax() {
         let tokens_vector = vec![
-            TestUtilities::field_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::key_identifier_test_token("@field", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(FIELD, 1, TokenType::Field),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = FieldASTNode {
@@ -2415,11 +2388,11 @@ mod sintax_tests {
     #[test]
     fn field_sintax_withouth_field() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::key_identifier_test_token("@field", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<FieldASTNode>>(field_parser(), fail_tokens_vector, "Se esperaba un FIELD en la línea 1");
@@ -2430,11 +2403,11 @@ mod sintax_tests {
     #[test]
     fn field_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::field_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::key_identifier_test_token("@field", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(FIELD, 1, TokenType::Field),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<FieldASTNode>>(field_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'FIELD' en la línea 1");
@@ -2445,11 +2418,11 @@ mod sintax_tests {
     #[test]
     fn field_sintax_withouth_left_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::field_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::key_identifier_test_token("@field", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(FIELD, 1, TokenType::Field),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<FieldASTNode>>(field_parser(), fail_tokens_vector, "Se esperaba un '<' antes de el identificador en la línea 1");
@@ -2460,11 +2433,11 @@ mod sintax_tests {
     #[test]
     fn field_sintax_withouth_access_field() {
         let fail_tokens_vector = vec![
-            TestUtilities::field_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(FIELD, 1, TokenType::Field),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<FieldASTNode>>(field_parser(), fail_tokens_vector, "Se esperaba un identificador después de '<' en la línea 1");
@@ -2475,11 +2448,11 @@ mod sintax_tests {
     #[test]
     fn field_sintax_withouth_right_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::field_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::key_identifier_test_token("@field", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(FIELD, 1, TokenType::Field),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<FieldASTNode>>(field_parser(), fail_tokens_vector, "Se esperaba un '>' después de el identificador en la línea 1");
@@ -2490,10 +2463,10 @@ mod sintax_tests {
     #[test]
     fn field_sintax_withouth_angle_brackets() {
         let fail_tokens_vector = vec![
-            TestUtilities::field_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::key_identifier_test_token("@field", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(FIELD, 1, TokenType::Field),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<FieldASTNode>>(field_parser(), fail_tokens_vector, "Se esperaba un '<' antes de el identificador en la línea 1");
@@ -2505,20 +2478,20 @@ mod sintax_tests {
     #[test]
     fn valid_iterator_sintax_with_sql_query() {
         let tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         let expected = IteratorASTNode {
@@ -2540,25 +2513,25 @@ mod sintax_tests {
     #[test]
     fn valid_iterator_sintax_with_more_than_one_field() {
         let tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::field_test_token(3),
-            TestUtilities::ident_test_token("field2", 3),
-            TestUtilities::left_angle_bracket_test_token(3),
-            TestUtilities::ident_test_token("field", 3),
-            TestUtilities::right_angle_bracket_test_token(3),
-            TestUtilities::closing_curly_brace_test_token(4),
-            TestUtilities::eof_test_token(4),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(FIELD, 3, TokenType::Field),
+            Token::create_test_token("field2", 3, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
+            Token::create_test_token("field", 3, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 4, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 4, TokenType::EOF),
         ];
 
         let expected = IteratorASTNode {
@@ -2585,19 +2558,19 @@ mod sintax_tests {
     #[test]
     fn valid_iterator_sintax_with_ident() {
         let tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("inline_query", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("inline_query", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         let expected = IteratorASTNode {
@@ -2618,19 +2591,19 @@ mod sintax_tests {
     #[test]
     fn valid_iterator_sintax_with_csv_per_row() {
         let tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::csv_per_row_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(CSV_PER_ROW, 1, TokenType::CsvPerRow),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         let expected = IteratorASTNode {
@@ -2651,19 +2624,19 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_iterator() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un ITERATOR en la línea 1");
@@ -2675,19 +2648,19 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'ITERATOR' en la línea 1");
@@ -2699,19 +2672,19 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_left_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la consulta SQL, identificador o csvperrow en la línea 1");
@@ -2723,18 +2696,18 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_access() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un identificador después de '<' en la línea 1");
@@ -2746,19 +2719,19 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_right_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un '>' después de la consulta SQL, identificador o csvperrow en la línea 1");
@@ -2770,19 +2743,19 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_opening_curly_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un '{' antes de los fields en la línea 2");
@@ -2794,15 +2767,15 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_fields() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::closing_curly_brace_test_token(2),
-            TestUtilities::eof_test_token(2),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 2, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 2, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un FIELD en la línea 2");
@@ -2814,19 +2787,19 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_closing_curly_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un '}' después de los fields en la línea 3");
@@ -2838,18 +2811,18 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_angle_brackets() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::opening_curly_brace_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::closing_curly_brace_test_token(3),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un '<' antes de la consulta SQL, identificador o csvperrow en la línea 1");
@@ -2861,18 +2834,18 @@ mod sintax_tests {
     #[test]
     fn iterator_sintax_withouth_curly_brackets() {
         let fail_tokens_vector = vec![
-            TestUtilities::iterator_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::sql_type_test_token(1),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::field_test_token(2),
-            TestUtilities::ident_test_token("field", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::key_identifier_test_token("@field", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::eof_test_token(3),
+            Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(FIELD, 2, TokenType::Field),
+            Token::create_test_token("field", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<IteratorASTNode>>(iterator_parser(), fail_tokens_vector, "Se esperaba un '{' antes de los fields en la línea 2");
@@ -2883,10 +2856,10 @@ mod sintax_tests {
     #[test]
     fn valid_access_sintax_with_iterator_access() {
         let tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = AccessASTNode {
@@ -2903,12 +2876,12 @@ mod sintax_tests {
     #[test]
     fn valid_access_sintax_with_field_access() {
         let tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = AccessASTNode {
@@ -2925,11 +2898,11 @@ mod sintax_tests {
     #[test]
     fn access_sintax_withouth_source_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<AccessASTNode>(access_parser(LEFT_ANGLE_BRACKET.to_string()), fail_tokens_vector, "Se esperaba un identificador después de '<' en la línea 1");
@@ -2940,11 +2913,11 @@ mod sintax_tests {
     #[test]
     fn access_sintax_withouth_dot_between_source_and_iterator() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<AccessASTNode>(access_parser(LEFT_ANGLE_BRACKET.to_string()), fail_tokens_vector, "Falta un '.' después del identificador en la línea 1");
@@ -2955,11 +2928,11 @@ mod sintax_tests {
     #[test]
     fn access_sintax_withouth_iterator_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<AccessASTNode>(access_parser(LEFT_ANGLE_BRACKET.to_string()), fail_tokens_vector, "Se esperaba un identificador después de '.' en la línea 1");
@@ -2970,11 +2943,11 @@ mod sintax_tests {
     #[test]
     fn access_sintax_withouth_dot_between_iterator_and_field() {
         let tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::ident_test_token("field", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token("field", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         // No dará error en este parser pero si en el siguiente que se ejecute al estar un ident suelto
@@ -2992,11 +2965,11 @@ mod sintax_tests {
     #[test]
     fn access_sintax_withouth_field_identifier() {
         let tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         // No dará error en este parser pero si en el siguiente que se ejecute al estar un '.' suelto
@@ -3015,14 +2988,14 @@ mod sintax_tests {
     #[test]
     fn valid_basic_expression_sintax() {
         let tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = ExpressionASTNode {
@@ -3045,18 +3018,18 @@ mod sintax_tests {
     #[test]
     fn valid_union_expression_sintax() {
         let tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::union_test_token(1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(UNION, 1, TokenType::Union),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = ExpressionASTNode {
@@ -3084,30 +3057,30 @@ mod sintax_tests {
     #[test]
     fn valid_join_expression_sintax() {
         let tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::join_test_token(1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::on_test_token(1),
-            TestUtilities::ident_test_token("id3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field3", 1),
-            TestUtilities::equal_test_token(1),
-            TestUtilities::ident_test_token("id4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field4", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(JOIN, 1, TokenType::Join),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token(ON, 1, TokenType::On),
+            Token::create_test_token("id3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field3", 1, TokenType::Ident),
+            Token::create_test_token(EQUAL, 1, TokenType::Equal),
+            Token::create_test_token("id4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field4", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         let expected = ExpressionASTNode {
@@ -3145,13 +3118,13 @@ mod sintax_tests {
     #[test]
     fn expression_sintax_withouth_expression() {
         let fail_tokens_vector = vec![
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un EXPRESSION en la línea 1");
@@ -3163,13 +3136,13 @@ mod sintax_tests {
     #[test]
     fn expression_sintax_withouth_identifier() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'EXPRESSION' en la línea 1");
@@ -3181,13 +3154,13 @@ mod sintax_tests {
     #[test]
     fn expression_sintax_withouth_left_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::ident_test_token("id", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un '<' antes de el acceso en la línea 1");
@@ -3199,11 +3172,11 @@ mod sintax_tests {
     #[test]
     fn expression_sintax_withouth_access() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un identificador después de '<' en la línea 1");
@@ -3215,13 +3188,13 @@ mod sintax_tests {
     #[test]
     fn expression_sintax_withouth_right_angle_bracket() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un '>' después de el acceso en la línea 1");
@@ -3233,12 +3206,12 @@ mod sintax_tests {
     #[test]
     fn expression_sintax_withouth_angle_brackets() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::ident_test_token("id", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator", 1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator", 1, TokenType::Ident),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un '<' antes de el acceso en la línea 1");
@@ -3250,17 +3223,17 @@ mod sintax_tests {
     #[test]
     fn union_expression_sintax_withouth_union() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un '>' después de el acceso en la línea 1");
@@ -3272,15 +3245,15 @@ mod sintax_tests {
     #[test]
     fn union_expression_sintax_withouth_second_access() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::union_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(UNION, 1, TokenType::Union),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'UNION' en la línea 1");
@@ -3292,29 +3265,29 @@ mod sintax_tests {
     #[test]
     fn join_expression_sintax_withouth_join() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::on_test_token(1),
-            TestUtilities::ident_test_token("id3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field3", 1),
-            TestUtilities::equal_test_token(1),
-            TestUtilities::ident_test_token("id4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field4", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token(ON, 1, TokenType::On),
+            Token::create_test_token("id3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field3", 1, TokenType::Ident),
+            Token::create_test_token(EQUAL, 1, TokenType::Equal),
+            Token::create_test_token("id4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field4", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un '>' después de el acceso en la línea 1");
@@ -3326,27 +3299,27 @@ mod sintax_tests {
     #[test]
     fn join_expression_sintax_withouth_second_access() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::join_test_token(1),
-            TestUtilities::on_test_token(1),
-            TestUtilities::ident_test_token("id3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field3", 1),
-            TestUtilities::equal_test_token(1),
-            TestUtilities::ident_test_token("id4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field4", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(JOIN, 1, TokenType::Join),
+            Token::create_test_token(ON, 1, TokenType::On),
+            Token::create_test_token("id3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field3", 1, TokenType::Ident),
+            Token::create_test_token(EQUAL, 1, TokenType::Equal),
+            Token::create_test_token("id4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field4", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'JOIN' en la línea 1");
@@ -3358,29 +3331,29 @@ mod sintax_tests {
     #[test]
     fn join_expression_sintax_withouth_on() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::join_test_token(1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::ident_test_token("id3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field3", 1),
-            TestUtilities::equal_test_token(1),
-            TestUtilities::ident_test_token("id4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field4", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(JOIN, 1, TokenType::Join),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token("id3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field3", 1, TokenType::Ident),
+            Token::create_test_token(EQUAL, 1, TokenType::Equal),
+            Token::create_test_token("id4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field4", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un ON después del segundo acceso en la expresión de la línea 1");
@@ -3392,25 +3365,25 @@ mod sintax_tests {
     #[test]
     fn join_expression_sintax_withouth_third_access() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::join_test_token(1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::on_test_token(1),
-            TestUtilities::equal_test_token(1),
-            TestUtilities::ident_test_token("id4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field4", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(JOIN, 1, TokenType::Join),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token(ON, 1, TokenType::On),
+            Token::create_test_token(EQUAL, 1, TokenType::Equal),
+            Token::create_test_token("id4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field4", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un identificador después de 'ON' en la línea 1");
@@ -3422,29 +3395,29 @@ mod sintax_tests {
     #[test]
     fn join_expression_sintax_withouth_equal() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::join_test_token(1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::on_test_token(1),
-            TestUtilities::ident_test_token("id3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field3", 1),
-            TestUtilities::ident_test_token("id4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator4", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field4", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(JOIN, 1, TokenType::Join),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token(ON, 1, TokenType::On),
+            Token::create_test_token("id3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field3", 1, TokenType::Ident),
+            Token::create_test_token("id4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator4", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field4", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Falta un '=' después del identificador siguiente al ON de la expresión de la línea 1");
@@ -3456,25 +3429,25 @@ mod sintax_tests {
     #[test]
     fn join_expression_sintax_withouth_fourth_access() {
         let fail_tokens_vector = vec![
-            TestUtilities::expression_test_token(1),
-            TestUtilities::ident_test_token("ident", 1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::ident_test_token("id1", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator1", 1),
-            TestUtilities::join_test_token(1),
-            TestUtilities::ident_test_token("id2", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator2", 1),
-            TestUtilities::on_test_token(1),
-            TestUtilities::ident_test_token("id3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("iterator3", 1),
-            TestUtilities::access_dot_test_token(1),
-            TestUtilities::ident_test_token("field3", 1),
-            TestUtilities::equal_test_token(1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::eof_test_token(1),
+            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
+            Token::create_test_token("ident", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("id1", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            Token::create_test_token(JOIN, 1, TokenType::Join),
+            Token::create_test_token("id2", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            Token::create_test_token(ON, 1, TokenType::On),
+            Token::create_test_token("id3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("iterator3", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("field3", 1, TokenType::Ident),
+            Token::create_test_token(EQUAL, 1, TokenType::Equal),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         check_parser_error::<Vec<ExpressionASTNode>>(expression_parser(), fail_tokens_vector, "Se esperaba un identificador después de '=' en la línea 1");

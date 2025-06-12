@@ -712,7 +712,6 @@ fn match_alternatives(
 /// Los tests se hacen tanto a nivel de tokens individuales como a nivel de tokens en conjunto
 #[cfg(test)]
 mod lexer_tests {
-    use crate::test_utils::TestUtilities;
 
     use super::*;
 
@@ -722,7 +721,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_prefix() {
-        let expected = TestUtilities::prefix_test_token(0);
+        let expected = Token::create_test_token(PREFIX, 0, TokenType::Prefix);
         let actual = prefix(&mut "PREFIX");
         check_ok(expected, actual);
     }
@@ -739,7 +738,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_colon() {
-        let expected = TestUtilities::colon_test_token(0);
+        let expected = Token::create_test_token(COLON, 0, TokenType::Colon);
         let actual = colon(&mut ":");
         check_ok(expected, actual);
     }
@@ -756,7 +755,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_equal() {
-        let expected = TestUtilities::equal_test_token(0);
+        let expected = Token::create_test_token(EQUAL, 0, TokenType::Equal);
         let actual = equal(&mut "=");
         check_ok(expected, actual);
     }
@@ -773,7 +772,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_access_dot() {
-        let expected = TestUtilities::access_dot_test_token(0);
+        let expected = Token::create_test_token(ACCESS_DOT, 0, TokenType::AccessDot);
         let actual = access_dot(&mut ".");
         check_ok(expected, actual);
     }
@@ -790,7 +789,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_left_angle_bracket() {
-        let expected = TestUtilities::left_angle_bracket_test_token(0);
+        let expected = Token::create_test_token(LEFT_ANGLE_BRACKET, 0, TokenType::LeftAngleBracket);
         let actual = left_angle_bracket(&mut "<");
         check_ok(expected, actual);
     }
@@ -807,7 +806,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_right_angle_bracket() {
-        let expected = TestUtilities::right_angle_bracket_test_token(0);
+        let expected = Token::create_test_token(RIGHT_ANGLE_BRACKET, 0, TokenType::RightAngleBracket);
         let actual = right_angle_bracket(&mut ">");
         check_ok(expected, actual);
     }
@@ -824,7 +823,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_opening_curly_brace() {
-        let expected = TestUtilities::opening_curly_brace_test_token(0);
+        let expected = Token::create_test_token(OPENING_CURLY_BRACE, 0, TokenType::OpeningCurlyBrace);
         let actual = opening_curly_brace(&mut "{");
         check_ok(expected, actual);
     }
@@ -841,7 +840,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_closing_curly_brace() {
-        let expected = TestUtilities::closing_curly_brace_test_token(0);
+        let expected = Token::create_test_token(CLOSING_CURLY_BRACE, 0, TokenType::ClosingCurlyBrace);
         let actual = closing_curly_brace(&mut "}");
         check_ok(expected, actual);
     }
@@ -858,7 +857,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source() {
-        let expected = TestUtilities::source_test_token(0);
+        let expected = Token::create_test_token(SOURCE, 0, TokenType::Source);
         let actual = source(&mut "SOURCE");
         check_ok(expected, actual);
     }
@@ -875,7 +874,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_query() {
-        let expected = TestUtilities::query_test_token(0);
+        let expected = Token::create_test_token(QUERY, 0, TokenType::Query);
         let actual = query(&mut "QUERY");
         check_ok(expected, actual);
     }
@@ -892,7 +891,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_iterator() {
-        let expected = TestUtilities::iterator_test_token(0);
+        let expected = Token::create_test_token(ITERATOR, 0, TokenType::Iterator);
         let actual = iterator(&mut "ITERATOR");
         check_ok(expected, actual);
     }
@@ -909,7 +908,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_field() {
-        let expected = TestUtilities::field_test_token(0);
+        let expected = Token::create_test_token(FIELD, 0, TokenType::Field);
         let actual = field(&mut "FIELD");
         check_ok(expected, actual);
     }
@@ -926,7 +925,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_expression() {
-        let expected = TestUtilities::expression_test_token(0);
+        let expected = Token::create_test_token(EXPRESSION, 0, TokenType::Expression);
         let actual = expression(&mut "EXPRESSION");
         check_ok(expected, actual);
     }
@@ -943,7 +942,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_union() {
-        let expected = TestUtilities::union_test_token(0);
+        let expected = Token::create_test_token(UNION, 0, TokenType::Union);
         let actual = union(&mut "UNION");
         check_ok(expected, actual);
     }
@@ -960,7 +959,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_join() {
-        let expected = TestUtilities::join_test_token(0);
+        let expected = Token::create_test_token(JOIN, 0, TokenType::Join);
         let actual = join(&mut "JOIN");
         check_ok(expected, actual);
     }
@@ -977,7 +976,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_on() {
-        let expected = TestUtilities::on_test_token(0);
+        let expected = Token::create_test_token(ON, 0, TokenType::On);
         let actual = on(&mut "ON");
         check_ok(expected, actual);
     }
@@ -994,7 +993,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_sql_type() {
-        let expected = TestUtilities::sql_type_test_token(0);
+        let expected = Token::create_test_token(SQL_TYPE, 0, TokenType::SqlType);
         let actual = sql_type(&mut "sql:");
         check_ok(expected, actual);
     }
@@ -1011,7 +1010,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_csv_per_row() {
-        let expected = TestUtilities::csv_per_row_test_token(0);
+        let expected = Token::create_test_token(CSV_PER_ROW, 0, TokenType::CsvPerRow);
         let actual = csv_per_row(&mut "csvperrow");
         check_ok(expected, actual);
     }
@@ -1020,7 +1019,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn invalid_csv_per_row() {
-        let actual = sql_type(&mut "csv_per_row");
+        let actual = csv_per_row(&mut "csv_per_row");
         check_error(actual);
     }
 
@@ -1028,7 +1027,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_withouth_underscore() {
-        let expected = TestUtilities::ident_test_token("ident", 0);
+        let expected = Token::create_test_token("ident", 0, TokenType::Ident);
         let actual = identifier(&mut "ident");
         check_ok(expected, actual);
     }
@@ -1037,7 +1036,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_inside() {
-        let expected = TestUtilities::ident_test_token("ident_valid", 0);
+        let expected = Token::create_test_token("ident_valid", 0, TokenType::Ident);
         let actual = identifier(&mut "ident_valid");
         check_ok(expected, actual);
     }
@@ -1046,7 +1045,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_begining() {
-        let expected = TestUtilities::ident_test_token("_ident_valid", 0);
+        let expected = Token::create_test_token("_ident_valid", 0, TokenType::Ident);
         let actual = identifier(&mut "_ident_valid");
         check_ok(expected, actual);
     }
@@ -1055,7 +1054,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_end() {
-        let expected = TestUtilities::ident_test_token("ident_valid_", 0);
+        let expected = Token::create_test_token("ident_valid_", 0, TokenType::Ident);
         let actual = identifier(&mut "ident_valid_");
         check_ok(expected, actual);
     }
@@ -1064,7 +1063,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_begining_and_end() {
-        let expected = TestUtilities::ident_test_token("_ident_valid_", 0);
+        let expected = Token::create_test_token("_ident_valid_", 0, TokenType::Ident);
         let actual = identifier(&mut "_ident_valid_");
         check_ok(expected, actual);
     }
@@ -1073,7 +1072,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_numbers() {
-        let expected = TestUtilities::ident_test_token("ident1_2valid", 0);
+        let expected = Token::create_test_token("ident1_2valid", 0, TokenType::Ident);
         let actual = identifier(&mut "ident1_2valid");
         check_ok(expected, actual);
     }
@@ -1098,7 +1097,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_key_identifier_withouth_underscore() {
-        let expected = TestUtilities::key_identifier_test_token("@ident", 0);
+        let expected = Token::create_test_token("@ident", 0, TokenType::KeyIdentifier);
         let actual = key_identifier(&mut "@ident");
         check_ok(expected, actual);
     }
@@ -1107,7 +1106,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_key_identifier_with_underscore_inside() {
-        let expected = TestUtilities::key_identifier_test_token("@Ident_valid", 0);
+        let expected = Token::create_test_token("@Ident_valid", 0, TokenType::KeyIdentifier);
         let actual = key_identifier(&mut "@Ident_valid");
         check_ok(expected, actual);
     }
@@ -1116,7 +1115,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_key_identifier_with_underscore_at_the_begining() {
-        let expected = TestUtilities::key_identifier_test_token("@_ident_valid", 0);
+        let expected = Token::create_test_token("@_ident_valid", 0, TokenType::KeyIdentifier);
         let actual = key_identifier(&mut "@_ident_valid");
         check_ok(expected, actual);
     }
@@ -1125,7 +1124,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_key_identifier_with_underscore_at_the_end() {
-        let expected = TestUtilities::key_identifier_test_token("@ident_valid_", 0);
+        let expected = Token::create_test_token("@ident_valid_", 0, TokenType::KeyIdentifier);
         let actual = key_identifier(&mut "@ident_valid_");
         check_ok(expected, actual);
     }
@@ -1134,7 +1133,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_key_identifier_with_underscore_at_the_begining_and_end() {
-        let expected = TestUtilities::key_identifier_test_token("@_ident_valid_", 0);
+        let expected = Token::create_test_token("@_ident_valid_", 0, TokenType::KeyIdentifier);
         let actual = key_identifier(&mut "@_ident_valid_");
         check_ok(expected, actual);
     }
@@ -1143,7 +1142,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_key_identifier_with_numbers() {
-        let expected = TestUtilities::key_identifier_test_token("@ident1_2valid", 0);
+        let expected = Token::create_test_token("@ident1_2valid", 0, TokenType::KeyIdentifier);
         let actual = key_identifier(&mut "@ident1_2valid");
         check_ok(expected, actual);
     }
@@ -1168,7 +1167,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_uri_with_https() {
-        let expected = TestUtilities::uri_test_token("https://ejemplo.com", 0);
+        let expected = Token::create_test_token("https://ejemplo.com", 0, TokenType::Uri);
         let actual = uri(&mut "https://ejemplo.com");
         check_ok(expected, actual);
     }
@@ -1177,7 +1176,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_uri_with_http() {
-        let expected = TestUtilities::uri_test_token("http://ejemplo.com", 0);
+        let expected = Token::create_test_token("http://ejemplo.com", 0, TokenType::Uri);
         let actual = uri(&mut "http://ejemplo.com");
         check_ok(expected, actual);
     }
@@ -1186,7 +1185,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_uri_with_slash_at_the_end() {
-        let expected = TestUtilities::uri_test_token("https://ejemplo.com/", 0);
+        let expected = Token::create_test_token("https://ejemplo.com/", 0, TokenType::Uri);
         let actual = uri(&mut "https://ejemplo.com/");
         check_ok(expected, actual);
     }
@@ -1195,7 +1194,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn uri_to_a_csv_remote_file() {
-        let expected = TestUtilities::uri_test_token("https://ejemplo.com/fichero.csv", 0);
+        let expected = Token::create_test_token("https://ejemplo.com/fichero.csv", 0, TokenType::Uri);
         let actual = uri(&mut "https://ejemplo.com/fichero.csv");
         check_ok(expected, actual);
     }
@@ -1212,7 +1211,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_jdbc_url() {
-        let expected = TestUtilities::jdbc_url_test_token("jdbc:mysql://localhost:3306/mydb", 0);
+        let expected = Token::create_test_token("jdbc:mysql://localhost:3306/mydb", 0, TokenType::JdbcUrl);
         let actual = jdbc_url(&mut "jdbc:mysql://localhost:3306/mydb");
         check_ok(expected, actual);
     }
@@ -1230,7 +1229,7 @@ mod lexer_tests {
     #[test]
     fn valid_file_path() {
         let expected =
-            TestUtilities::file_path_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0);
+            Token::create_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 0, TokenType::FilePath);
         let actual = file_path(&mut "file:///ejemplo/path/a/fichero/fichero.csv");
         check_ok(expected, actual);
     }
@@ -1247,7 +1246,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_relative_path() {
-        let expected = TestUtilities::path_test_token("ejemplo/fichero.csv", 0);
+        let expected = Token::create_test_token("ejemplo/fichero.csv", 0, TokenType::Path);
         let actual = path(&mut "ejemplo/fichero.csv");
         check_ok(expected, actual);
     }
@@ -1257,7 +1256,7 @@ mod lexer_tests {
     #[test]
     fn valid_absolute_path() {
         let expected =
-            TestUtilities::path_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0);
+            Token::create_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 0, TokenType::Path);
         let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_ok(expected, actual);
     }
@@ -1282,7 +1281,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_sql_query() {
-        let expected = TestUtilities::sql_query_test_token("SELECT * FROM tabla WHERE id = '1'", 0);
+        let expected = Token::create_test_token("SELECT * FROM tabla WHERE id = '1'", 0, TokenType::SqlQuery);
         let actual = sql_query(&mut "SELECT * FROM tabla WHERE id = '1'");
         check_ok(expected, actual);
     }
@@ -1316,41 +1315,47 @@ mod lexer_tests {
             }";
 
         let expected: Vec<Token> = vec![
-            TestUtilities::prefix_test_token(1),
-            TestUtilities::ident_test_token("example", 1),
-            TestUtilities::colon_test_token(1),
-            TestUtilities::left_angle_bracket_test_token(1),
-            TestUtilities::uri_test_token("http://example.com/", 1),
-            TestUtilities::right_angle_bracket_test_token(1),
-            TestUtilities::source_test_token(2),
-            TestUtilities::ident_test_token("films_csv_file", 2),
-            TestUtilities::left_angle_bracket_test_token(2),
-            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
-            TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::query_test_token(3),
-            TestUtilities::ident_test_token("query_sql", 3),
-            TestUtilities::left_angle_bracket_test_token(3),
-            TestUtilities::sql_type_test_token(3),
-            TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
-            TestUtilities::right_angle_bracket_test_token(3),
-            TestUtilities::iterator_test_token(4),
-            TestUtilities::ident_test_token("iterator", 4),
-            TestUtilities::left_angle_bracket_test_token(4),
-            TestUtilities::ident_test_token("query_sql", 4),
-            TestUtilities::right_angle_bracket_test_token(4),
-            TestUtilities::opening_curly_brace_test_token(4),
-            TestUtilities::field_test_token(5),
-            TestUtilities::ident_test_token("field1", 5),
-            TestUtilities::left_angle_bracket_test_token(5),
-            TestUtilities::key_identifier_test_token("@key", 5),
-            TestUtilities::right_angle_bracket_test_token(5),
-            TestUtilities::field_test_token(6),
-            TestUtilities::ident_test_token("field2", 6),
-            TestUtilities::left_angle_bracket_test_token(6),
-            TestUtilities::ident_test_token("attribute", 6),
-            TestUtilities::right_angle_bracket_test_token(6),
-            TestUtilities::closing_curly_brace_test_token(7),
-            TestUtilities::eof_test_token(7),
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("http://example.com/", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+
+            Token::create_test_token(SOURCE, 2, TokenType::Source),
+            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+
+            Token::create_test_token(QUERY, 3, TokenType::Query),
+            Token::create_test_token("query_sql", 3, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
+            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
+
+            Token::create_test_token(ITERATOR, 4, TokenType::Iterator),
+            Token::create_test_token("iterator", 4, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
+            Token::create_test_token("query_sql", 4, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 4, TokenType::OpeningCurlyBrace),
+
+            Token::create_test_token(FIELD, 5, TokenType::Field),
+            Token::create_test_token("field1", 5, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
+            Token::create_test_token("@key", 5, TokenType::KeyIdentifier),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
+
+            Token::create_test_token(FIELD, 6, TokenType::Field),
+            Token::create_test_token("field2", 6, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
+            Token::create_test_token("attribute", 6, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
+
+            Token::create_test_token(CLOSING_CURLY_BRACE, 7, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 7, TokenType::EOF),
         ];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);
