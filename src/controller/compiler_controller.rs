@@ -28,7 +28,7 @@ pub fn run_lexer_analyzer() {
 
 /// Ejecuta el analizador sintáctico del compilador
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `tokens` - El vector de tokens resultado del analizador léxico
 fn run_sintax_analyzer(tokens: Vec<Token>) {
     match model::sintax::sintax_analyzer::parser(tokens) {
@@ -43,7 +43,7 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 
 /// Ejecuta el analizador semántico del compilador
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `node` - El nodo raíz del AST resultado del analizador sintáctico
 fn run_semantic_analyzer(node: FileASTNode) {
     let semantic_errors = model::semantic::semantic_analyzer::semantic_analysis(&node);
@@ -58,7 +58,7 @@ fn run_semantic_analyzer(node: FileASTNode) {
 
 /// Muestra los errores encontrados al realizar los distintos análisis
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `errors` - Un vector de CompilerError que contiene los errores encontrados
 fn show_errors(errors: Vec<CompilerError>) {
     for error in errors {
@@ -68,7 +68,7 @@ fn show_errors(errors: Vec<CompilerError>) {
 
 /// Muestra los errores sintácticos encontrados al realizar el análisis sintáctico
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `sintax_errors` - Un vector de Simple<Token>, de la biblioteca chumsky, que contiene los errores sintácticos encontrados
 fn show_sintax_errors(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) {
     for error in sintax_errors {

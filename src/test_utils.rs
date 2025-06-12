@@ -81,12 +81,6 @@ impl TestUtilities {
         token
     }
 
-    pub fn concatenate_test_token(num_line: u16) -> Token {
-        let mut token = Token::new(CONCATENATE.to_string(), TokenType::Concatenate);
-        token.set_num_line(num_line);
-        token
-    }
-
     pub fn access_dot_test_token(num_line: u16) -> Token {
         let mut token = Token::new(ACCESS_DOT.to_string(), TokenType::AccessDot);
         token.set_num_line(num_line);

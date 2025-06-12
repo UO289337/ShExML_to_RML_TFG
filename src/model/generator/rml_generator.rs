@@ -16,7 +16,7 @@ const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";
 ///
 /// Recorre el AST a partir de su nodo raíz para ir extrayendo la información e ir escribiéndola en el fichero RML en el formato adecuado
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `node` - El nodo raíz del AST
 pub fn rml_generator(node: FileASTNode) {
     let mut generator = Generator;

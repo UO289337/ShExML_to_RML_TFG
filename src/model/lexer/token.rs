@@ -25,7 +25,6 @@ pub enum TokenType {
     SqlQuery,
     Colon,
     Equal,
-    Concatenate,
     AccessDot,
     LeftAngleBracket,
     RightAngleBracket,
@@ -47,7 +46,6 @@ pub const SQL_TYPE: &str = "sql:";
 pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";
 pub const EQUAL: &str = "=";
-pub const CONCATENATE: &str = "+";
 pub const ACCESS_DOT: &str = ".";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";
@@ -74,7 +72,7 @@ impl Token {
     /// Los valores del token serán los que se le pasen como parámetro excepto el de número de línea, el cual es 0 dado que,
     /// cuando se crea el token, no es posible saber en que línea se encuentra
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `lexeme` - El lexema del token
     /// * `token_type` - EL tipo del token
     pub fn new(lexeme: String, token_type: TokenType) -> Self {
@@ -87,7 +85,7 @@ impl Token {
 
     /// Modifica el valor del número de línea en el que se encuentra el token en el fichero de entrada
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `self` - El propio token
     /// * `new_line` - El nuevo número de línea donde está el token
     pub fn set_num_line(&mut self, new_line: u16) {

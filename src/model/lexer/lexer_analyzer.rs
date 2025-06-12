@@ -17,7 +17,7 @@ use regex::Regex;
 ///
 /// Acepta la entrada 'PREFIX'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -34,7 +34,7 @@ fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada ':'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -51,7 +51,7 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada '='
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -64,28 +64,11 @@ fn equal(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(EQUAL.to_string(), TokenType::Equal))
 }
 
-/// Encuentra el token Concatenate en la entrada
-///
-/// Acepta la entrada '+'
-///
-/// # Argumentos
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token +
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn concatenate(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal(CONCATENATE).parse_next(input)?;
-    Ok(Token::new(CONCATENATE.to_string(), TokenType::Concatenate))
-}
-
 /// Encuentra el token AccessDot en la entrada
 ///
 /// Acepta la entrada '.'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -102,7 +85,7 @@ fn access_dot(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada '<'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -122,7 +105,7 @@ fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> 
 ///
 /// Acepta la entrada '>'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -142,7 +125,7 @@ fn right_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 ///
 /// Acepta la entrada '{'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -162,7 +145,7 @@ fn opening_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 ///
 /// Acepta la entrada '}'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -182,7 +165,7 @@ fn closing_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 ///
 /// Acepta la entrada 'SOURCE'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -199,7 +182,7 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'QUERY'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -216,7 +199,7 @@ fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'ITERATOR'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -233,7 +216,7 @@ fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'FIELD'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -250,7 +233,7 @@ fn field(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'EXPRESSION'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -267,7 +250,7 @@ fn expression(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'UNION'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -284,7 +267,7 @@ fn union(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'JOIN'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -301,7 +284,7 @@ fn join(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'ON'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -318,7 +301,7 @@ fn on(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada ':sql'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -335,7 +318,7 @@ fn sql_type(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'csvperrow'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -352,7 +335,7 @@ fn csv_per_row(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres alfanuméricos; también acepta '_'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -378,7 +361,7 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres alfanuméricos; también acepta '@' al principio
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -407,7 +390,7 @@ fn key_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de URIs
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -435,7 +418,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de JDBC URLs
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -463,7 +446,7 @@ fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de file
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -491,7 +474,7 @@ fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de una ruta relativa o absoluta
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -528,7 +511,7 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada consultas SQL
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -569,7 +552,7 @@ fn sql_query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Analiza la entrada y va encontrando tokens. A medida que los encuentra los va almacenando en un vector
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - La entrada del fichero
 ///
 /// # Retorna
@@ -590,7 +573,7 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<CompilerError>> {
 ///
 /// Si no hay errores devuelve el vector de tokens detectado y, si hay errores, los devuelve
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `tokens` - El vector de tokens resultado del análisis léxico
 /// * `errors` - El vector de errores léxicos detectados
 /// * `num_line` - El último número de línea
@@ -615,7 +598,7 @@ fn end_lexer(
 
 /// Itera sobre la entrada con el fin de analizarla lexicamente
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - La entrada del fichero
 /// * `tokens` - El vector que contendrá los tokens detectados
 /// * `errors` - El vector que contendrá los errores léxicos detectados
@@ -650,7 +633,7 @@ fn look_over_input(
 ///
 /// A partir de la parte de la entrada que se le pase, busca a que token se corresponde
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - La parte de la entrada del fichero cuyo token se busca
 /// * `tokens` - El vector donde se insertará el token resultante de la búsqueda
 /// * `num_line` - El número de línea en el que se encuentra el token
@@ -667,7 +650,6 @@ fn match_alternatives(
         alt((
             colon,
             equal,
-            concatenate,
             access_dot,
             left_angle_bracket,
             right_angle_bracket,
@@ -784,23 +766,6 @@ mod lexer_tests {
     #[test]
     fn invalid_equal() {
         let actual = equal(&mut ":");
-        check_error(actual);
-    }
-
-    /// Comprueba que se detecta el token Concatenate
-    #[doc(hidden)]
-    #[test]
-    fn valid_concatenate() {
-        let expected = TestUtilities::concatenate_test_token(0);
-        let actual = concatenate(&mut "+");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token + aquellas cadenas que no lo sean
-    #[doc(hidden)]
-    #[test]
-    fn invalid_concatenate() {
-        let actual = concatenate(&mut "=");
         check_error(actual);
     }
 
@@ -1415,7 +1380,7 @@ mod lexer_tests {
 
     /// Comprueba que el resultado actual del test es igual al esperado
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `expected` - El token esperado
     /// * `actual` - El token real
     fn check_ok(expected: Token, actual: Result<Token, ErrMode<ContextError>>) {
@@ -1424,7 +1389,7 @@ mod lexer_tests {
 
     /// Comprueba que el resultado actual del test es un error
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `actual` - Un Result con el error esperado
     fn check_error(actual: Result<Token, ErrMode<ContextError>>) {
         assert!(

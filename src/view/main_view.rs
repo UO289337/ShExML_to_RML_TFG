@@ -43,7 +43,7 @@ fn input_shexml_file() -> Result<String, Error> {
 
 /// Comprueba que la extensión del fichero seleccionado por el usuario sea .shexml
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `file` - El fichero de entrada ShExML indicado por el usuario
 ///
 /// # Retorna
@@ -66,7 +66,7 @@ fn check_file_extension(file: &String) -> Result<String, Error> {
 
 /// Comprueba que el fichero ShExML no esté vacío
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `file_content` - El contenido del fichero ShExML de entrada seleccionado por el usuario
 ///
 /// # Retorna
