@@ -23,11 +23,12 @@ use super::super::lexer::token::TokenType;
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
-    prefix_parser()
+    prefix_parser().or_not()
         .then(source_parser())
         .then(query_parser().or_not())
-        .then(iterator_parser().or_not())
+        .then(iterator_parser())
         .then(expression_parser().or_not())
+        // .then(shape_parser())
         .then_ignore(eof_parser())
         .map(
             |((((prefixes, sources), queries), iterators), expressions)| FileASTNode {
@@ -36,6 +37,7 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
                 queries,
                 iterators,
                 expressions,
+                // shapes,
             },
         )
 }
@@ -389,6 +391,44 @@ fn create_access_node(
         field_accessed: None,
     }
 }
+
+/*
+/// Parsea los tokens para generar el nodo Shape del AST
+///
+/// Realiza el parseo de los tokens para parsear la secuencia:
+/// Prefix Ident Prefix Ident OpeningCurlyBrackets ShapeTuples ClosingCurlyBrackets
+///
+/// # Retorna
+/// Un vector con nodos Shape del AST
+///
+/// # Errores
+/// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
+fn shape_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
+    prefix_or_uri_parser()
+        .then(prefix_or_uri_parser())
+        
+
+        .then(identifier_parser(FIELD.to_string()))
+        .then_ignore(left_angle_bracket_parser("el identificador".to_string()))
+        .then(identifier_parser("<".to_string()).or(key_identifier_parser()))
+        .then_ignore(right_angle_bracket_parser("el identificador".to_string()))
+        .map(|((_, ident), access_ident)| FieldASTNode {
+            field_identifier: ident.lexeme.clone(),
+            access_field_identifier: access_ident.lexeme.clone(),
+        })
+        .repeated()
+        .at_least(1)
+        .collect()
+}
+
+fn prefix_or_uri_parser() -> Or<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>> {
+    (colon_parser()
+        .then(identifier_parser(COLON.to_string())))
+    .or(left_angle_bracket_parser("la URI".to_string())
+        .then(uri_parser())
+        .then(right_angle_bracket_parser("la URI".to_string())))
+}
+        */
 
 // Parsers particulares
 
@@ -1461,10 +1501,10 @@ mod sintax_tests {
         ];
 
         let expected = FileASTNode {
-            prefixes: vec![PrefixASTNode {
+            prefixes: Some(vec![PrefixASTNode {
                 identifier: "example".to_string(),
                 uri: "https://example.com/".to_string(),
-            }],
+            }]),
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
@@ -1473,7 +1513,7 @@ mod sintax_tests {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
-            iterators: Some(vec![IteratorASTNode {
+            iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
                 fields: vec![FieldASTNode {
@@ -1492,7 +1532,7 @@ mod sintax_tests {
                     field_identifier: "country".to_string(),
                     access_field_identifier: "country".to_string(),
                 }]
-            }]),
+            }],
             expressions: Some(vec![ExpressionASTNode {
                 identifier: "films".to_string(),
                 expression_type: ExpressionType::BASIC,
@@ -1571,16 +1611,16 @@ mod sintax_tests {
         ];
 
         let expected = FileASTNode {
-            prefixes: vec![PrefixASTNode {
+            prefixes: Some(vec![PrefixASTNode {
                 identifier: "example".to_string(),
                 uri: "https://example.com/".to_string(),
-            }],
+            }]),
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: None,
-            iterators: Some(vec![IteratorASTNode {
+            iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
                 fields: vec![FieldASTNode {
@@ -1599,72 +1639,7 @@ mod sintax_tests {
                     field_identifier: "country".to_string(),
                     access_field_identifier: "country".to_string(),
                 }]
-            }]),
-            expressions: Some(vec![ExpressionASTNode {
-                identifier: "films".to_string(),
-                expression_type: ExpressionType::BASIC,
-                accesses: vec![AccessASTNode {
-                    identifier: "films_csv_file".to_string(),
-                    iterator_accessed: "film_csv".to_string(),
-                    field_accessed: None,
-                }]
-            }]),
-        };
-
-        let actual = file_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap());
-    }
-
-    /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST si no hay iterator y no hay errores sintácticos
-    #[doc(hidden)]
-    #[test]
-    fn file_parser_with_valid_sintax_and_withouth_iterator() {
-        let tokens_vector = vec![
-            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
-            Token::create_test_token("example", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-
-            Token::create_test_token(SOURCE, 2, TokenType::Source),
-            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-            
-            Token::create_test_token(QUERY, 3, TokenType::Query),
-            Token::create_test_token("query_sql", 3, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
-            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-
-            Token::create_test_token(EXPRESSION, 4, TokenType::Expression),
-            Token::create_test_token("films", 4, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
-            Token::create_test_token("films_csv_file", 4, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 4, TokenType::AccessDot),
-            Token::create_test_token("film_csv", 4, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
-
-            Token::create_test_token(EOF, 4, TokenType::EOF),
-        ];
-
-        let expected = FileASTNode {
-            prefixes: vec![PrefixASTNode {
-                identifier: "example".to_string(),
-                uri: "https://example.com/".to_string(),
             }],
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
-            queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
-            iterators: None,
             expressions: Some(vec![ExpressionASTNode {
                 identifier: "films".to_string(),
                 expression_type: ExpressionType::BASIC,
@@ -1741,10 +1716,10 @@ mod sintax_tests {
         ];
 
         let expected = FileASTNode {
-            prefixes: vec![PrefixASTNode {
+            prefixes: Some(vec![PrefixASTNode {
                 identifier: "example".to_string(),
                 uri: "https://example.com/".to_string(),
-            }],
+            }]),
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
@@ -1753,7 +1728,7 @@ mod sintax_tests {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
-            iterators: Some(vec![IteratorASTNode {
+            iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
                 fields: vec![FieldASTNode {
@@ -1772,7 +1747,7 @@ mod sintax_tests {
                     field_identifier: "country".to_string(),
                     access_field_identifier: "country".to_string(),
                 }]
-            }]),
+            }],
             expressions: None,
         };
 

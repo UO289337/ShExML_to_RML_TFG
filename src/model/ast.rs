@@ -12,6 +12,15 @@ pub enum ExpressionType {
     JOIN,
 }
 
+/// Uri o Prefix
+///
+/// Enumerador que contiene el Prefix o la URI de un Shape o de un elemento de este
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum PrefixOrURI {
+    Prefix(String),
+    URI(String),
+}
+
 impl ExpressionType {
     /// Obtiene el tipo de una expresión a partir de un token
     ///
@@ -33,11 +42,12 @@ impl ExpressionType {
 /// Es la raíz del árbol AST y contiene vectores de prefijos (prefixes) y de fuentes (sources) como hijos
 #[derive(Debug, PartialEq)]
 pub struct FileASTNode {
-    pub prefixes: Vec<PrefixASTNode>,
+    pub prefixes: Option<Vec<PrefixASTNode>>,
     pub sources: Vec<SourceASTNode>,
     pub queries: Option<Vec<QueryASTNode>>,
-    pub iterators: Option<Vec<IteratorASTNode>>,
+    pub iterators: Vec<IteratorASTNode>,
     pub expressions: Option<Vec<ExpressionASTNode>>,
+    // pub shapes: Vec<ShapeASTNode>,
 }
 
 /// Nodo de tipo Prefix del AST
@@ -77,6 +87,15 @@ pub struct IteratorASTNode {
     pub fields: Vec<FieldASTNode>,
 }
 
+/// Nodo de tipo Field del AST
+///
+/// Se corresponde con los Field de un ITERATOR de SheXMl; contiene un identificador para el field y otro para el campo accedido
+#[derive(Debug, PartialEq)]
+pub struct FieldASTNode {
+    pub field_identifier: String,
+    pub access_field_identifier: String,
+}
+
 /// Nodo de tipo Expression del AST
 ///
 /// Se corresponde con los Expression de SheXMl; contiene un identificador, el tipo de la expresión y los accesos a iteradores y/o campos que se realizan
@@ -85,15 +104,6 @@ pub struct ExpressionASTNode {
     pub identifier: String,
     pub expression_type: ExpressionType,
     pub accesses: Vec<AccessASTNode>,
-}
-
-/// Nodo de tipo Field del AST
-///
-/// Se corresponde con los Field de un ITERATOR de SheXMl; contiene un identificador para el field y otro para el campo accedido
-#[derive(Debug, PartialEq)]
-pub struct FieldASTNode {
-    pub field_identifier: String,
-    pub access_field_identifier: String,
 }
 
 /// Nodo de tipo Access del AST
@@ -105,3 +115,28 @@ pub struct AccessASTNode {
     pub iterator_accessed: String,
     pub field_accessed: Option<String>,
 }
+
+/*
+/// Nodo de tipo Shape del AST
+///
+/// Se corresponde con los Shape de ShExML
+#[derive(Debug, PartialEq)]
+pub struct ShapeASTNode {
+    pub prefix_or_uri: PrefixOrURI,
+    pub identifier: String,
+    pub key_prefix_or_uri: PrefixOrURI,
+    pub key_identifier: String,
+    pub tuples: Vec<ShapeTuplesASTNode>,
+}
+
+/// Nodo de tipo ShapeTuples del AST
+///
+/// Se corresponde con las tuplas de los Shape de ShExML
+#[derive(Debug, PartialEq)]
+pub struct ShapeTuplesASTNode {
+    pub prefix_or_uri: PrefixOrURI,
+    pub identifier: String,
+    pub object_prefix_or_uri: Option<PrefixOrURI>,
+    pub object: String,
+}
+    */

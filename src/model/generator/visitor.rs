@@ -24,7 +24,7 @@ impl Visitor<String> for Generator {
     /// Una cadena con el contenido del fichero RML
     fn visit_file(&mut self, file_node: FileASTNode) -> String {
         let mut file_generation = String::new();
-        for prefix in file_node.prefixes {
+        for prefix in file_node.prefixes.unwrap() {
             file_generation.push_str(&format!("@prefix {} .\n", self.visit_prefix(prefix)));
         }
         file_generation

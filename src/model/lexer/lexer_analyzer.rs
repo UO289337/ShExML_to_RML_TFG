@@ -47,6 +47,23 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(COLON.to_string(), TokenType::Colon))
 }
 
+/// Encuentra el token SemiColon en la entrada
+///
+/// Acepta la entrada ';'
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token ;
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn semicolon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(SEMICOLON).parse_next(input)?;
+    Ok(Token::new(SEMICOLON.to_string(), TokenType::SemiColon))
+}
+
 /// Encuentra el token Equal en la entrada
 ///
 /// Acepta la entrada '='
@@ -158,6 +175,46 @@ fn closing_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
     Ok(Token::new(
         CLOSING_CURLY_BRACE.to_string(),
         TokenType::ClosingCurlyBrace,
+    ))
+}
+
+/// Encuentra el token LeftBracket en la entrada
+///
+/// Acepta la entrada '['
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token [
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn left_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(LEFT_BRACKET).parse_next(input)?;
+    Ok(Token::new(
+        LEFT_BRACKET.to_string(),
+        TokenType::LeftBracket,
+    ))
+}
+
+/// Encuentra el token RightBracket en la entrada
+///
+/// Acepta la entrada ']'
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token ]
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn right_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(RIGHT_BRACKET).parse_next(input)?;
+    Ok(Token::new(
+        RIGHT_BRACKET.to_string(),
+        TokenType::RightBracket,
     ))
 }
 
@@ -649,12 +706,15 @@ fn match_alternatives(
         // Elementos básicos
         alt((
             colon,
+            semicolon,
             equal,
             access_dot,
             left_angle_bracket,
             right_angle_bracket,
             opening_curly_brace,
             closing_curly_brace,
+            left_bracket,
+            right_bracket,
         )),
         // Palabras reservadas
         alt((
@@ -748,6 +808,23 @@ mod lexer_tests {
     #[test]
     fn invalid_colon() {
         let actual = colon(&mut ";");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token ;
+    #[doc(hidden)]
+    #[test]
+    fn valid_semicolon() {
+        let expected = Token::create_test_token(SEMICOLON, 0, TokenType::SemiColon);
+        let actual = semicolon(&mut ";");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token ; aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_semicolon() {
+        let actual = semicolon(&mut ":");
         check_error(actual);
     }
 
@@ -850,6 +927,40 @@ mod lexer_tests {
     #[test]
     fn invalid_closing_curly_brace() {
         let actual = closing_curly_brace(&mut "{");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token [
+    #[doc(hidden)]
+    #[test]
+    fn valid_left_bracket() {
+        let expected = Token::create_test_token(LEFT_BRACKET, 0, TokenType::LeftBracket);
+        let actual = left_bracket(&mut "[");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token [ aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_left_bracket() {
+        let actual = left_bracket(&mut "]");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token ]
+    #[doc(hidden)]
+    #[test]
+    fn valid_right_bracket() {
+        let expected = Token::create_test_token(RIGHT_BRACKET, 0, TokenType::RightBracket);
+        let actual = right_bracket(&mut "]");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token ] aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_right_bracket() {
+        let actual = right_bracket(&mut "[");
         check_error(actual);
     }
 

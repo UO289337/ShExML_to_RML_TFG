@@ -31,6 +31,8 @@ pub enum TokenType {
     RightAngleBracket,
     OpeningCurlyBrace,
     ClosingCurlyBrace,
+    LeftBracket,
+    RightBracket,
     EOF,
 }
 
@@ -46,13 +48,15 @@ pub const ON: &str = "ON";
 pub const SQL_TYPE: &str = "sql:";
 pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";
-pub const SEMI_COLON: &str = ";";
+pub const SEMICOLON: &str = ";";
 pub const EQUAL: &str = "=";
 pub const ACCESS_DOT: &str = ".";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";
 pub const OPENING_CURLY_BRACE: &str = "{";
 pub const CLOSING_CURLY_BRACE: &str = "}";
+pub const LEFT_BRACKET: &str = "[";
+pub const RIGHT_BRACKET: &str = "]";
 pub const EOF: &str = " ";
 
 /// Estructura de los token
