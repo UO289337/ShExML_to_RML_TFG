@@ -1414,18 +1414,62 @@ mod sintax_tests {
             TestUtilities::left_angle_bracket_test_token(1),
             TestUtilities::uri_test_token("https://example.com/", 1),
             TestUtilities::right_angle_bracket_test_token(1),
+
             TestUtilities::source_test_token(2),
             TestUtilities::ident_test_token("films_csv_file", 2),
             TestUtilities::left_angle_bracket_test_token(2),
             TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
             TestUtilities::right_angle_bracket_test_token(2),
+
             TestUtilities::query_test_token(3),
             TestUtilities::ident_test_token("query_sql", 3),
             TestUtilities::left_angle_bracket_test_token(3),
             TestUtilities::sql_type_test_token(3),
             TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
             TestUtilities::right_angle_bracket_test_token(3),
-            TestUtilities::eof_test_token(3),
+
+            TestUtilities::iterator_test_token(4),
+            TestUtilities::ident_test_token("film_csv", 4),
+            TestUtilities::left_angle_bracket_test_token(4),
+            TestUtilities::ident_test_token("query_sql", 4),
+            TestUtilities::right_angle_bracket_test_token(4),
+            TestUtilities::opening_curly_brace_test_token(4),
+
+            TestUtilities::field_test_token(5),
+            TestUtilities::ident_test_token("id", 5),
+            TestUtilities::left_angle_bracket_test_token(5),
+            TestUtilities::key_identifier_test_token("@id", 5),
+            TestUtilities::right_angle_bracket_test_token(5),
+
+            TestUtilities::field_test_token(6),
+            TestUtilities::ident_test_token("name", 6),
+            TestUtilities::left_angle_bracket_test_token(6),
+            TestUtilities::key_identifier_test_token("name", 6),
+            TestUtilities::right_angle_bracket_test_token(6),
+
+            TestUtilities::field_test_token(7),
+            TestUtilities::ident_test_token("year", 7),
+            TestUtilities::left_angle_bracket_test_token(7),
+            TestUtilities::ident_test_token("year", 7),
+            TestUtilities::right_angle_bracket_test_token(7),
+
+            TestUtilities::field_test_token(8),
+            TestUtilities::ident_test_token("country", 8),
+            TestUtilities::left_angle_bracket_test_token(8),
+            TestUtilities::key_identifier_test_token("country", 8),
+            TestUtilities::right_angle_bracket_test_token(8),
+
+            TestUtilities::closing_curly_brace_test_token(9),
+
+            TestUtilities::expression_test_token(10),
+            TestUtilities::ident_test_token("films", 10),
+            TestUtilities::left_angle_bracket_test_token(10),
+            TestUtilities::ident_test_token("films_csv_file", 10),
+            TestUtilities::access_dot_test_token(10),
+            TestUtilities::ident_test_token("film_csv", 10),
+            TestUtilities::right_angle_bracket_test_token(10),
+
+            TestUtilities::eof_test_token(10),
         ];
 
         let expected = FileASTNode {
@@ -1441,8 +1485,35 @@ mod sintax_tests {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
-            iterators: None,
-            expressions: None,
+            iterators: Some(vec![IteratorASTNode {
+                identifier: "film_csv".to_string(),
+                iterator_access: "query_sql".to_string(),
+                fields: vec![FieldASTNode {
+                    field_identifier: "id".to_string(),
+                    access_field_identifier: "@id".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "name".to_string(),
+                    access_field_identifier: "name".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "year".to_string(),
+                    access_field_identifier: "year".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "country".to_string(),
+                    access_field_identifier: "country".to_string(),
+                }]
+            }]),
+            expressions: Some(vec![ExpressionASTNode {
+                identifier: "films".to_string(),
+                expression_type: ExpressionType::BASIC,
+                accesses: vec![AccessASTNode {
+                    identifier: "films_csv_file".to_string(),
+                    iterator_accessed: "film_csv".to_string(),
+                    field_accessed: None,
+                }]
+            }]),
         };
 
         let actual = file_parser().parse(tokens_vector.clone());
@@ -1460,12 +1531,55 @@ mod sintax_tests {
             TestUtilities::left_angle_bracket_test_token(1),
             TestUtilities::uri_test_token("https://example.com/", 1),
             TestUtilities::right_angle_bracket_test_token(1),
+
             TestUtilities::source_test_token(2),
             TestUtilities::ident_test_token("films_csv_file", 2),
             TestUtilities::left_angle_bracket_test_token(2),
             TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
             TestUtilities::right_angle_bracket_test_token(2),
-            TestUtilities::eof_test_token(3),
+            
+            TestUtilities::iterator_test_token(3),
+            TestUtilities::ident_test_token("film_csv", 3),
+            TestUtilities::left_angle_bracket_test_token(3),
+            TestUtilities::ident_test_token("query_sql", 3),
+            TestUtilities::right_angle_bracket_test_token(3),
+            TestUtilities::opening_curly_brace_test_token(3),
+
+            TestUtilities::field_test_token(4),
+            TestUtilities::ident_test_token("id", 4),
+            TestUtilities::left_angle_bracket_test_token(4),
+            TestUtilities::key_identifier_test_token("@id", 4),
+            TestUtilities::right_angle_bracket_test_token(4),
+
+            TestUtilities::field_test_token(5),
+            TestUtilities::ident_test_token("name", 5),
+            TestUtilities::left_angle_bracket_test_token(5),
+            TestUtilities::key_identifier_test_token("name", 5),
+            TestUtilities::right_angle_bracket_test_token(5),
+
+            TestUtilities::field_test_token(6),
+            TestUtilities::ident_test_token("year", 6),
+            TestUtilities::left_angle_bracket_test_token(6),
+            TestUtilities::ident_test_token("year", 6),
+            TestUtilities::right_angle_bracket_test_token(6),
+
+            TestUtilities::field_test_token(7),
+            TestUtilities::ident_test_token("country", 7),
+            TestUtilities::left_angle_bracket_test_token(7),
+            TestUtilities::key_identifier_test_token("country", 7),
+            TestUtilities::right_angle_bracket_test_token(7),
+
+            TestUtilities::closing_curly_brace_test_token(8),
+
+            TestUtilities::expression_test_token(9),
+            TestUtilities::ident_test_token("films", 9),
+            TestUtilities::left_angle_bracket_test_token(9),
+            TestUtilities::ident_test_token("films_csv_file", 9),
+            TestUtilities::access_dot_test_token(9),
+            TestUtilities::ident_test_token("film_csv", 9),
+            TestUtilities::right_angle_bracket_test_token(9),
+
+            TestUtilities::eof_test_token(9),
         ];
 
         let expected = FileASTNode {
@@ -1478,7 +1592,199 @@ mod sintax_tests {
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: None,
+            iterators: Some(vec![IteratorASTNode {
+                identifier: "film_csv".to_string(),
+                iterator_access: "query_sql".to_string(),
+                fields: vec![FieldASTNode {
+                    field_identifier: "id".to_string(),
+                    access_field_identifier: "@id".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "name".to_string(),
+                    access_field_identifier: "name".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "year".to_string(),
+                    access_field_identifier: "year".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "country".to_string(),
+                    access_field_identifier: "country".to_string(),
+                }]
+            }]),
+            expressions: Some(vec![ExpressionASTNode {
+                identifier: "films".to_string(),
+                expression_type: ExpressionType::BASIC,
+                accesses: vec![AccessASTNode {
+                    identifier: "films_csv_file".to_string(),
+                    iterator_accessed: "film_csv".to_string(),
+                    field_accessed: None,
+                }]
+            }]),
+        };
+
+        let actual = file_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST si no hay iterator y no hay errores sintácticos
+    #[doc(hidden)]
+    #[test]
+    fn file_parser_with_valid_sintax_and_withouth_iterator() {
+        let tokens_vector = vec![
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("example", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::uri_test_token("https://example.com/", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+
+            TestUtilities::source_test_token(2),
+            TestUtilities::ident_test_token("films_csv_file", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+            
+            TestUtilities::query_test_token(3),
+            TestUtilities::ident_test_token("query_sql", 3),
+            TestUtilities::left_angle_bracket_test_token(3),
+            TestUtilities::sql_type_test_token(3),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
+            TestUtilities::right_angle_bracket_test_token(3),
+
+            TestUtilities::expression_test_token(4),
+            TestUtilities::ident_test_token("films", 4),
+            TestUtilities::left_angle_bracket_test_token(4),
+            TestUtilities::ident_test_token("films_csv_file", 4),
+            TestUtilities::access_dot_test_token(4),
+            TestUtilities::ident_test_token("film_csv", 4),
+            TestUtilities::right_angle_bracket_test_token(4),
+
+            TestUtilities::eof_test_token(4),
+        ];
+
+        let expected = FileASTNode {
+            prefixes: vec![PrefixASTNode {
+                identifier: "example".to_string(),
+                uri: "https://example.com/".to_string(),
+            }],
+            sources: vec![SourceASTNode {
+                identifier: "films_csv_file".to_string(),
+                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+            }],
+            queries: Some(vec![QueryASTNode {
+                identifier: "query_sql".to_string(),
+                sql_query: "SELECT * FROM example;".to_string(),
+            }]),
             iterators: None,
+            expressions: Some(vec![ExpressionASTNode {
+                identifier: "films".to_string(),
+                expression_type: ExpressionType::BASIC,
+                accesses: vec![AccessASTNode {
+                    identifier: "films_csv_file".to_string(),
+                    iterator_accessed: "film_csv".to_string(),
+                    field_accessed: None,
+                }]
+            }]),
+        };
+
+        let actual = file_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap());
+    }
+
+    /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST si no hay Expression y no hay errores sintácticos
+    #[doc(hidden)]
+    #[test]
+    fn file_parser_with_valid_sintax_and_withouth_expression() {
+        let tokens_vector = vec![
+            TestUtilities::prefix_test_token(1),
+            TestUtilities::ident_test_token("example", 1),
+            TestUtilities::colon_test_token(1),
+            TestUtilities::left_angle_bracket_test_token(1),
+            TestUtilities::uri_test_token("https://example.com/", 1),
+            TestUtilities::right_angle_bracket_test_token(1),
+
+            TestUtilities::source_test_token(2),
+            TestUtilities::ident_test_token("films_csv_file", 2),
+            TestUtilities::left_angle_bracket_test_token(2),
+            TestUtilities::uri_test_token("https://shexml.herminiogarcia.com/files/films.csv", 2),
+            TestUtilities::right_angle_bracket_test_token(2),
+
+            TestUtilities::query_test_token(3),
+            TestUtilities::ident_test_token("query_sql", 3),
+            TestUtilities::left_angle_bracket_test_token(3),
+            TestUtilities::sql_type_test_token(3),
+            TestUtilities::sql_query_test_token("SELECT * FROM example;", 3),
+            TestUtilities::right_angle_bracket_test_token(3),
+
+            TestUtilities::iterator_test_token(4),
+            TestUtilities::ident_test_token("film_csv", 4),
+            TestUtilities::left_angle_bracket_test_token(4),
+            TestUtilities::ident_test_token("query_sql", 4),
+            TestUtilities::right_angle_bracket_test_token(4),
+            TestUtilities::opening_curly_brace_test_token(4),
+
+            TestUtilities::field_test_token(5),
+            TestUtilities::ident_test_token("id", 5),
+            TestUtilities::left_angle_bracket_test_token(5),
+            TestUtilities::key_identifier_test_token("@id", 5),
+            TestUtilities::right_angle_bracket_test_token(5),
+
+            TestUtilities::field_test_token(6),
+            TestUtilities::ident_test_token("name", 6),
+            TestUtilities::left_angle_bracket_test_token(6),
+            TestUtilities::key_identifier_test_token("name", 6),
+            TestUtilities::right_angle_bracket_test_token(6),
+
+            TestUtilities::field_test_token(7),
+            TestUtilities::ident_test_token("year", 7),
+            TestUtilities::left_angle_bracket_test_token(7),
+            TestUtilities::ident_test_token("year", 7),
+            TestUtilities::right_angle_bracket_test_token(7),
+
+            TestUtilities::field_test_token(8),
+            TestUtilities::ident_test_token("country", 8),
+            TestUtilities::left_angle_bracket_test_token(8),
+            TestUtilities::key_identifier_test_token("country", 8),
+            TestUtilities::right_angle_bracket_test_token(8),
+
+            TestUtilities::closing_curly_brace_test_token(9),
+            TestUtilities::eof_test_token(9),
+        ];
+
+        let expected = FileASTNode {
+            prefixes: vec![PrefixASTNode {
+                identifier: "example".to_string(),
+                uri: "https://example.com/".to_string(),
+            }],
+            sources: vec![SourceASTNode {
+                identifier: "films_csv_file".to_string(),
+                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
+            }],
+            queries: Some(vec![QueryASTNode {
+                identifier: "query_sql".to_string(),
+                sql_query: "SELECT * FROM example;".to_string(),
+            }]),
+            iterators: Some(vec![IteratorASTNode {
+                identifier: "film_csv".to_string(),
+                iterator_access: "query_sql".to_string(),
+                fields: vec![FieldASTNode {
+                    field_identifier: "id".to_string(),
+                    access_field_identifier: "@id".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "name".to_string(),
+                    access_field_identifier: "name".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "year".to_string(),
+                    access_field_identifier: "year".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "country".to_string(),
+                    access_field_identifier: "country".to_string(),
+                }]
+            }]),
             expressions: None,
         };
 
