@@ -33,6 +33,30 @@ impl TestUtilities {
         token
     }
 
+    pub fn expression_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(EXPRESSION.to_string(), TokenType::Expression);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn union_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(UNION.to_string(), TokenType::Union);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn join_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(JOIN.to_string(), TokenType::Join);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn on_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(ON.to_string(), TokenType::On);
+        token.set_num_line(num_line);
+        token
+    }
+
     pub fn sql_type_test_token(num_line: u16) -> Token {
         let mut token = Token::new(SQL_TYPE.to_string(), TokenType::SqlType);
         token.set_num_line(num_line);
@@ -47,6 +71,18 @@ impl TestUtilities {
 
     pub fn colon_test_token(num_line: u16) -> Token {
         let mut token = Token::new(COLON.to_string(), TokenType::Colon);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn equal_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(EQUAL.to_string(), TokenType::Equal);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn access_dot_test_token(num_line: u16) -> Token {
+        let mut token = Token::new(ACCESS_DOT.to_string(), TokenType::AccessDot);
         token.set_num_line(num_line);
         token
     }
@@ -86,6 +122,12 @@ impl TestUtilities {
 
     pub fn ident_test_token(ident: &str, num_line: u16) -> Token {
         let mut token = Token::new(ident.to_string(), TokenType::Ident);
+        token.set_num_line(num_line);
+        token
+    }
+
+    pub fn key_identifier_test_token(key_ident: &str, num_line: u16) -> Token {
+        let mut token = Token::new(key_ident.to_string(), TokenType::KeyIdentifier);
         token.set_num_line(num_line);
         token
     }

@@ -1,5 +1,33 @@
 //! Estructura del AST (Abstract Syntax Tree) del compilador
 
+use crate::model::lexer::token::{Token, TokenType};
+
+/// Tipos de expresiones
+///
+/// Enumerador que contiene todos los tipos de expresiones que puede haber en el compilador
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ExpressionType {
+    BASIC,
+    UNION,
+    JOIN,
+}
+
+impl ExpressionType {
+    /// Obtiene el tipo de una expresión a partir de un token
+    ///
+    /// A partir de un token y de su tipo, obtiene el tipo que debe ser la expresión
+    ///
+    /// # Retorna
+    /// El tipo de la expresión
+    pub fn from(token: Token) -> ExpressionType {
+        match token.token_type {
+            TokenType::Union => ExpressionType::UNION,
+            TokenType::Join => ExpressionType::JOIN,
+            _ => ExpressionType::BASIC,
+        }
+    }
+}
+
 /// Nodo de tipo File del AST
 ///
 /// Es la raíz del árbol AST y contiene vectores de prefijos (prefixes) y de fuentes (sources) como hijos
@@ -9,6 +37,7 @@ pub struct FileASTNode {
     pub sources: Vec<SourceASTNode>,
     pub queries: Option<Vec<QueryASTNode>>,
     pub iterators: Option<Vec<IteratorASTNode>>,
+    pub expressions: Option<Vec<ExpressionASTNode>>,
 }
 
 /// Nodo de tipo Prefix del AST
@@ -48,6 +77,16 @@ pub struct IteratorASTNode {
     pub fields: Vec<FieldASTNode>,
 }
 
+/// Nodo de tipo Expression del AST
+///
+/// Se corresponde con los Expression de SheXMl; contiene un identificador, el tipo de la expresión y los accesos a iteradores y/o campos que se realizan
+#[derive(Debug, PartialEq)]
+pub struct ExpressionASTNode {
+    pub identifier: String,
+    pub expression_type: ExpressionType,
+    pub accesses: Vec<AccessASTNode>,
+}
+
 /// Nodo de tipo Field del AST
 ///
 /// Se corresponde con los Field de un ITERATOR de SheXMl; contiene un identificador para el field y otro para el campo accedido
@@ -55,4 +94,14 @@ pub struct IteratorASTNode {
 pub struct FieldASTNode {
     pub field_identifier: String,
     pub access_field_identifier: String,
+}
+
+/// Nodo de tipo Access del AST
+///
+/// Se corresponde con los accesos a iteradores y/o campos de estos en las expresiones
+#[derive(Debug, PartialEq)]
+pub struct AccessASTNode {
+    pub identifier: String,
+    pub iterator_accessed: String,
+    pub field_accessed: Option<String>,
 }

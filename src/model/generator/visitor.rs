@@ -16,7 +16,7 @@ pub struct Generator;
 impl Visitor<String> for Generator {
     /// Visita el nodo File
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `self` - El propio generador
     /// * `file_node` - El nodo File del AST
     ///
@@ -34,7 +34,7 @@ impl Visitor<String> for Generator {
 
     /// Visita el nodo Prefix
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `self` - El propio generador
     /// * `prefix_node` - El nodo Prefix del AST
     ///

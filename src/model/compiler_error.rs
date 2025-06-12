@@ -20,7 +20,7 @@ impl fmt::Display for CompilerError {
 impl CompilerError {
     /// Crea un CompilerError y lo devuelve
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `message` - Mensaje del error
     ///
     /// # Retorna

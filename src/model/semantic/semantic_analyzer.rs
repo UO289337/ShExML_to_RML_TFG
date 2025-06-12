@@ -14,7 +14,7 @@ use crate::model::{
 ///
 /// Realiza varias comprobaciones a partir de los nodos del AST
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `node` - La referencia al nodo raíz del AST
 ///
 /// # Retorna
@@ -26,7 +26,7 @@ pub fn semantic_analysis(node: &FileASTNode) -> Vec<CompilerError> {
 
 /// Comprueba que no haya identificadores duplicados
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `node` - La referencia al nodo raíz del AST
 ///
 /// # Retorna
@@ -58,7 +58,7 @@ fn check_duplicate_identifiers(node: &FileASTNode) -> Vec<CompilerError> {
 
 /// Obtiene los identificadores de los PREFIX
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `prefixes` - La referencia al vector de nodos Prefix del AST
 ///
 /// # Retorna
@@ -73,7 +73,7 @@ fn get_prefix_identifiers(prefixes: &Vec<PrefixASTNode>) -> Vec<String> {
 
 /// Obtiene los identificadores de los SOURCE
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `sources` - La referencia al vector de nodos Source del AST
 ///
 /// # Retorna
@@ -88,7 +88,7 @@ fn get_source_identifiers(sources: &Vec<SourceASTNode>) -> Vec<String> {
 
 /// Obtiene los identificadores de los QUERY
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `queries` - La referencia al vector de nodos Query del AST
 ///
 /// # Retorna
@@ -136,6 +136,7 @@ mod lexer_tests {
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -171,6 +172,7 @@ mod lexer_tests {
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -205,6 +207,7 @@ mod lexer_tests {
                 },
             ]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -233,6 +236,7 @@ mod lexer_tests {
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
             iterators: None,
+            expressions: None,
         };
 
         let actual = check_duplicate_identifiers(&input);

@@ -17,7 +17,7 @@ use regex::Regex;
 ///
 /// Acepta la entrada 'PREFIX'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -34,7 +34,7 @@ fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada ':'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -47,11 +47,45 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(COLON.to_string(), TokenType::Colon))
 }
 
+/// Encuentra el token Equal en la entrada
+///
+/// Acepta la entrada '='
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token =
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn equal(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(EQUAL).parse_next(input)?;
+    Ok(Token::new(EQUAL.to_string(), TokenType::Equal))
+}
+
+/// Encuentra el token AccessDot en la entrada
+///
+/// Acepta la entrada '.'
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token .
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn access_dot(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(ACCESS_DOT).parse_next(input)?;
+    Ok(Token::new(ACCESS_DOT.to_string(), TokenType::AccessDot))
+}
+
 /// Encuentra el token LeftAngleBracket en la entrada
 ///
 /// Acepta la entrada '<'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -71,7 +105,7 @@ fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> 
 ///
 /// Acepta la entrada '>'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -91,7 +125,7 @@ fn right_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 ///
 /// Acepta la entrada '{'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -111,7 +145,7 @@ fn opening_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 ///
 /// Acepta la entrada '}'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -131,7 +165,7 @@ fn closing_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 ///
 /// Acepta la entrada 'SOURCE'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -148,7 +182,7 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'QUERY'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -165,7 +199,7 @@ fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'ITERATOR'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -182,7 +216,7 @@ fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'FIELD'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -195,11 +229,79 @@ fn field(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(FIELD.to_string(), TokenType::Field))
 }
 
+/// Encuentra el token Expression en la entrada
+///
+/// Acepta la entrada 'EXPRESSION'
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Expression
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn expression(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(EXPRESSION).parse_next(input)?;
+    Ok(Token::new(EXPRESSION.to_string(), TokenType::Expression))
+}
+
+/// Encuentra el token Union en la entrada
+///
+/// Acepta la entrada 'UNION'
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Union
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn union(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(UNION).parse_next(input)?;
+    Ok(Token::new(UNION.to_string(), TokenType::Union))
+}
+
+/// Encuentra el token Join en la entrada
+///
+/// Acepta la entrada 'JOIN'
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token Join
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn join(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(JOIN).parse_next(input)?;
+    Ok(Token::new(JOIN.to_string(), TokenType::Join))
+}
+
+/// Encuentra el token On en la entrada
+///
+/// Acepta la entrada 'ON'
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token On
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn on(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let _ = literal(ON).parse_next(input)?;
+    Ok(Token::new(ON.to_string(), TokenType::On))
+}
+
 /// Encuentra el token SqlType en la entrada
 ///
 /// Acepta la entrada ':sql'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -216,7 +318,7 @@ fn sql_type(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta la entrada 'csvperrow'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -231,19 +333,18 @@ fn csv_per_row(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 
 /// Encuentra un token identificador en la entrada
 ///
-/// Acepta como entrada cualquier cadena de caracteres alfabéticos; también acepta '_'
+/// Acepta como entrada cualquier cadena de caracteres alfanuméricos; también acepta '_'
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
-/// Un token identificador
+/// Un token Ident
 ///
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let ident =
-        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
+    let ident = take_while(1.., |c: char| c.is_alphanumeric() || c == '_').parse_next(input)?;
 
     if ident.chars().next().unwrap().is_numeric() {
         let error = &ContextError::new().add_context(
@@ -256,11 +357,40 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(ident.to_string(), TokenType::Ident))
 }
 
+/// Encuentra un token identificador clave en la entrada
+///
+/// Acepta como entrada cualquier cadena de caracteres alfanuméricos; también acepta '@' al principio
+///
+/// # Parámetros
+/// * `input` - Parte del fichero que se está analizando
+///
+/// # Retorna
+/// Un token KeyIdentifier
+///
+/// # Errores
+/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
+fn key_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
+    let key_ident =
+        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
+    let re_ident = Regex::new(r"^@[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
+
+    if !re_ident.is_match(key_ident) {
+        let error = &ContextError::new().add_context(
+            &"Formato incorrecto",
+            &key_ident.checkpoint(),
+            StrContext::Label("Identificador clave incorrecto"),
+        );
+        return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    Ok(Token::new(key_ident.to_string(), TokenType::KeyIdentifier))
+}
+
 /// Encuentra un token URI en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de URIs
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -288,7 +418,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de JDBC URLs
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -316,7 +446,7 @@ fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de file
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -344,7 +474,7 @@ fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de una ruta relativa o absoluta
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -381,7 +511,7 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Acepta como entrada consultas SQL
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - Parte del fichero que se está analizando
 ///
 /// # Retorna
@@ -422,7 +552,7 @@ fn sql_query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 ///
 /// Analiza la entrada y va encontrando tokens. A medida que los encuentra los va almacenando en un vector
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - La entrada del fichero
 ///
 /// # Retorna
@@ -443,7 +573,7 @@ pub fn lexer(input: &mut &str) -> Result<Vec<Token>, Vec<CompilerError>> {
 ///
 /// Si no hay errores devuelve el vector de tokens detectado y, si hay errores, los devuelve
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `tokens` - El vector de tokens resultado del análisis léxico
 /// * `errors` - El vector de errores léxicos detectados
 /// * `num_line` - El último número de línea
@@ -468,7 +598,7 @@ fn end_lexer(
 
 /// Itera sobre la entrada con el fin de analizarla lexicamente
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - La entrada del fichero
 /// * `tokens` - El vector que contendrá los tokens detectados
 /// * `errors` - El vector que contendrá los errores léxicos detectados
@@ -503,7 +633,7 @@ fn look_over_input(
 ///
 /// A partir de la parte de la entrada que se le pase, busca a que token se corresponde
 ///
-/// # Argumentos
+/// # Parámetros
 /// * `input` - La parte de la entrada del fichero cuyo token se busca
 /// * `tokens` - El vector donde se insertará el token resultante de la búsqueda
 /// * `num_line` - El número de línea en el que se encuentra el token
@@ -514,25 +644,42 @@ fn match_alternatives(
     num_line: u16,
     errors: &mut Vec<CompilerError>,
 ) {
+    // alt tiene un límite de 21 parámetros, por lo que es necesario crear más alt dentro de uno
     match alt((
-        colon,
-        left_angle_bracket,
-        right_angle_bracket,
-        opening_curly_brace,
-        closing_curly_brace,
-        prefix,
-        source,
-        iterator,
-        field,
-        sql_type,
-        csv_per_row,
-        query,
-        sql_query,
-        file_path,
-        path,
-        jdbc_url,
-        uri,
-        identifier,
+        // Elementos básicos
+        alt((
+            colon,
+            equal,
+            access_dot,
+            left_angle_bracket,
+            right_angle_bracket,
+            opening_curly_brace,
+            closing_curly_brace,
+        )),
+        // Palabras reservadas
+        alt((
+            prefix,
+            source,
+            query,
+            iterator,
+            field,
+            expression,
+            union,
+            join,
+            on,
+            sql_type,
+            csv_per_row,
+        )),
+        // Elementos variables; no tienen un valor fijo
+        alt((
+            sql_query,
+            file_path,
+            path,
+            jdbc_url,
+            uri,
+            key_identifier,
+            identifier,
+        )),
     ))
     .parse_next(input)
     {
@@ -602,6 +749,40 @@ mod lexer_tests {
     #[test]
     fn invalid_colon() {
         let actual = colon(&mut ";");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token =
+    #[doc(hidden)]
+    #[test]
+    fn valid_equal() {
+        let expected = TestUtilities::equal_test_token(0);
+        let actual = equal(&mut "=");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token = aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_equal() {
+        let actual = equal(&mut ":");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token .
+    #[doc(hidden)]
+    #[test]
+    fn valid_access_dot() {
+        let expected = TestUtilities::access_dot_test_token(0);
+        let actual = access_dot(&mut ".");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token . aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_access_dot() {
+        let actual = access_dot(&mut ":");
         check_error(actual);
     }
 
@@ -741,6 +922,74 @@ mod lexer_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se detecta el token Expression
+    #[doc(hidden)]
+    #[test]
+    fn valid_expression() {
+        let expected = TestUtilities::expression_test_token(0);
+        let actual = expression(&mut "EXPRESSION");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Expression aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_expression() {
+        let actual = expression(&mut "FIELD");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token Union
+    #[doc(hidden)]
+    #[test]
+    fn valid_union() {
+        let expected = TestUtilities::union_test_token(0);
+        let actual = union(&mut "UNION");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Union aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_union() {
+        let actual = union(&mut "FIELD");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token Join
+    #[doc(hidden)]
+    #[test]
+    fn valid_join() {
+        let expected = TestUtilities::join_test_token(0);
+        let actual = join(&mut "JOIN");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token Join aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_join() {
+        let actual = join(&mut "UNION");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token On
+    #[doc(hidden)]
+    #[test]
+    fn valid_on() {
+        let expected = TestUtilities::on_test_token(0);
+        let actual = on(&mut "ON");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token On aquellas cadenas que no lo sean
+    #[doc(hidden)]
+    #[test]
+    fn invalid_on() {
+        let actual = on(&mut "UNION");
+        check_error(actual);
+    }
+
     /// Comprueba que se detecta el token SqlType
     #[doc(hidden)]
     #[test]
@@ -775,7 +1024,7 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) sin que tenga un '_'
+    /// Comprueba que se detecta el token KeyIdentifier sin que tenga un '_'
     #[doc(hidden)]
     #[test]
     fn valid_identifier_withouth_underscore() {
@@ -784,7 +1033,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' en medio
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_' en medio
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_inside() {
@@ -793,7 +1042,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_ ' al comienzo
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_ ' al comienzo
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_begining() {
@@ -802,7 +1051,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' al final
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_' al final
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_end() {
@@ -811,7 +1060,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con un '_' al comienzo y final
+    /// Comprueba que se detecta el token Ident (identificadores) con un '_' al comienzo y final
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_underscore_at_the_begining_and_end() {
@@ -820,7 +1069,7 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que se detecta el token IDENT (identificadores) con números no al comienzo
+    /// Comprueba que se detecta el token Ident (identificadores) con números no al comienzo
     #[doc(hidden)]
     #[test]
     fn valid_identifier_with_numbers() {
@@ -829,11 +1078,89 @@ mod lexer_tests {
         check_ok(expected, actual);
     }
 
-    /// Comprueba que no se detecta como token IDENT aquellas cadenas que empiezan por números
+    /// Comprueba que no se detecta como token Ident aquellas cadenas que empiezan por números
     #[doc(hidden)]
     #[test]
     fn invalid_identifier_with_numbers_at_the_begining() {
         let actual = identifier(&mut "123ident_invalid");
+        check_error(actual);
+    }
+
+    /// Comprueba que no se detecta como token Ident aquellas cadenas que contienen caracteres especiales
+    #[doc(hidden)]
+    #[test]
+    fn invalid_identifier_with_special_characters() {
+        let actual = identifier(&mut "@ident_invalid");
+        check_error(actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier sin que tenga un '_'
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_withouth_underscore() {
+        let expected = TestUtilities::key_identifier_test_token("@ident", 0);
+        let actual = key_identifier(&mut "@ident");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_' en medio
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_inside() {
+        let expected = TestUtilities::key_identifier_test_token("@Ident_valid", 0);
+        let actual = key_identifier(&mut "@Ident_valid");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_ ' al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_at_the_begining() {
+        let expected = TestUtilities::key_identifier_test_token("@_ident_valid", 0);
+        let actual = key_identifier(&mut "@_ident_valid");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_' al final
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_at_the_end() {
+        let expected = TestUtilities::key_identifier_test_token("@ident_valid_", 0);
+        let actual = key_identifier(&mut "@ident_valid_");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con un '_' al comienzo y final
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_underscore_at_the_begining_and_end() {
+        let expected = TestUtilities::key_identifier_test_token("@_ident_valid_", 0);
+        let actual = key_identifier(&mut "@_ident_valid_");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que se detecta el token KeyIdentifier con números no al comienzo
+    #[doc(hidden)]
+    #[test]
+    fn valid_key_identifier_with_numbers() {
+        let expected = TestUtilities::key_identifier_test_token("@ident1_2valid", 0);
+        let actual = key_identifier(&mut "@ident1_2valid");
+        check_ok(expected, actual);
+    }
+
+    /// Comprueba que no se detecta como token KeyIdentifier aquellas cadenas que empiezan por números
+    #[doc(hidden)]
+    #[test]
+    fn invalid_key_identifier_with_numbers_at_the_begining() {
+        let actual = key_identifier(&mut "@1invalid_identifier");
+        check_error(actual);
+    }
+
+    /// Comprueba que no se detecta como token KeyIdentifier aquellas cadenas que no comienzan por '@'
+    #[doc(hidden)]
+    #[test]
+    fn invalid_key_identifier_withouth_at_the_begining() {
+        let actual = key_identifier(&mut "ident_invalid");
         check_error(actual);
     }
 
@@ -1015,7 +1342,7 @@ mod lexer_tests {
             TestUtilities::field_test_token(5),
             TestUtilities::ident_test_token("field1", 5),
             TestUtilities::left_angle_bracket_test_token(5),
-            TestUtilities::ident_test_token("@key", 5),
+            TestUtilities::key_identifier_test_token("@key", 5),
             TestUtilities::right_angle_bracket_test_token(5),
             TestUtilities::field_test_token(6),
             TestUtilities::ident_test_token("field2", 6),
@@ -1053,7 +1380,7 @@ mod lexer_tests {
 
     /// Comprueba que el resultado actual del test es igual al esperado
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `expected` - El token esperado
     /// * `actual` - El token real
     fn check_ok(expected: Token, actual: Result<Token, ErrMode<ContextError>>) {
@@ -1062,7 +1389,7 @@ mod lexer_tests {
 
     /// Comprueba que el resultado actual del test es un error
     ///
-    /// # Argumentos
+    /// # Parámetros
     /// * `actual` - Un Result con el error esperado
     fn check_error(actual: Result<Token, ErrMode<ContextError>>) {
         assert!(
