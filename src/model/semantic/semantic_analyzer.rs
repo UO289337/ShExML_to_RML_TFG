@@ -165,7 +165,7 @@ mod lexer_tests {
                     field_accessed: None,
                 }),
                 tuples: vec![
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
@@ -175,7 +175,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "year".to_string(),
                         object_prefix_or_uri: Some(PrefixOrURI::Prefix),
@@ -185,7 +185,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
@@ -195,7 +195,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
@@ -274,7 +274,7 @@ mod lexer_tests {
                     field_accessed: None,
                 }),
                 tuples: vec![
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
@@ -284,7 +284,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "year".to_string(),
                         object_prefix_or_uri: Some(PrefixOrURI::Prefix),
@@ -294,7 +294,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
@@ -304,7 +304,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
@@ -382,7 +382,7 @@ mod lexer_tests {
                     field_accessed: None,
                 }),
                 tuples: vec![
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
@@ -392,7 +392,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "year".to_string(),
                         object_prefix_or_uri: Some(PrefixOrURI::Prefix),
@@ -402,7 +402,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
@@ -412,7 +412,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
@@ -484,7 +484,7 @@ mod lexer_tests {
                     field_accessed: None,
                 }),
                 tuples: vec![
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
@@ -494,7 +494,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "year".to_string(),
                         object_prefix_or_uri: Some(PrefixOrURI::Prefix),
@@ -504,7 +504,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
@@ -514,7 +514,7 @@ mod lexer_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,

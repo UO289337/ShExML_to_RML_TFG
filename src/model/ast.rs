@@ -134,14 +134,14 @@ pub struct ShapeASTNode {
     pub identifier: String,
     pub field_prefix_or_uri: PrefixOrURI,
     pub field_identifier: IdentOrAccess,
-    pub tuples: Vec<ShapeTuplesASTNode>,
+    pub tuples: Vec<ShapeTupleASTNode>,
 }
 
 /// Nodo de tipo ShapeTuples del AST
 ///
 /// Se corresponde con las tuplas de los Shape de ShExML
 #[derive(Debug, PartialEq)]
-pub struct ShapeTuplesASTNode {
+pub struct ShapeTupleASTNode {
     pub prefix_or_uri: PrefixOrURI,
     pub identifier: String,
     pub object_prefix_or_uri: Option<PrefixOrURI>,

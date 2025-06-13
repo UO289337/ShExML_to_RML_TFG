@@ -56,9 +56,7 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
     prefix_token_parser()
         .then(identifier_parser(PREFIX))
         .then_ignore(colon_parser())
-        .then_ignore(left_angle_bracket_parser("la URI"))
-        .then(uri_parser())
-        .then_ignore(right_angle_bracket_parser("la URI"))
+        .then(uri_with_angle_brackets_parser())
         .map(|((_, ident), uri)| PrefixASTNode {
             identifier: ident.lexeme.clone(),
             uri: uri.lexeme.clone(),
@@ -443,11 +441,21 @@ fn shape_parser() -> impl Parser<Token, Vec<ShapeASTNode>, Error = Simple<Token>
         .collect()
 }
 
+/// Crea un nodo Shape del AST
+///
+/// # Retorna
+/// Un nodo ShapeASTNode del AST
+///
+/// # Parámetros
+/// * `shape_prefix_or_uri` - Una tupla con el Token del Prefix y el Option de la URI
+/// * `shape_field_prefix_or_uri` - Un Option con la Uri del field de la Shape
+/// * `field_ident` - Una tupla con 2 Option, uno con el token del Ident y otro con el token del nodo Access
+/// * `shape_tuples` - Un vector con las tuplas de la Shape
 fn create_shape_node(
     shape_prefix_or_uri: (Token, Option<Token>),
     shape_field_prefix_or_uri: Option<Token>,
     field_ident: (Option<Token>, Option<AccessASTNode>),
-    shape_tuples: Vec<ShapeTuplesASTNode>,
+    shape_tuples: Vec<ShapeTupleASTNode>,
 ) -> ShapeASTNode {
     let (shape_ident, shape_uri) = shape_prefix_or_uri;
     let (shape_field_ident, shape_field_access) = field_ident;
@@ -482,14 +490,14 @@ fn create_shape_node(
 /// Parsea los tokens para generar el nodo ShapeTuples del AST
 ///
 /// Realiza el parseo de los tokens para parsear la secuencia:
-/// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket) LeftBracket (Ident|Access) RightBracket Semicolon
+/// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
 ///
 /// # Retorna
 /// Un vector con nodos Shape del AST
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTuplesASTNode>, Error = Simple<Token>> {
+fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Simple<Token>> {
     prefix_or_uri_parser()
         .then(
             colon_parser()
@@ -515,11 +523,20 @@ fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTuplesASTNode>, Error = S
         .collect()
 }
 
+/// Crea un nodo ShapeTuple del AST
+///
+/// # Retorna
+/// Un nodo ShapeTuplesASTNode del AST
+///
+/// # Parámetros
+/// * `tuple_prefix_or_uri` - Una tupla con el Token del Prefix y el Option de la URI
+/// * `object_prefix_or_uri` - Un Option con otro Option con el token de la URI; el primer Option indica la opcionalidad del uso de Prefix o URI
+/// * `tuple_object` - Una tupla con 2 Option, uno con el token del Ident y otro con el token del nodo Access
 fn create_shape_tuple_node(
     tuple_prefix_or_uri: (Token, Option<Token>),
     object_prefix_or_uri: Option<Option<Token>>,
     tuple_object: (Option<Token>, Option<AccessASTNode>),
-) -> ShapeTuplesASTNode {
+) -> ShapeTupleASTNode {
     let (tuple_ident, tuple_uri) = tuple_prefix_or_uri;
     let (tuple_object_ident, tuple_field_access) = tuple_object;
     let mut tuple_prefix_or_uri = PrefixOrURI::Prefix;
@@ -546,7 +563,7 @@ fn create_shape_tuple_node(
         object_ident = IdentOrAccess::Access(tuple_field_access.unwrap());
     }
 
-    ShapeTuplesASTNode {
+    ShapeTupleASTNode {
         prefix_or_uri: tuple_prefix_or_uri,
         identifier: tuple_ident.lexeme,
         object_prefix_or_uri: tuple_object_prefix_or_uri,
@@ -556,6 +573,10 @@ fn create_shape_tuple_node(
 
 // Parsers auxiliares
 
+/// Realiza el parseo de un Prefix o Uri, junto con el Ident que acompaña a Prefix y la URI que acompaña a esta
+///
+/// # Retorna
+/// Un Parser con una tupla con el identificador del Prefix y con un Option con la URI, dependiendo de lo que se encuentre
 fn prefix_or_uri_parser() -> Or<
     Map<
         Then<
@@ -591,6 +612,10 @@ fn prefix_or_uri_parser() -> Or<
         .map(|(uri, ident)| (ident, Some(uri))))
 }
 
+/// Realiza el parseo de una URI con '<' y '>' a ambos lados
+///
+/// # Retorna
+/// Un Parser con un Token Uri
 fn uri_with_angle_brackets_parser() -> impl Parser<Token, Token, Error = Simple<Token>> {
     left_angle_bracket_parser("la URI")
         .then(uri_parser())
@@ -1844,7 +1869,51 @@ mod sintax_tests {
             Token::create_test_token(ACCESS_DOT, 10, TokenType::AccessDot),
             Token::create_test_token("film_csv", 10, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 10, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 10, TokenType::EOF),
+
+            Token::create_test_token(COLON, 11, TokenType::Colon),
+            Token::create_test_token("Films", 11, TokenType::Ident),
+            Token::create_test_token(COLON, 11, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 11, TokenType::LeftBracket),
+            Token::create_test_token("films", 11, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 11, TokenType::AccessDot),
+            Token::create_test_token("id", 11, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 11, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 11, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 12, TokenType::Colon),
+            Token::create_test_token("name", 12, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 12, TokenType::LeftBracket),
+            Token::create_test_token("films", 12, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
+            Token::create_test_token("name", 12, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 12, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 12, TokenType::SemiColon),
+            Token::create_test_token(COLON, 13, TokenType::Colon),
+            Token::create_test_token("year", 13, TokenType::Ident),
+            Token::create_test_token(COLON, 13, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 13, TokenType::LeftBracket),
+            Token::create_test_token("films", 13, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 13, TokenType::AccessDot),
+            Token::create_test_token("year", 13, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 13, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 13, TokenType::SemiColon),
+            Token::create_test_token(COLON, 14, TokenType::Colon),
+            Token::create_test_token("country", 14, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 14, TokenType::LeftBracket),
+            Token::create_test_token("films", 14, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 14, TokenType::AccessDot),
+            Token::create_test_token("country", 14, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 14, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 14, TokenType::SemiColon),
+            Token::create_test_token(COLON, 15, TokenType::Colon),
+            Token::create_test_token("director", 15, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 15, TokenType::LeftBracket),
+            Token::create_test_token("films", 15, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 15, TokenType::AccessDot),
+            Token::create_test_token("director", 15, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 15, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 15, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 16, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 16, TokenType::EOF),
         ];
 
         let expected = FileASTNode {
@@ -1901,7 +1970,7 @@ mod sintax_tests {
                     field_accessed: None,
                 }),
                 tuples: vec![
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
@@ -1911,7 +1980,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "year".to_string(),
                         object_prefix_or_uri: Some(PrefixOrURI::Prefix),
@@ -1921,7 +1990,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
@@ -1931,7 +2000,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
@@ -2100,7 +2169,7 @@ mod sintax_tests {
                     field_accessed: None,
                 }),
                 tuples: vec![
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
@@ -2110,7 +2179,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "year".to_string(),
                         object_prefix_or_uri: Some(PrefixOrURI::Prefix),
@@ -2120,7 +2189,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
@@ -2130,7 +2199,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
@@ -2250,7 +2319,7 @@ mod sintax_tests {
                     field_accessed: None,
                 }),
                 tuples: vec![
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
@@ -2260,7 +2329,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "year".to_string(),
                         object_prefix_or_uri: Some(PrefixOrURI::Prefix),
@@ -2270,7 +2339,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
@@ -2280,7 +2349,7 @@ mod sintax_tests {
                             field_accessed: None,
                         }),
                     },
-                    ShapeTuplesASTNode {
+                    ShapeTupleASTNode {
                         prefix_or_uri: PrefixOrURI::Prefix,
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
@@ -4264,6 +4333,534 @@ mod sintax_tests {
             expression_parser(),
             fail_tokens_vector,
             "Se esperaba un identificador después de '=' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
+    /// Prefix Colon Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn valid_shape_tuple_sintax_with_ident_prefix() {
+        let tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        let expected = ShapeTupleASTNode {
+            prefix_or_uri: PrefixOrURI::Prefix,
+            identifier: "name".to_string(),
+            object_prefix_or_uri: None,
+            object: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "name".to_string(),
+                field_accessed: None,
+            }),
+        };
+
+        let actual = shape_tuple_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
+    /// LeftAngelBracket Uri RightAngleBracket Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn valid_shape_tuple_sintax_with_ident_uri() {
+        let tokens_vector = vec![
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        let expected = ShapeTupleASTNode {
+            prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
+            identifier: "name".to_string(),
+            object_prefix_or_uri: None,
+            object: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "name".to_string(),
+                field_accessed: None,
+            }),
+        };
+
+        let actual = shape_tuple_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) Prefix Colon LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn valid_shape_tuple_sintax_with_field_prefix() {
+        let tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        let expected = ShapeTupleASTNode {
+            prefix_or_uri: PrefixOrURI::Prefix,
+            identifier: "name".to_string(),
+            object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+            object: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "name".to_string(),
+                field_accessed: None,
+            }),
+        };
+
+        let actual = shape_tuple_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) LeftAngelBracket Uri RightAngleBracket LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn valid_shape_tuple_sintax_with_field_uri() {
+        let tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        let expected = ShapeTupleASTNode {
+            prefix_or_uri: PrefixOrURI::Prefix,
+            identifier: "name".to_string(),
+            object_prefix_or_uri: Some(PrefixOrURI::URI("https://example.com".to_string())),
+            object: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "name".to_string(),
+                field_accessed: None,
+            }),
+        };
+
+        let actual = shape_tuple_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_tuple_sintax_withouth_ident_prefix_or_uri() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeTupleASTNode>>(
+            shape_tuple_parser(),
+            fail_tokens_vector,
+            "Se esperaba un ':' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_tuple_sintax_withouth_left_bracket() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("films_name", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeTupleASTNode>>(
+            shape_tuple_parser(),
+            fail_tokens_vector,
+            "Se esperaba un '[' antes del identificador en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_tuple_sintax_withouth_ident_or_access_field() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeTupleASTNode>>(
+            shape_tuple_parser(),
+            fail_tokens_vector,
+            "Se esperaba un identificador después de '[' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_tuple_sintax_withouth_right_bracket() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 1, TokenType::Ident),
+            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeTupleASTNode>>(
+            shape_tuple_parser(),
+            fail_tokens_vector,
+            "Se esperaba un ']' después del identificador en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket
+    #[doc(hidden)]
+    #[test]
+    fn shape_tuple_sintax_withouth_semicolon() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("name", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeTupleASTNode>>(
+            shape_tuple_parser(),
+            fail_tokens_vector,
+            "Se esperaba un ';' después de ']' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
+    /// Prefix Colon Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn valid_shape_sintax_with_ident_prefix() {
+        let tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("Films", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
+            Token::create_test_token("name", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 2, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
+        ];
+
+        let expected = ShapeASTNode {
+            prefix_or_uri: PrefixOrURI::Prefix,
+            identifier: "Films".to_string(),
+            field_prefix_or_uri: PrefixOrURI::Prefix,
+            field_identifier: IdentOrAccess::Access(AccessASTNode { 
+                identifier: "films".to_string(), 
+                iterator_accessed: "id".to_string(), 
+                field_accessed: None, 
+            }),
+            tuples: vec![ShapeTupleASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "name".to_string(),
+                object_prefix_or_uri: None,
+                object: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "name".to_string(),
+                    field_accessed: None,
+                })
+            }],
+        };
+
+        let actual = shape_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
+    /// LeftAngelBracket Uri RightAngleBracket Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn valid_shape_sintax_with_ident_uri() {
+        let tokens_vector = vec![
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("Films", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
+            Token::create_test_token("name", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 2, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
+        ];
+
+        let expected = ShapeASTNode {
+            prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
+            identifier: "Films".to_string(),
+            field_prefix_or_uri: PrefixOrURI::Prefix,
+            field_identifier: IdentOrAccess::Access(AccessASTNode { 
+                identifier: "films".to_string(), 
+                iterator_accessed: "id".to_string(), 
+                field_accessed: None, 
+            }),
+            tuples: vec![ShapeTupleASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "name".to_string(),
+                object_prefix_or_uri: None,
+                object: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "name".to_string(),
+                    field_accessed: None,
+                })
+            }],
+        };
+
+        let actual = shape_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) LeftAngelBracket Uri RightAngleBracket LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn valid_shape_sintax_with_field_uri() {
+        let tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("Films", 1, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://example.com", 1, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
+            Token::create_test_token("name", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 2, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
+        ];
+
+        let expected = ShapeASTNode {
+            prefix_or_uri: PrefixOrURI::Prefix,
+            identifier: "Films".to_string(),
+            field_prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
+            field_identifier: IdentOrAccess::Access(AccessASTNode { 
+                identifier: "films".to_string(), 
+                iterator_accessed: "id".to_string(), 
+                field_accessed: None, 
+            }),
+            tuples: vec![ShapeTupleASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "name".to_string(),
+                object_prefix_or_uri: None,
+                object: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "name".to_string(),
+                    field_accessed: None,
+                })
+            }],
+        };
+
+        let actual = shape_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_sintax_withouth_ident_prefix_or_uri() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
+            Token::create_test_token("name", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 2, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeASTNode>>(
+            shape_parser(),
+            fail_tokens_vector,
+            "Se esperaba un ':' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? (Ident|Access) RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_sintax_withouth_left_bracket() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("Films", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
+            Token::create_test_token("name", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 2, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeTupleASTNode>>(
+            shape_tuple_parser(),
+            fail_tokens_vector,
+            "Se esperaba un '[' antes del identificador en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket RightBracket Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_sintax_withouth_ident_field() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("Films", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
+            Token::create_test_token("name", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
+            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeASTNode>>(
+            shape_parser(),
+            fail_tokens_vector,
+            "Se esperaba un identificador después de '[' en la línea 1",
+        );
+    }
+
+    /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
+    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) Semicolon
+    #[doc(hidden)]
+    #[test]
+    fn shape_sintax_withouth_right_bracket() {
+        let fail_tokens_vector = vec![
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token("Films", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
+            Token::create_test_token("films", 1, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
+            Token::create_test_token("id", 1, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
+            Token::create_test_token("name", 2, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
+            Token::create_test_token("films_name", 2, TokenType::Ident),
+            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 3, TokenType::EOF),
+        ];
+
+        check_parser_error::<Vec<ShapeASTNode>>(
+            shape_parser(),
+            fail_tokens_vector,
+            "Se esperaba un ']' después del identificador en la línea 1",
         );
     }
 
