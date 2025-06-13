@@ -155,6 +155,58 @@ mod lexer_tests {
                 ],
             }],
             expressions: None,
+            shapes: vec![ShapeASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "Films".to_string(),
+                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "name".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "year".to_string(),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "country".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "director".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -212,6 +264,58 @@ mod lexer_tests {
                 ],
             }],
             expressions: None,
+            shapes: vec![ShapeASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "Films".to_string(),
+                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "name".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "year".to_string(),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "country".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "director".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -268,6 +372,58 @@ mod lexer_tests {
                 ],
             }],
             expressions: None,
+            shapes: vec![ShapeASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "Films".to_string(),
+                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "name".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "year".to_string(),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "country".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "director".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -318,6 +474,58 @@ mod lexer_tests {
                 ],
             }],
             expressions: None,
+            shapes: vec![ShapeASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "Films".to_string(),
+                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "name".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "year".to_string(),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "country".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "director".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);

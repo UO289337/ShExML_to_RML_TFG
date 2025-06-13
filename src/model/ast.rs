@@ -17,8 +17,17 @@ pub enum ExpressionType {
 /// Enumerador que contiene el Prefix o la URI de un Shape o de un elemento de este
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PrefixOrURI {
-    Prefix(String),
+    Prefix,
     URI(String),
+}
+
+/// Ident o Access
+///
+/// Enumerador que contiene el identificador o el nodo de acceso a un field de un Shape
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum IdentOrAccess {
+    Ident(String),
+    Access(AccessASTNode),
 }
 
 impl ExpressionType {
@@ -47,7 +56,7 @@ pub struct FileASTNode {
     pub queries: Option<Vec<QueryASTNode>>,
     pub iterators: Vec<IteratorASTNode>,
     pub expressions: Option<Vec<ExpressionASTNode>>,
-    // pub shapes: Vec<ShapeASTNode>,
+    pub shapes: Vec<ShapeASTNode>,
 }
 
 /// Nodo de tipo Prefix del AST
@@ -109,14 +118,13 @@ pub struct ExpressionASTNode {
 /// Nodo de tipo Access del AST
 ///
 /// Se corresponde con los accesos a iteradores y/o campos de estos en las expresiones
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct AccessASTNode {
     pub identifier: String,
     pub iterator_accessed: String,
     pub field_accessed: Option<String>,
 }
 
-/*
 /// Nodo de tipo Shape del AST
 ///
 /// Se corresponde con los Shape de ShExML
@@ -124,8 +132,8 @@ pub struct AccessASTNode {
 pub struct ShapeASTNode {
     pub prefix_or_uri: PrefixOrURI,
     pub identifier: String,
-    pub key_prefix_or_uri: PrefixOrURI,
-    pub key_identifier: String,
+    pub field_prefix_or_uri: PrefixOrURI,
+    pub field_identifier: IdentOrAccess,
     pub tuples: Vec<ShapeTuplesASTNode>,
 }
 
@@ -137,6 +145,5 @@ pub struct ShapeTuplesASTNode {
     pub prefix_or_uri: PrefixOrURI,
     pub identifier: String,
     pub object_prefix_or_uri: Option<PrefixOrURI>,
-    pub object: String,
+    pub object: IdentOrAccess,
 }
-    */

@@ -21,11 +21,13 @@ mod integration_lexer_syntax_analyzers_tests {
             model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 
         assert!(semantic_result.is_empty());
-        assert!(sintax_result
-            .as_ref()
-            .is_ok_and(|file| !file.prefixes.as_deref().unwrap().is_empty()
-                && !file.sources.is_empty()
-                && file.queries.is_some()));
+        assert!(sintax_result.as_ref().is_ok_and(|file| !file
+            .prefixes
+            .as_deref()
+            .unwrap()
+            .is_empty()
+            && !file.sources.is_empty()
+            && file.queries.is_some()));
 
         let _ = sintax_result.as_ref().map(|file| {
             assert_eq!(file.prefixes.as_deref().unwrap().len(), 1);

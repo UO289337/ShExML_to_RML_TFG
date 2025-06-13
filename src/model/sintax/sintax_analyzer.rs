@@ -29,16 +29,16 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
         .then(query_parser().or_not())
         .then(iterator_parser())
         .then(expression_parser().or_not())
-        // .then(shape_parser())
+        .then(shape_parser())
         .then_ignore(eof_parser())
         .map(
-            |((((prefixes, sources), queries), iterators), expressions)| FileASTNode {
+            |(((((prefixes, sources), queries), iterators), expressions), shapes)| FileASTNode {
                 prefixes,
                 sources,
                 queries,
                 iterators,
                 expressions,
-                // shapes,
+                shapes,
             },
         )
 }
@@ -54,11 +54,11 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Token>> {
     prefix_token_parser()
-        .then(identifier_parser(PREFIX.to_string()))
+        .then(identifier_parser(PREFIX))
         .then_ignore(colon_parser())
-        .then_ignore(left_angle_bracket_parser("la URI".to_string()))
+        .then_ignore(left_angle_bracket_parser("la URI"))
         .then(uri_parser())
-        .then_ignore(right_angle_bracket_parser("la URI".to_string()))
+        .then_ignore(right_angle_bracket_parser("la URI"))
         .map(|((_, ident), uri)| PrefixASTNode {
             identifier: ident.lexeme.clone(),
             uri: uri.lexeme.clone(),
@@ -79,15 +79,15 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {
     source_token_parser()
-        .then(identifier_parser(SOURCE.to_string()))
-        .then_ignore(left_angle_bracket_parser("la URL o ruta".to_string()))
+        .then(identifier_parser(SOURCE))
+        .then_ignore(left_angle_bracket_parser("la URL o ruta"))
         .then(
             uri_parser()
                 .or(file_path_parser())
                 .or(path_parser())
                 .or(jdbc_url_parser()),
         )
-        .then_ignore(right_angle_bracket_parser("la URL o ruta".to_string()))
+        .then_ignore(right_angle_bracket_parser("la URL o ruta"))
         .map(|((_, ident), source_definition)| SourceASTNode {
             identifier: ident.lexeme.clone(),
             source_definition: source_definition.lexeme.clone(),
@@ -108,11 +108,11 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>> {
     query_token_parser()
-        .then(identifier_parser(QUERY.to_string()))
-        .then_ignore(left_angle_bracket_parser("la consulta SQL".to_string()))
+        .then(identifier_parser(QUERY))
+        .then_ignore(left_angle_bracket_parser("la consulta SQL"))
         .then_ignore(sql_type_parser())
         .then(sql_query_token_parser())
-        .then_ignore(right_angle_bracket_parser("la consulta SQL".to_string()))
+        .then_ignore(right_angle_bracket_parser("la consulta SQL"))
         .map(|((_, ident), sql_query)| QueryASTNode {
             identifier: ident.lexeme.clone(),
             sql_query: sql_query.lexeme.clone(),
@@ -134,13 +134,13 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn iterator_parser() -> impl Parser<Token, Vec<IteratorASTNode>, Error = Simple<Token>> {
     iterator_token_parser()
-        .then(identifier_parser(ITERATOR.to_string()))
+        .then(identifier_parser(ITERATOR))
         .then_ignore(left_angle_bracket_parser(
-            "la consulta SQL, identificador o csvperrow".to_string(),
+            "la consulta SQL, identificador o csvperrow",
         ))
         .then(
             // Es necesario utilizar tuplas para poner concatenar el SqlType y el SqlQuery
-            identifier_parser("<".to_string())
+            identifier_parser(LEFT_ANGLE_BRACKET)
                 .map(|token| (token, None))
                 .or(csv_per_row_parser().map(|token| (token, None)))
                 .or(sql_type_parser()
@@ -148,11 +148,11 @@ fn iterator_parser() -> impl Parser<Token, Vec<IteratorASTNode>, Error = Simple<
                     .map(|(sql_type, sql_query)| (sql_type, Some(sql_query)))),
         )
         .then_ignore(right_angle_bracket_parser(
-            "la consulta SQL, identificador o csvperrow".to_string(),
+            "la consulta SQL, identificador o csvperrow",
         ))
-        .then_ignore(opening_curly_brace_parser("los fields".to_string()))
+        .then_ignore(opening_curly_brace_parser("los campos"))
         .then(field_parser())
-        .then_ignore(closing_curly_brace_parser("los fields".to_string()))
+        .then_ignore(closing_curly_brace_parser("los campos"))
         .map(|(((_, ident), iterator_access), fields)| {
             create_iterator_ast_node(ident, iterator_access, fields)
         })
@@ -206,10 +206,10 @@ fn create_iterator_ast_node(
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
     field_token_parser()
-        .then(identifier_parser(FIELD.to_string()))
-        .then_ignore(left_angle_bracket_parser("el identificador".to_string()))
-        .then(identifier_parser("<".to_string()).or(key_identifier_parser()))
-        .then_ignore(right_angle_bracket_parser("el identificador".to_string()))
+        .then(identifier_parser(FIELD))
+        .then_ignore(left_angle_bracket_parser("el identificador"))
+        .then(identifier_parser(LEFT_ANGLE_BRACKET).or(key_identifier_parser()))
+        .then_ignore(right_angle_bracket_parser("el identificador"))
         .map(|((_, ident), access_ident)| FieldASTNode {
             field_identifier: ident.lexeme.clone(),
             access_field_identifier: access_ident.lexeme.clone(),
@@ -231,25 +231,25 @@ fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn expression_parser() -> impl Parser<Token, Vec<ExpressionASTNode>, Error = Simple<Token>> {
     expression_token_parser()
-        .then(identifier_parser(EXPRESSION.to_string()))
-        .then_ignore(left_angle_bracket_parser("el acceso".to_string()))
-        .then(access_parser(LEFT_ANGLE_BRACKET.to_string()))
+        .then(identifier_parser(EXPRESSION))
+        .then_ignore(left_angle_bracket_parser("el acceso"))
+        .then(access_parser(LEFT_ANGLE_BRACKET))
         .then(
             union_parser()
-                .then(access_parser(UNION.to_string()))
+                .then(access_parser(UNION))
                 .map(|(union, access)| (union, access, None, None))
                 .or(join_parser()
-                    .then(access_parser(JOIN.to_string()))
+                    .then(access_parser(JOIN))
                     .then_ignore(on_parser())
-                    .then(access_parser(ON.to_string()))
+                    .then(access_parser(ON))
                     .then_ignore(equal_parser())
-                    .then(access_parser(EQUAL.to_string()))
+                    .then(access_parser(EQUAL))
                     .map(|(((join, access_join), access_on), access_equal)| {
                         (join, access_join, Some(access_on), Some(access_equal))
                     }))
                 .or_not(),
         )
-        .then_ignore(right_angle_bracket_parser("el acceso".to_string()))
+        .then_ignore(right_angle_bracket_parser("el acceso"))
         .map(|(((_, ident), iterator_access), more_accesses)| {
             create_expression_node(ident, iterator_access, more_accesses)
         })
@@ -356,15 +356,13 @@ fn create_vec_of_accesses(
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn access_parser(
-    previous_token: String,
-) -> impl Parser<Token, AccessASTNode, Error = Simple<Token>> {
+fn access_parser(previous_token: &str) -> impl Parser<Token, AccessASTNode, Error = Simple<Token>> {
     identifier_parser(previous_token)
         .then_ignore(access_dot_parser())
-        .then(identifier_parser(ACCESS_DOT.to_string()))
+        .then(identifier_parser(ACCESS_DOT))
         .then(
             access_dot_parser()
-                .then(identifier_parser(ACCESS_DOT.to_string()))
+                .then(identifier_parser(ACCESS_DOT))
                 .or_not(),
         )
         .map(|((ident, iterator_accessed), field_accessed)| {
@@ -403,43 +401,202 @@ fn create_access_node(
     }
 }
 
-/*
 /// Parsea los tokens para generar el nodo Shape del AST
 ///
 /// Realiza el parseo de los tokens para parsear la secuencia:
-/// Prefix Ident Prefix Ident OpeningCurlyBrackets ShapeTuples ClosingCurlyBrackets
+/// (Prefix Colon|LeftAngelBracket Uri RightAngleBracket) Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket) LeftBracket (Ident|Access) RightBracket OpeningCurlyBrackets ShapeTuples ClosingCurlyBrackets
 ///
 /// # Retorna
 /// Un vector con nodos Shape del AST
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn shape_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
+fn shape_parser() -> impl Parser<Token, Vec<ShapeASTNode>, Error = Simple<Token>> {
     prefix_or_uri_parser()
-        .then(prefix_or_uri_parser())
-
-
-        .then(identifier_parser(FIELD.to_string()))
-        .then_ignore(left_angle_bracket_parser("el identificador".to_string()))
-        .then(identifier_parser("<".to_string()).or(key_identifier_parser()))
-        .then_ignore(right_angle_bracket_parser("el identificador".to_string()))
-        .map(|((_, ident), access_ident)| FieldASTNode {
-            field_identifier: ident.lexeme.clone(),
-            access_field_identifier: access_ident.lexeme.clone(),
-        })
+        .then(
+            colon_parser()
+                .map(|_| None)
+                .or(uri_with_angle_brackets_parser().map(|uri| Some(uri))),
+        )
+        .then_ignore(left_bracket_parser("identificador"))
+        .then(
+            identifier_parser(LEFT_BRACKET)
+                .map(|token| (Some(token), None))
+                .or(access_parser(LEFT_BRACKET).map(|access| (None, Some(access)))),
+        )
+        .then_ignore(right_bracket_parser("identificador"))
+        .then_ignore(opening_curly_brace_parser("las tuplas de la Shape"))
+        .then(shape_tuple_parser())
+        .then_ignore(closing_curly_brace_parser("las tuplas de la Shape"))
+        .map(
+            |(((shape_prefix_or_uri, shape_field_prefix_or_uri), field_ident), shape_tuples)| {
+                create_shape_node(
+                    shape_prefix_or_uri,
+                    shape_field_prefix_or_uri,
+                    field_ident,
+                    shape_tuples,
+                )
+            },
+        )
         .repeated()
         .at_least(1)
         .collect()
 }
 
-fn prefix_or_uri_parser() -> Or<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>> {
-    (colon_parser()
-        .then(identifier_parser(COLON.to_string())))
-    .or(left_angle_bracket_parser("la URI".to_string())
-        .then(uri_parser())
-        .then(right_angle_bracket_parser("la URI".to_string())))
+fn create_shape_node(
+    shape_prefix_or_uri: (Token, Option<Token>),
+    shape_field_prefix_or_uri: Option<Token>,
+    field_ident: (Option<Token>, Option<AccessASTNode>),
+    shape_tuples: Vec<ShapeTuplesASTNode>,
+) -> ShapeASTNode {
+    let (shape_ident, shape_uri) = shape_prefix_or_uri;
+    let (shape_field_ident, shape_field_access) = field_ident;
+    let mut shape_prefix_or_uri = PrefixOrURI::Prefix;
+    let mut sh_field_prefix_or_uri = PrefixOrURI::Prefix;
+
+    if shape_uri.is_some() {
+        shape_prefix_or_uri = PrefixOrURI::URI(shape_uri.unwrap().lexeme);
+
+        if shape_field_prefix_or_uri.is_some() {
+            sh_field_prefix_or_uri = PrefixOrURI::URI(shape_field_prefix_or_uri.unwrap().lexeme)
+        }
+    }
+
+    let field_ident;
+
+    if shape_field_ident.is_some() {
+        field_ident = IdentOrAccess::Ident(shape_field_ident.unwrap().lexeme);
+    } else {
+        field_ident = IdentOrAccess::Access(shape_field_access.unwrap());
+    }
+
+    ShapeASTNode {
+        prefix_or_uri: shape_prefix_or_uri,
+        identifier: shape_ident.lexeme,
+        field_prefix_or_uri: sh_field_prefix_or_uri,
+        field_identifier: field_ident,
+        tuples: shape_tuples,
+    }
 }
-        */
+
+/// Parsea los tokens para generar el nodo ShapeTuples del AST
+///
+/// Realiza el parseo de los tokens para parsear la secuencia:
+/// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket) LeftBracket (Ident|Access) RightBracket Semicolon
+///
+/// # Retorna
+/// Un vector con nodos Shape del AST
+///
+/// # Errores
+/// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
+fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTuplesASTNode>, Error = Simple<Token>> {
+    prefix_or_uri_parser()
+        .then(
+            colon_parser()
+                .map(|_| None)
+                .or(uri_with_angle_brackets_parser().map(|uri| Some(uri)))
+                .or_not(),
+        )
+        .then_ignore(left_bracket_parser("identificador"))
+        .then(
+            identifier_parser(LEFT_BRACKET)
+                .map(|token| (Some(token), None))
+                .or(access_parser(LEFT_BRACKET).map(|access| (None, Some(access)))),
+        )
+        .then_ignore(right_bracket_parser("identificador"))
+        .then_ignore(semicolon_parser())
+        .map(
+            |((tuple_prefix_or_uri, object_prefix_or_uri), tuple_object)| {
+                create_shape_tuple_node(tuple_prefix_or_uri, object_prefix_or_uri, tuple_object)
+            },
+        )
+        .repeated()
+        .at_least(1)
+        .collect()
+}
+
+fn create_shape_tuple_node(
+    tuple_prefix_or_uri: (Token, Option<Token>),
+    object_prefix_or_uri: Option<Option<Token>>,
+    tuple_object: (Option<Token>, Option<AccessASTNode>),
+) -> ShapeTuplesASTNode {
+    let (tuple_ident, tuple_uri) = tuple_prefix_or_uri;
+    let (tuple_object_ident, tuple_field_access) = tuple_object;
+    let mut tuple_prefix_or_uri = PrefixOrURI::Prefix;
+    let mut tuple_object_prefix_or_uri = Some(PrefixOrURI::Prefix);
+    let is_object_prefix_or_uri = object_prefix_or_uri.is_some();
+
+    if tuple_uri.is_some() {
+        tuple_prefix_or_uri = PrefixOrURI::URI(tuple_uri.unwrap().lexeme);
+
+        if is_object_prefix_or_uri && object_prefix_or_uri.as_ref().unwrap().is_some() {
+            tuple_object_prefix_or_uri = Some(PrefixOrURI::URI(
+                object_prefix_or_uri.unwrap().unwrap().lexeme,
+            ));
+        } else if !is_object_prefix_or_uri {
+            tuple_object_prefix_or_uri = None;
+        }
+    }
+
+    let object_ident;
+
+    if tuple_object_ident.is_some() {
+        object_ident = IdentOrAccess::Ident(tuple_object_ident.unwrap().lexeme);
+    } else {
+        object_ident = IdentOrAccess::Access(tuple_field_access.unwrap());
+    }
+
+    ShapeTuplesASTNode {
+        prefix_or_uri: tuple_prefix_or_uri,
+        identifier: tuple_ident.lexeme,
+        object_prefix_or_uri: tuple_object_prefix_or_uri,
+        object: object_ident,
+    }
+}
+
+// Parsers auxiliares
+
+fn prefix_or_uri_parser() -> Or<
+    Map<
+        Then<
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+        >,
+        impl Fn((Token, Token)) -> (Token, Option<Token>),
+        (Token, Token),
+    >,
+    Map<
+        Then<
+            impl Parser<Token, Token, Error = Simple<Token>>,
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+        >,
+        impl Fn((Token, Token)) -> (Token, Option<Token>),
+        (Token, Token),
+    >,
+> {
+    (colon_parser()
+        .then(identifier_parser(COLON))
+        .map(|(_, ident)| (ident, None)))
+    .or(uri_with_angle_brackets_parser()
+        .then(identifier_parser(LEFT_ANGLE_BRACKET))
+        .map(|(uri, ident)| (ident, Some(uri))))
+}
+
+fn uri_with_angle_brackets_parser() -> impl Parser<Token, Token, Error = Simple<Token>> {
+    left_angle_bracket_parser("la URI")
+        .then(uri_parser())
+        .then_ignore(right_angle_bracket_parser("la URI"))
+        .map(|(_, uri)| uri)
+}
 
 // Parsers particulares
 
@@ -643,7 +800,7 @@ fn sql_type_parser() -> MapErr<
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Ident
 fn identifier_parser(
-    previous_token: String,
+    previous_token: &str,
 ) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
@@ -773,6 +930,23 @@ fn colon_parser() -> MapErr<
     )
 }
 
+/// Parsea el token ';' en los tokens
+///
+/// # Retorna
+/// Un token de tipo ; si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo ;
+fn semicolon_parser() -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
+    general_parser(
+        TokenType::SemiColon,
+        format!("Faltan los ';' después del ']' en la línea"),
+    )
+}
+
 /// Parsea el token '.' en los tokens
 ///
 /// # Retorna
@@ -817,7 +991,7 @@ fn equal_parser() -> MapErr<
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo <
 fn left_angle_bracket_parser(
-    next_token: String,
+    next_token: &str,
 ) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
@@ -836,7 +1010,7 @@ fn left_angle_bracket_parser(
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo >
 fn right_angle_bracket_parser(
-    previous_token: String,
+    previous_token: &str,
 ) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
@@ -855,7 +1029,7 @@ fn right_angle_bracket_parser(
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo {
 fn opening_curly_brace_parser(
-    previous_token: String,
+    previous_token: &str,
 ) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
@@ -875,7 +1049,7 @@ fn opening_curly_brace_parser(
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo }
 fn closing_curly_brace_parser(
-    previous_token: String,
+    previous_token: &str,
 ) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
@@ -884,6 +1058,44 @@ fn closing_curly_brace_parser(
     general_parser(
         TokenType::ClosingCurlyBrace,
         format!("Se esperaba un '}}' después de {previous_token} en la línea"),
+    )
+}
+
+/// Parsea el token '[' en los tokens
+///
+/// # Retorna
+/// Un token de tipo [ si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo [
+fn left_bracket_parser(
+    previous_token: &str,
+) -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
+    general_parser(
+        TokenType::LeftBracket,
+        format!("Se esperaba un '[[' después de {previous_token} en la línea"),
+    )
+}
+
+/// Parsea el token ']' en los tokens
+///
+/// # Retorna
+/// Un token de tipo ] si el token actual es de dicho tipo
+///
+/// # Errores
+/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo ]
+fn right_bracket_parser(
+    previous_token: &str,
+) -> MapErr<
+    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+    impl Fn(Simple<Token>) -> Simple<Token>,
+> {
+    general_parser(
+        TokenType::RightBracket,
+        format!("Se esperaba un ']]' después de {previous_token} en la línea"),
     )
 }
 
@@ -1174,7 +1386,7 @@ mod sintax_parsers_tests {
     #[test]
     fn parse_valid_identifier() {
         let expected_token = Token::create_test_token("ident", 1, TokenType::Ident);
-        let actual = identifier_parser("PREFIX".to_string()).parse(vec![expected_token.clone()]);
+        let actual = identifier_parser("PREFIX").parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -1182,7 +1394,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_identifier() {
-        let actual = identifier_parser("SOURCE".to_string()).parse(vec![Token::create_test_token(
+        let actual = identifier_parser("SOURCE").parse(vec![Token::create_test_token(
             COLON,
             1,
             TokenType::Colon,
@@ -1336,6 +1548,24 @@ mod sintax_parsers_tests {
         check_error(actual);
     }
 
+    /// Comprueba que se parsean los tokens Semicolon (;)
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_semicolon() {
+        let expected_token = Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon);
+        let actual = semicolon_parser().parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens Semicolon (;) aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_semicolon() {
+        let actual =
+            semicolon_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
+        check_error(actual);
+    }
+
     /// Comprueba que se parsean los tokens AccessDot (.)
     #[doc(hidden)]
     #[test]
@@ -1378,8 +1608,7 @@ mod sintax_parsers_tests {
     fn parse_valid_left_angle_bracket() {
         let expected_token =
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket);
-        let actual =
-            left_angle_bracket_parser("URI".to_string()).parse(vec![expected_token.clone()]);
+        let actual = left_angle_bracket_parser("URI").parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -1387,12 +1616,11 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_left_angle_bracket() {
-        let actual =
-            left_angle_bracket_parser("URI".to_string()).parse(vec![Token::create_test_token(
-                RIGHT_ANGLE_BRACKET,
-                1,
-                TokenType::RightAngleBracket,
-            )]);
+        let actual = left_angle_bracket_parser("URI").parse(vec![Token::create_test_token(
+            RIGHT_ANGLE_BRACKET,
+            1,
+            TokenType::RightAngleBracket,
+        )]);
         check_error(actual);
     }
 
@@ -1402,8 +1630,7 @@ mod sintax_parsers_tests {
     fn parse_valid_right_angle_bracket() {
         let expected_token =
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket);
-        let actual =
-            right_angle_bracket_parser("URI".to_string()).parse(vec![expected_token.clone()]);
+        let actual = right_angle_bracket_parser("URI").parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -1411,12 +1638,11 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_right_angle_bracket() {
-        let actual =
-            right_angle_bracket_parser("URI".to_string()).parse(vec![Token::create_test_token(
-                LEFT_ANGLE_BRACKET,
-                1,
-                TokenType::LeftAngleBracket,
-            )]);
+        let actual = right_angle_bracket_parser("URI").parse(vec![Token::create_test_token(
+            LEFT_ANGLE_BRACKET,
+            1,
+            TokenType::LeftAngleBracket,
+        )]);
         check_error(actual);
     }
 
@@ -1426,8 +1652,7 @@ mod sintax_parsers_tests {
     fn parse_valid_opening_curly_bracket() {
         let expected_token =
             Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace);
-        let actual =
-            opening_curly_brace_parser("ITERATOR".to_string()).parse(vec![expected_token.clone()]);
+        let actual = opening_curly_brace_parser("ITERATOR").parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
@@ -1435,9 +1660,11 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_opening_curly_bracket() {
-        let actual = opening_curly_brace_parser("ITERATOR".to_string()).parse(vec![
-            Token::create_test_token(CLOSING_CURLY_BRACE, 1, TokenType::ClosingCurlyBrace),
-        ]);
+        let actual = opening_curly_brace_parser("ITERATOR").parse(vec![Token::create_test_token(
+            CLOSING_CURLY_BRACE,
+            1,
+            TokenType::ClosingCurlyBrace,
+        )]);
         check_error(actual);
     }
 
@@ -1447,18 +1674,73 @@ mod sintax_parsers_tests {
     fn parse_valid_closing_curly_bracket() {
         let expected_token =
             Token::create_test_token(CLOSING_CURLY_BRACE, 1, TokenType::ClosingCurlyBrace);
-        let actual =
-            closing_curly_brace_parser("ITERATOR".to_string()).parse(vec![expected_token.clone()]);
+        let actual = closing_curly_brace_parser("ITERATOR").parse(vec![expected_token.clone()]);
         check_ok(expected_token, actual);
     }
 
     /// Comprueba que no se parsean como tokens ClosingCurlyBrackets (}) aquellos que lo son
     #[doc(hidden)]
     #[test]
+    fn not_parse_invalid_closing_curly_bracket() {
+        let actual = closing_curly_brace_parser("ITERATOR").parse(vec![Token::create_test_token(
+            OPENING_CURLY_BRACE,
+            1,
+            TokenType::OpeningCurlyBrace,
+        )]);
+        check_error(actual);
+    }
+
+    /// Comprueba que se parsean los tokens LeftBracket ([)
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_left_bracket() {
+        let expected_token = Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket);
+        let actual = left_bracket_parser("tupla").parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens LeftBracket ([) aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_left_bracket() {
+        let actual = left_bracket_parser("tupla").parse(vec![Token::create_test_token(
+            RIGHT_BRACKET,
+            1,
+            TokenType::RightBracket,
+        )]);
+        check_error(actual);
+    }
+
+    /// Comprueba que se parsean los tokens RightBracket (])
+    #[doc(hidden)]
+    #[test]
+    fn parse_valid_right_bracket() {
+        let expected_token = Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket);
+        let actual = left_bracket_parser("tupla").parse(vec![expected_token.clone()]);
+        check_ok(expected_token, actual);
+    }
+
+    /// Comprueba que no se parsean como tokens LeftBracket ([) aquellos que lo son
+    #[doc(hidden)]
+    #[test]
+    fn not_parse_invalid_right_bracket() {
+        let actual = left_bracket_parser("tupla").parse(vec![Token::create_test_token(
+            LEFT_BRACKET,
+            1,
+            TokenType::LeftBracket,
+        )]);
+        check_error(actual);
+    }
+
+    /// Comprueba que no se parsean como tokens ClosingCurlyBrackets (}) aquellos que lo son
+    #[doc(hidden)]
+    #[test]
     fn not_parse_closing_opening_curly_bracket() {
-        let actual = closing_curly_brace_parser("ITERATOR".to_string()).parse(vec![
-            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
-        ]);
+        let actual = closing_curly_brace_parser("ITERATOR").parse(vec![Token::create_test_token(
+            OPENING_CURLY_BRACE,
+            1,
+            TokenType::OpeningCurlyBrace,
+        )]);
         check_error(actual);
     }
 
@@ -1609,6 +1891,58 @@ mod sintax_tests {
                     field_accessed: None,
                 }],
             }]),
+            shapes: vec![ShapeASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "Films".to_string(),
+                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "name".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "year".to_string(),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "country".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "director".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = file_parser().parse(tokens_vector.clone());
@@ -1669,7 +2003,50 @@ mod sintax_tests {
             Token::create_test_token(ACCESS_DOT, 9, TokenType::AccessDot),
             Token::create_test_token("film_csv", 9, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 9, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 9, TokenType::EOF),
+            Token::create_test_token(COLON, 10, TokenType::Colon),
+            Token::create_test_token("Films", 10, TokenType::Ident),
+            Token::create_test_token(COLON, 10, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 10, TokenType::LeftBracket),
+            Token::create_test_token("films", 10, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 10, TokenType::AccessDot),
+            Token::create_test_token("id", 10, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 10, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 10, TokenType::OpeningCurlyBrace),
+            Token::create_test_token(COLON, 11, TokenType::Colon),
+            Token::create_test_token("name", 11, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 11, TokenType::LeftBracket),
+            Token::create_test_token("films", 11, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 11, TokenType::AccessDot),
+            Token::create_test_token("name", 11, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 11, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 11, TokenType::SemiColon),
+            Token::create_test_token(COLON, 12, TokenType::Colon),
+            Token::create_test_token("year", 12, TokenType::Ident),
+            Token::create_test_token(COLON, 12, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 12, TokenType::LeftBracket),
+            Token::create_test_token("films", 12, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
+            Token::create_test_token("year", 12, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 12, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 12, TokenType::SemiColon),
+            Token::create_test_token(COLON, 13, TokenType::Colon),
+            Token::create_test_token("country", 13, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 13, TokenType::LeftBracket),
+            Token::create_test_token("films", 13, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 13, TokenType::AccessDot),
+            Token::create_test_token("country", 13, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 13, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 13, TokenType::SemiColon),
+            Token::create_test_token(COLON, 14, TokenType::Colon),
+            Token::create_test_token("director", 14, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 14, TokenType::LeftBracket),
+            Token::create_test_token("films", 14, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 14, TokenType::AccessDot),
+            Token::create_test_token("director", 14, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 14, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 14, TokenType::SemiColon),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 15, TokenType::ClosingCurlyBrace),
+            Token::create_test_token(EOF, 15, TokenType::EOF),
         ];
 
         let expected = FileASTNode {
@@ -1713,6 +2090,58 @@ mod sintax_tests {
                     field_accessed: None,
                 }],
             }]),
+            shapes: vec![ShapeASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "Films".to_string(),
+                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "name".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "year".to_string(),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "country".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "director".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = file_parser().parse(tokens_vector.clone());
@@ -1811,6 +2240,58 @@ mod sintax_tests {
                 ],
             }],
             expressions: None,
+            shapes: vec![ShapeASTNode {
+                prefix_or_uri: PrefixOrURI::Prefix,
+                identifier: "Films".to_string(),
+                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "name".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "year".to_string(),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "country".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTuplesASTNode {
+                        prefix_or_uri: PrefixOrURI::Prefix,
+                        identifier: "director".to_string(),
+                        object_prefix_or_uri: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = file_parser().parse(tokens_vector.clone());
@@ -3128,7 +3609,7 @@ mod sintax_tests {
             iterator_accessed: "iterator".to_string(),
             field_accessed: None,
         };
-        let actual = access_parser(LEFT_ANGLE_BRACKET.to_string()).parse(tokens_vector.clone());
+        let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
 
@@ -3150,7 +3631,7 @@ mod sintax_tests {
             iterator_accessed: "iterator".to_string(),
             field_accessed: Some("field".to_string()),
         };
-        let actual = access_parser(LEFT_ANGLE_BRACKET.to_string()).parse(tokens_vector.clone());
+        let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
 
@@ -3167,7 +3648,7 @@ mod sintax_tests {
         ];
 
         check_parser_error::<AccessASTNode>(
-            access_parser(LEFT_ANGLE_BRACKET.to_string()),
+            access_parser(LEFT_ANGLE_BRACKET),
             fail_tokens_vector,
             "Se esperaba un identificador después de '<' en la línea 1",
         );
@@ -3186,7 +3667,7 @@ mod sintax_tests {
         ];
 
         check_parser_error::<AccessASTNode>(
-            access_parser(LEFT_ANGLE_BRACKET.to_string()),
+            access_parser(LEFT_ANGLE_BRACKET),
             fail_tokens_vector,
             "Falta un '.' después del identificador en la línea 1",
         );
@@ -3205,7 +3686,7 @@ mod sintax_tests {
         ];
 
         check_parser_error::<AccessASTNode>(
-            access_parser(LEFT_ANGLE_BRACKET.to_string()),
+            access_parser(LEFT_ANGLE_BRACKET),
             fail_tokens_vector,
             "Se esperaba un identificador después de '.' en la línea 1",
         );
@@ -3229,7 +3710,7 @@ mod sintax_tests {
             iterator_accessed: "iterator".to_string(),
             field_accessed: None,
         };
-        let actual = access_parser(LEFT_ANGLE_BRACKET.to_string()).parse(tokens_vector.clone());
+        let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
 
@@ -3251,7 +3732,7 @@ mod sintax_tests {
             iterator_accessed: "iterator".to_string(),
             field_accessed: None,
         };
-        let actual = access_parser(LEFT_ANGLE_BRACKET.to_string()).parse(tokens_vector.clone());
+        let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
 
