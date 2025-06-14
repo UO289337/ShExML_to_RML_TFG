@@ -54,7 +54,7 @@ impl TestUtilities {
     pub fn create_valid_query_test(num_line: u16) -> Vec<Token> {
         vec![
             Token::create_test_token(QUERY, num_line, TokenType::Query),
-            Token::create_test_token("query_sql", num_line, TokenType::Ident),
+            Token::create_test_token("inline_query", num_line, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
             Token::create_test_token(SQL_TYPE, num_line, TokenType::SqlType),
             Token::create_test_token("SELECT * FROM example;", num_line, TokenType::SqlQuery),
@@ -74,7 +74,7 @@ impl TestUtilities {
             Token::create_test_token(ITERATOR, num_line, TokenType::Iterator),
             Token::create_test_token("film_csv", num_line, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
-            Token::create_test_token("query_sql", num_line, TokenType::Ident),
+            Token::create_test_token("inline_query", num_line, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, num_line, TokenType::OpeningCurlyBrace),
         ];
@@ -159,8 +159,10 @@ impl TestUtilities {
     pub fn create_valid_shape_test(num_line: u16) -> Vec<Token> {
         // Se crea junto con las Shape Tuples
         vec![
+            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line, TokenType::Colon),
             Token::create_test_token("Films", num_line, TokenType::Ident),
+            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, num_line, TokenType::LeftBracket),
             Token::create_test_token("films", num_line, TokenType::Ident),
@@ -168,6 +170,7 @@ impl TestUtilities {
             Token::create_test_token("id", num_line, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line, TokenType::RightBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, num_line, TokenType::OpeningCurlyBrace),
+            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 1, TokenType::Colon),
             Token::create_test_token("name", num_line + 1, TokenType::Ident),
             Token::create_test_token(LEFT_BRACKET, num_line + 1, TokenType::LeftBracket),
@@ -176,8 +179,10 @@ impl TestUtilities {
             Token::create_test_token("name", num_line + 1, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line + 1, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, num_line + 1, TokenType::SemiColon),
+            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 2, TokenType::Colon),
             Token::create_test_token("year", num_line + 2, TokenType::Ident),
+            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 2, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, num_line + 2, TokenType::LeftBracket),
             Token::create_test_token("films", num_line + 2, TokenType::Ident),
@@ -185,6 +190,7 @@ impl TestUtilities {
             Token::create_test_token("year", num_line + 2, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line + 2, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, num_line + 2, TokenType::SemiColon),
+            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 3, TokenType::Colon),
             Token::create_test_token("country", num_line + 3, TokenType::Ident),
             Token::create_test_token(LEFT_BRACKET, num_line + 3, TokenType::LeftBracket),
@@ -193,6 +199,7 @@ impl TestUtilities {
             Token::create_test_token("country", num_line + 3, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line + 3, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, num_line + 3, TokenType::SemiColon),
+            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 4, TokenType::Colon),
             Token::create_test_token("director", num_line + 4, TokenType::Ident),
             Token::create_test_token(LEFT_BRACKET, num_line + 4, TokenType::LeftBracket),
@@ -258,5 +265,97 @@ impl TestUtilities {
             identifier: ident.to_string(),
             sql_query: sql_query.to_string(),
         }])
+    }
+
+    pub fn create_default_iterators_for_file_node() -> Vec<IteratorASTNode> {
+        vec![IteratorASTNode {
+            identifier: "film_csv".to_string(),
+            iterator_access: "inline_query".to_string(),
+            fields: vec![
+                FieldASTNode {
+                    field_identifier: "id".to_string(),
+                    access_field_identifier: "@id".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "name".to_string(),
+                    access_field_identifier: "name".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "year".to_string(),
+                    access_field_identifier: "year".to_string(),
+                },
+                FieldASTNode {
+                    field_identifier: "country".to_string(),
+                    access_field_identifier: "country".to_string(),
+                },
+            ],
+        }]
+    }
+
+    pub fn create_default_expressions_for_file_node() -> Option<Vec<ExpressionASTNode>> {
+        Some(vec![ExpressionASTNode {
+            identifier: "films".to_string(),
+            expression_type: ExpressionType::BASIC,
+            accesses: vec![AccessASTNode {
+                identifier: "films_csv_file".to_string(),
+                iterator_accessed: "film_csv".to_string(),
+                field_accessed: None,
+            }],
+        }])
+    }
+
+    pub fn create_default_shapes_for_file_node() -> Vec<ShapeASTNode> {
+        vec![ShapeASTNode {
+            prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            identifier: "Films".to_string(),
+            field_prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            field_identifier: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "id".to_string(),
+                field_accessed: None,
+            }),
+            tuples: vec![
+                ShapeTupleASTNode {
+                    prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+                    identifier: "name".to_string(),
+                    object_prefix_or_uri: None,
+                    object: IdentOrAccess::Access(AccessASTNode {
+                        identifier: "films".to_string(),
+                        iterator_accessed: "name".to_string(),
+                        field_accessed: None,
+                    }),
+                },
+                ShapeTupleASTNode {
+                    prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+                    identifier: "year".to_string(),
+                    object_prefix_or_uri: Some(PrefixOrURI::Prefix("example".to_string())),
+                    object: IdentOrAccess::Access(AccessASTNode {
+                        identifier: "films".to_string(),
+                        iterator_accessed: "year".to_string(),
+                        field_accessed: None,
+                    }),
+                },
+                ShapeTupleASTNode {
+                    prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+                    identifier: "country".to_string(),
+                    object_prefix_or_uri: None,
+                    object: IdentOrAccess::Access(AccessASTNode {
+                        identifier: "films".to_string(),
+                        iterator_accessed: "country".to_string(),
+                        field_accessed: None,
+                    }),
+                },
+                ShapeTupleASTNode {
+                    prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+                    identifier: "director".to_string(),
+                    object_prefix_or_uri: None,
+                    object: IdentOrAccess::Access(AccessASTNode {
+                        identifier: "films".to_string(),
+                        iterator_accessed: "director".to_string(),
+                        field_accessed: None,
+                    }),
+                },
+            ],
+        }]
     }
 }

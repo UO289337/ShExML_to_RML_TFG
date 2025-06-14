@@ -156,9 +156,9 @@ mod lexer_tests {
             }],
             expressions: None,
             shapes: vec![ShapeASTNode {
-                prefix_or_uri: PrefixOrURI::Prefix,
+                prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 identifier: "Films".to_string(),
-                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 field_identifier: IdentOrAccess::Access(AccessASTNode {
                     identifier: "films".to_string(),
                     iterator_accessed: "id".to_string(),
@@ -166,7 +166,7 @@ mod lexer_tests {
                 }),
                 tuples: vec![
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -176,9 +176,9 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "year".to_string(),
-                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix("example".to_string())),
                         object: IdentOrAccess::Access(AccessASTNode {
                             identifier: "films".to_string(),
                             iterator_accessed: "year".to_string(),
@@ -186,7 +186,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -196,7 +196,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -265,9 +265,9 @@ mod lexer_tests {
             }],
             expressions: None,
             shapes: vec![ShapeASTNode {
-                prefix_or_uri: PrefixOrURI::Prefix,
+                prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 identifier: "Films".to_string(),
-                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 field_identifier: IdentOrAccess::Access(AccessASTNode {
                     identifier: "films".to_string(),
                     iterator_accessed: "id".to_string(),
@@ -275,7 +275,7 @@ mod lexer_tests {
                 }),
                 tuples: vec![
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -285,9 +285,9 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "year".to_string(),
-                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix("example".to_string())),
                         object: IdentOrAccess::Access(AccessASTNode {
                             identifier: "films".to_string(),
                             iterator_accessed: "year".to_string(),
@@ -295,7 +295,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -305,7 +305,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -373,9 +373,9 @@ mod lexer_tests {
             }],
             expressions: None,
             shapes: vec![ShapeASTNode {
-                prefix_or_uri: PrefixOrURI::Prefix,
+                prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 identifier: "Films".to_string(),
-                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 field_identifier: IdentOrAccess::Access(AccessASTNode {
                     identifier: "films".to_string(),
                     iterator_accessed: "id".to_string(),
@@ -383,7 +383,7 @@ mod lexer_tests {
                 }),
                 tuples: vec![
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -393,9 +393,9 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "year".to_string(),
-                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix("example".to_string())),
                         object: IdentOrAccess::Access(AccessASTNode {
                             identifier: "films".to_string(),
                             iterator_accessed: "year".to_string(),
@@ -403,7 +403,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -413,7 +413,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -475,9 +475,9 @@ mod lexer_tests {
             }],
             expressions: None,
             shapes: vec![ShapeASTNode {
-                prefix_or_uri: PrefixOrURI::Prefix,
+                prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 identifier: "Films".to_string(),
-                field_prefix_or_uri: PrefixOrURI::Prefix,
+                field_prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                 field_identifier: IdentOrAccess::Access(AccessASTNode {
                     identifier: "films".to_string(),
                     iterator_accessed: "id".to_string(),
@@ -485,7 +485,7 @@ mod lexer_tests {
                 }),
                 tuples: vec![
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "name".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -495,9 +495,9 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "year".to_string(),
-                        object_prefix_or_uri: Some(PrefixOrURI::Prefix),
+                        object_prefix_or_uri: Some(PrefixOrURI::Prefix("example".to_string())),
                         object: IdentOrAccess::Access(AccessASTNode {
                             identifier: "films".to_string(),
                             iterator_accessed: "year".to_string(),
@@ -505,7 +505,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "country".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {
@@ -515,7 +515,7 @@ mod lexer_tests {
                         }),
                     },
                     ShapeTupleASTNode {
-                        prefix_or_uri: PrefixOrURI::Prefix,
+                        prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
                         identifier: "director".to_string(),
                         object_prefix_or_uri: None,
                         object: IdentOrAccess::Access(AccessASTNode {

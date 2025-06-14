@@ -1427,11 +1427,21 @@ mod lexer_tests {
     #[test]
     fn lexer_with_multiple_tokens() {
         let mut input = "PREFIX example: <http://example.com/>
+            PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
-            QUERY query_sql <sql: SELECT * FROM example;>
-            ITERATOR iterator <query_sql> {
-                FIELD field1 <@key>
-                FIELD field2 <attribute>
+            ITERATOR films_csv <csvperrow> {
+                FIELD id <@id>
+                FIELD name <name>
+                FIELD year <year>
+                FIELD country <country>
+                FIELD director <director>
+            }
+            EXPRESSION films <films_csv_file.films_csv>
+            example:Films example:[films.id] {
+                example:name [films.name] ;
+                example:year [films.year] ;
+                example:country dbr:[films.country] ;
+                example:director dbr:[films.director] ;
             }";
 
         let expected: Vec<Token> = vec![

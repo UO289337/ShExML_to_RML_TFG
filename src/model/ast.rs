@@ -17,7 +17,7 @@ pub enum ExpressionType {
 /// Enumerador que contiene el Prefix o la URI de un Shape o de un elemento de este
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum PrefixOrURI {
-    Prefix,
+    Prefix(String),
     URI(String),
 }
 
