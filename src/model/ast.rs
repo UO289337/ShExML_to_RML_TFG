@@ -12,15 +12,6 @@ pub enum ExpressionType {
     JOIN,
 }
 
-/// Uri o Prefix
-///
-/// Enumerador que contiene el Prefix o la URI de un Shape o de un elemento de este
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum PrefixOrURI {
-    Prefix(String),
-    URI(String),
-}
-
 /// Ident o Access
 ///
 /// Enumerador que contiene el identificador o el nodo de acceso a un field de un Shape
@@ -130,9 +121,9 @@ pub struct AccessASTNode {
 /// Se corresponde con los Shape de ShExML
 #[derive(Debug, PartialEq)]
 pub struct ShapeASTNode {
-    pub prefix_or_uri: PrefixOrURI,
+    pub prefix: String,
     pub identifier: String,
-    pub field_prefix_or_uri: PrefixOrURI,
+    pub field_prefix: String,
     pub field_identifier: IdentOrAccess,
     pub tuples: Vec<ShapeTupleASTNode>,
 }
@@ -142,8 +133,8 @@ pub struct ShapeASTNode {
 /// Se corresponde con las tuplas de los Shape de ShExML
 #[derive(Debug, PartialEq)]
 pub struct ShapeTupleASTNode {
-    pub prefix_or_uri: PrefixOrURI,
+    pub prefix: String,
     pub identifier: String,
-    pub object_prefix_or_uri: Option<PrefixOrURI>,
+    pub object_prefix: Option<String>,
     pub object: IdentOrAccess,
 }

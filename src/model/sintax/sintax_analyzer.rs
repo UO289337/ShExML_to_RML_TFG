@@ -894,8 +894,8 @@ fn shape_parser() -> impl Parser<Token, Vec<ShapeASTNode>, Error = Simple<Token>
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn single_shape_parser() -> impl Parser<Token, ShapeASTNode, Error = Simple<Token>> {
-    prefix_or_uri_with_ident_parser()
-        .then(prefix_or_uri_parser("en la Shape, después del identificador del Prefix del acceso"))
+    prefix_with_ident_parser()
+        .then(prefix_shape_parser("en la Shape, después del identificador del Prefix del acceso"))
         .then_ignore(left_bracket_parser("el identificador"))
         .then(ident_or_access_parser())
         .then_ignore(right_bracket_parser("el identificador"))
@@ -926,17 +926,17 @@ fn shape_body_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Sim
 /// Un nodo ShapeASTNode del AST
 ///
 /// # Parámetros
-/// * `shape_prefix_or_uri` - Una tupla con el Token del Prefix y el Option de la URI
-/// * `shape_field_prefix_or_uri` - Un Option con la Uri del field de la Shape
+/// * `shape_prefix` - Una tupla con el Token del Prefix y del Ident después de este
+/// * `shape_field_prefix` - El Ident del Prefix del field
 /// * `field_ident` - Una tupla con 2 Option, uno con el token del Ident y otro con el token del nodo Access
 /// * `shape_tuples` - Un vector con las tuplas de la Shape
 fn create_shape_node(
-    shape_prefix_or_uri: (PrefixOrURI, Token),
-    shape_field_prefix_or_uri: PrefixOrURI,
+    shape_prefix: (Token, Token),
+    shape_field_prefix: Token,
     field_ident: (Option<Token>, Option<AccessASTNode>),
     shape_tuples: Vec<ShapeTupleASTNode>,
 ) -> ShapeASTNode {
-    let (prefix_or_uri, shape_ident) = shape_prefix_or_uri;
+    let (prefix, shape_ident) = shape_prefix;
     let (shape_field_ident, shape_field_access) = field_ident;
 
     let field_ident;
@@ -948,9 +948,9 @@ fn create_shape_node(
     }
 
     ShapeASTNode {
-        prefix_or_uri,
+        prefix: prefix.lexeme,
         identifier: shape_ident.lexeme,
-        field_prefix_or_uri: shape_field_prefix_or_uri,
+        field_prefix: shape_field_prefix.lexeme,
         field_identifier: field_ident,
         tuples: shape_tuples,
     }
@@ -980,15 +980,15 @@ fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Si
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn single_shape_tuple_parser() -> impl Parser<Token, ShapeTupleASTNode, Error = Simple<Token>> {
-    prefix_or_uri_with_ident_parser()
-        .then(prefix_or_uri_parser("en la tupla del Shape, después del identificador del Prefix").or_not())
+    prefix_with_ident_parser()
+        .then(prefix_shape_parser("en la tupla del Shape, después del identificador del Prefix").or_not())
         .then_ignore(left_bracket_parser("el identificador"))
         .then(ident_or_access_parser())
         .then_ignore(right_bracket_parser("el identificador"))
         .then_ignore(semicolon_parser())
         .map(
-            |((tuple_prefix_or_uri, object_prefix_or_uri), tuple_object)| {
-                create_shape_tuple_node(tuple_prefix_or_uri, object_prefix_or_uri, tuple_object)
+            |((tuple_prefix, object_prefix), tuple_object)| {
+                create_shape_tuple_node(tuple_prefix, object_prefix, tuple_object)
             },
         )
 }
@@ -999,15 +999,15 @@ fn single_shape_tuple_parser() -> impl Parser<Token, ShapeTupleASTNode, Error = 
 /// Un nodo ShapeTuplesASTNode del AST
 ///
 /// # Parámetros
-/// * `tuple_prefix_or_uri` - Una tupla con el Token del Prefix y el Option de la URI
-/// * `object_prefix_or_uri` - Un Option con otro Option con el token de la URI; el primer Option indica la opcionalidad del uso de Prefix o URI
+/// * `tuple_prefix` - Una tupla con el Token del Prefix y con el Ident después de este
+/// * `object_prefix` - Un Option con el token del Prefix
 /// * `tuple_object` - Una tupla con 2 Option, uno con el token del Ident y otro con el token del nodo Access
 fn create_shape_tuple_node(
-    tuple_prefix_or_uri: (PrefixOrURI, Token),
-    object_prefix_or_uri: Option<PrefixOrURI>,
+    tuple_prefix: (Token, Token),
+    object_prefix: Option<Token>,
     tuple_object: (Option<Token>, Option<AccessASTNode>),
 ) -> ShapeTupleASTNode {
-    let (prefix_or_uri, ident) = tuple_prefix_or_uri;
+    let (prefix, ident) = tuple_prefix;
     let (tuple_object_ident, tuple_field_access) = tuple_object;
 
     let object_ident;
@@ -1018,10 +1018,18 @@ fn create_shape_tuple_node(
         object_ident = IdentOrAccess::Access(tuple_field_access.unwrap());
     }
 
+    let obj_prefix;
+
+    if object_prefix.is_some() {
+        obj_prefix = Some(object_prefix.unwrap().lexeme);
+    } else {
+        obj_prefix = None;
+    }
+
     ShapeTupleASTNode {
-        prefix_or_uri,
+        prefix: prefix.lexeme,
         identifier: ident.lexeme,
-        object_prefix_or_uri,
+        object_prefix: obj_prefix,
         object: object_ident,
     }
 }
@@ -1048,14 +1056,11 @@ fn ident_or_access_parser(
 ///
 /// # Retorna
 /// Un Parser con una tupla con el identificador del Prefix y con la URI o el identificador después del Prefix, dependiendo de lo que se encuentre
-fn prefix_or_uri_with_ident_parser() -> Or<Map<Then<Map<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Token, Token)) -> Token, (Token, Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, impl Fn((Token, Token)) -> (PrefixOrURI, Token), (Token, Token)>, Map<Then<impl Parser<Token, Token, Error = Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, impl Fn((Token, Token)) -> (PrefixOrURI, Token), (Token, Token)>> {
-    (identifier_parser("la expresión y antes de los ':'")
+fn prefix_with_ident_parser() -> Map<Then<Map<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Token, Token)) -> Token, (Token, Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, impl Fn((Token, Token)) -> (Token, Token), (Token, Token)> {
+    identifier_parser("la expresión y antes de los ':'")
         .then_ignore(colon_parser("antes del identificador"))
         .then(identifier_parser(COLON))
-        .map(|(colon_ident, ident)| (PrefixOrURI::Prefix(colon_ident.lexeme), ident)))
-    .or(uri_with_angle_brackets_parser()
-        .then(identifier_parser(RIGHT_ANGLE_BRACKET))
-        .map(|(uri, ident)| (PrefixOrURI::URI(uri.lexeme), ident)))
+        .map(|(colon_ident, ident)| (colon_ident, ident))
 }
 
 /// Parsea los tokens del Prefix o Uri del field de Shape
@@ -1067,13 +1072,12 @@ fn prefix_or_uri_with_ident_parser() -> Or<Map<Then<Map<Then<MapErr<Map<Filter<i
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn prefix_or_uri_parser(
+fn prefix_shape_parser(
     message: &str,
-) -> Or<Map<Map<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Token, Token)) -> Token, (Token, Token)>, impl Fn(Token) -> PrefixOrURI, Token>, Map<impl Parser<Token, Token, Error = Simple<Token>>, impl Fn(Token) -> PrefixOrURI, Token>> {
+) -> Map<Map<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Token, Token)) -> Token, (Token, Token)>, impl Fn(Token) -> Token, Token> {
     identifier_parser(COLON)
         .then_ignore(colon_parser(message))
-        .map(|ident| PrefixOrURI::Prefix(ident.lexeme))
-        .or(uri_with_angle_brackets_parser().map(|uri| PrefixOrURI::Prefix(uri.lexeme)))
+        .map(|ident| ident)
 }
 
 /// Realiza el parseo de una URI con '<' y '>' a ambos lados
@@ -4370,9 +4374,9 @@ mod sintax_tests {
         ];
 
         let expected = ShapeTupleASTNode {
-            prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            prefix: "example".to_string(),
             identifier: "name".to_string(),
-            object_prefix_or_uri: None,
+            object_prefix: None,
             object: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "name".to_string(),
@@ -4404,9 +4408,9 @@ mod sintax_tests {
         ];
 
         let expected = ShapeTupleASTNode {
-            prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
+            prefix:"https://example.com".to_string(),
             identifier: "name".to_string(),
-            object_prefix_or_uri: None,
+            object_prefix: None,
             object: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "name".to_string(),
@@ -4439,9 +4443,9 @@ mod sintax_tests {
         ];
 
         let expected = ShapeTupleASTNode {
-            prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            prefix: "example".to_string(),
             identifier: "name".to_string(),
-            object_prefix_or_uri: Some(PrefixOrURI::Prefix("example".to_string())),
+            object_prefix: Some("example".to_string()),
             object: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "name".to_string(),
@@ -4473,9 +4477,9 @@ mod sintax_tests {
         ];
 
         let expected = ShapeTupleASTNode {
-            prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            prefix: "example".to_string(),
             identifier: "name".to_string(),
-            object_prefix_or_uri: Some(PrefixOrURI::URI("https://example.com".to_string())),
+            object_prefix: Some("https://example.com".to_string()),
             object: IdentOrAccess::Ident("films_name".to_string()),
         };
 
@@ -4487,7 +4491,7 @@ mod sintax_tests {
     /// (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
-    fn shape_tuple_sintax_withouth_ident_prefix_or_uri() {
+    fn shape_tuple_sintax_withouth_ident_prefix() {
         let fail_tokens_vector = vec![
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
             Token::create_test_token("https://example.com", 1, TokenType::Uri),
@@ -4634,18 +4638,18 @@ mod sintax_tests {
         ];
 
         let expected = ShapeASTNode {
-            prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            prefix: "example".to_string(),
             identifier: "Films".to_string(),
-            field_prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            field_prefix: "example".to_string(),
             field_identifier: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "id".to_string(),
                 field_accessed: None,
             }),
             tuples: vec![ShapeTupleASTNode {
-                prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+                prefix: "example".to_string(),
                 identifier: "name".to_string(),
-                object_prefix_or_uri: None,
+                object_prefix: None,
                 object: IdentOrAccess::Ident("films_name".to_string()),
             }],
         };
@@ -4683,18 +4687,18 @@ mod sintax_tests {
         ];
 
         let expected = ShapeASTNode {
-            prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
+            prefix:"https://example.com".to_string(),
             identifier: "Films".to_string(),
-            field_prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            field_prefix: "example".to_string(),
             field_identifier: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "id".to_string(),
                 field_accessed: None,
             }),
             tuples: vec![ShapeTupleASTNode {
-                prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+                prefix: "example".to_string(),
                 identifier: "name".to_string(),
-                object_prefix_or_uri: None,
+                object_prefix: None,
                 object: IdentOrAccess::Ident("films_name".to_string()),
             }],
         };
@@ -4733,18 +4737,18 @@ mod sintax_tests {
         ];
 
         let expected = ShapeASTNode {
-            prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+            prefix: "example".to_string(),
             identifier: "Films".to_string(),
-            field_prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
+            field_prefix:"https://example.com".to_string(),
             field_identifier: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "id".to_string(),
                 field_accessed: None,
             }),
             tuples: vec![ShapeTupleASTNode {
-                prefix_or_uri: PrefixOrURI::Prefix("example".to_string()),
+                prefix: "example".to_string(),
                 identifier: "name".to_string(),
-                object_prefix_or_uri: None,
+                object_prefix: None,
                 object: IdentOrAccess::Ident("films_name".to_string()),
             }],
         };
@@ -4757,7 +4761,7 @@ mod sintax_tests {
     /// (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
-    fn shape_sintax_withouth_ident_prefix_or_uri() {
+    fn shape_sintax_withouth_ident_prefix() {
         let fail_tokens_vector = vec![
             Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
