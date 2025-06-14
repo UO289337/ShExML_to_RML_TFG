@@ -28,7 +28,7 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
         .then(source_parser())
         .then(query_parser().or_not())
         .then(iterator_parser())
-        .then(expression_parser().or_not())
+        .then(expression_parser())
         .then(shape_parser())
         .then_ignore(eof_parser())
         .map(
@@ -57,7 +57,7 @@ fn build_file_ast_node(
     sources: Vec<SourceASTNode>,
     queries: Option<Vec<QueryASTNode>>,
     iterators: Vec<IteratorASTNode>,
-    expressions: Option<Vec<ExpressionASTNode>>,
+    expressions: Vec<ExpressionASTNode>,
     shapes: Vec<ShapeASTNode>,
 ) -> FileASTNode {
     FileASTNode {
@@ -1057,7 +1057,7 @@ fn ident_or_access_parser(
 /// # Retorna
 /// Un Parser con una tupla con el identificador del Prefix y con la URI o el identificador después del Prefix, dependiendo de lo que se encuentre
 fn prefix_with_ident_parser() -> Map<Then<Map<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Token, Token)) -> Token, (Token, Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, impl Fn((Token, Token)) -> (Token, Token), (Token, Token)> {
-    identifier_parser("la expresión y antes de los ':'")
+    identifier_parser("la expresión o Shape, al principio de una Shape")
         .then_ignore(colon_parser("antes del identificador"))
         .then(identifier_parser(COLON))
         .map(|(colon_ident, ident)| (colon_ident, ident))
@@ -1300,7 +1300,7 @@ fn identifier_parser(
 > {
     general_parser(
         TokenType::Ident,
-        format!("Se esperaba un identificador después de '{previous_token}' en la línea"),
+        format!("Se esperaba un identificador después de {previous_token} en la línea"),
     )
 }
 
@@ -2296,6 +2296,7 @@ mod sintax_tests {
         tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(4));
         tokens_vector.append(&mut TestUtilities::create_valid_expression_test(10));
         tokens_vector.append(&mut TestUtilities::create_valid_shape_test(11));
+        tokens_vector.append(&mut vec![Token::create_test_token(EOF, 17, TokenType::EOF)]);
 
         // Unicamente se utilizan algunas funciones comunes debido a que el resto de nodos tienen varias maneras de ser construidos
         let expected = FileASTNode {
@@ -2329,6 +2330,7 @@ mod sintax_tests {
         tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
         tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
         tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
+        tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
 
         let expected = FileASTNode {
             prefixes: TestUtilities::create_prefixes_for_file_node(
@@ -2349,38 +2351,6 @@ mod sintax_tests {
         assert_eq!(expected, actual.unwrap());
     }
 
-    /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST si no hay Expression y no hay errores sintácticos
-    #[doc(hidden)]
-    #[test]
-    fn file_parser_with_valid_sintax_and_withouth_expression() {
-        let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
-        tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
-        tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
-        tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(4));
-        tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
-
-        let expected = FileASTNode {
-            prefixes: TestUtilities::create_prefixes_for_file_node(
-                "example",
-                "https://example.com/",
-            ),
-            sources: TestUtilities::create_sources_for_file_node(
-                "films_csv_file",
-                "https://shexml.herminiogarcia.com/files/films.csv",
-            ),
-            queries: TestUtilities::create_queries_for_file_node(
-                "inline_query",
-                "SELECT * FROM example;",
-            ),
-            iterators: TestUtilities::create_default_iterators_for_file_node(),
-            expressions: None,
-            shapes: TestUtilities::create_default_shapes_for_file_node(),
-        };
-
-        let actual = file_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap());
-    }
-
     /// Comprueba que el parser general de file genera el nodo raíz del AST si no hay prefixes
     #[doc(hidden)]
     #[test]
@@ -2390,6 +2360,7 @@ mod sintax_tests {
         tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
         tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
         tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
+        tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
 
         let expected = FileASTNode {
             prefixes: None,
@@ -2419,11 +2390,48 @@ mod sintax_tests {
         fail_tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
         fail_tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
         fail_tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
+        fail_tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
 
         check_parser_error::<FileASTNode>(
             file_parser(),
             fail_tokens_vector,
             "Se esperaba un PREFIX o un SOURCE en la línea 2",
+        );
+    }
+
+    /// Comprueba que el parser general de file no genera el nodo raíz del AST si no hay expressions
+    #[doc(hidden)]
+    #[test]
+    fn file_parser_withouth_expressions() {
+        let mut fail_tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(4));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
+        fail_tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
+
+        check_parser_error::<FileASTNode>(
+            file_parser(),
+            fail_tokens_vector,
+            "Se esperaba un EXPRESSION en la línea 10",
+        );
+    }
+
+    /// Comprueba que el parser general de file no genera el nodo raíz del AST si no hay Shapes
+    #[doc(hidden)]
+    #[test]
+    fn file_parser_withouth_shapes() {
+        let mut fail_tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(4));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_expression_test(10));
+        fail_tokens_vector.append(&mut vec![Token::create_test_token(EOF, 11, TokenType::EOF)]);
+
+        check_parser_error::<FileASTNode>(
+            file_parser(),
+            fail_tokens_vector,
+            "Se esperaba un identificador después de la expresión o Shape, al principio de una Shape en la línea 11",
         );
     }
 
@@ -2516,7 +2524,7 @@ mod sintax_tests {
         check_parser_error::<Vec<PrefixASTNode>>(
             prefix_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'PREFIX' en la línea 1",
+            "Se esperaba un identificador después de PREFIX en la línea 1",
         );
     }
 
@@ -2861,7 +2869,7 @@ mod sintax_tests {
         check_parser_error::<Vec<SourceASTNode>>(
             source_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'SOURCE' en la línea 1",
+            "Se esperaba un identificador después de SOURCE en la línea 1",
         );
     }
 
@@ -3029,7 +3037,7 @@ mod sintax_tests {
         check_parser_error::<Vec<QueryASTNode>>(
             query_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'QUERY' en la línea 1",
+            "Se esperaba un identificador después de QUERY en la línea 1",
         );
     }
 
@@ -3187,7 +3195,7 @@ mod sintax_tests {
         check_parser_error::<Vec<FieldASTNode>>(
             field_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'FIELD' en la línea 1",
+            "Se esperaba un identificador después de FIELD en la línea 1",
         );
     }
 
@@ -3225,7 +3233,7 @@ mod sintax_tests {
         check_parser_error::<Vec<FieldASTNode>>(
             field_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '<' en la línea 1",
+            "Se esperaba un identificador después de < en la línea 1",
         );
     }
 
@@ -3464,7 +3472,7 @@ mod sintax_tests {
         check_parser_error::<Vec<IteratorASTNode>>(
             iterator_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'ITERATOR' en la línea 1",
+            "Se esperaba un identificador después de ITERATOR en la línea 1",
         );
     }
 
@@ -3519,7 +3527,7 @@ mod sintax_tests {
         check_parser_error::<Vec<IteratorASTNode>>(
             iterator_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '<' en la línea 1",
+            "Se esperaba un identificador después de < en la línea 1",
         );
     }
 
@@ -3738,7 +3746,7 @@ mod sintax_tests {
         check_parser_error::<AccessASTNode>(
             access_parser(LEFT_ANGLE_BRACKET),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '<' en la línea 1",
+            "Se esperaba un identificador después de < en la línea 1",
         );
     }
 
@@ -3776,7 +3784,7 @@ mod sintax_tests {
         check_parser_error::<AccessASTNode>(
             access_parser(LEFT_ANGLE_BRACKET),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '.' en la línea 1",
+            "Se esperaba un identificador después de . en la línea 1",
         );
     }
 
@@ -3998,7 +4006,7 @@ mod sintax_tests {
         check_parser_error::<Vec<ExpressionASTNode>>(
             expression_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'EXPRESSION' en la línea 1",
+            "Se esperaba un identificador después de EXPRESSION en la línea 1",
         );
     }
 
@@ -4040,7 +4048,7 @@ mod sintax_tests {
         check_parser_error::<Vec<ExpressionASTNode>>(
             expression_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '<' en la línea 1",
+            "Se esperaba un identificador después de < en la línea 1",
         );
     }
 
@@ -4133,7 +4141,7 @@ mod sintax_tests {
         check_parser_error::<Vec<ExpressionASTNode>>(
             expression_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'UNION' en la línea 1",
+            "Se esperaba un identificador después de UNION en la línea 1",
         );
     }
 
@@ -4207,7 +4215,7 @@ mod sintax_tests {
         check_parser_error::<Vec<ExpressionASTNode>>(
             expression_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'JOIN' en la línea 1",
+            "Se esperaba un identificador después de JOIN en la línea 1",
         );
     }
 
@@ -4279,7 +4287,7 @@ mod sintax_tests {
         check_parser_error::<Vec<ExpressionASTNode>>(
             expression_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de 'ON' en la línea 1",
+            "Se esperaba un identificador después de ON en la línea 1",
         );
     }
 
@@ -4351,12 +4359,12 @@ mod sintax_tests {
         check_parser_error::<Vec<ExpressionASTNode>>(
             expression_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '=' en la línea 1",
+            "Se esperaba un identificador después de = en la línea 1",
         );
     }
 
     /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
-    /// Prefix Colon Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    /// Ident Colon Ident (Ident Colon Ident)? LeftBracket (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn valid_shape_tuple_sintax_with_ident_prefix() {
@@ -4389,41 +4397,7 @@ mod sintax_tests {
     }
 
     /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
-    /// LeftAngelBracket Uri RightAngleBracket Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
-    #[doc(hidden)]
-    #[test]
-    fn valid_shape_tuple_sintax_with_ident_uri() {
-        let tokens_vector = vec![
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
-            Token::create_test_token("films", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        let expected = ShapeTupleASTNode {
-            prefix:"https://example.com".to_string(),
-            identifier: "name".to_string(),
-            object_prefix: None,
-            object: IdentOrAccess::Access(AccessASTNode {
-                identifier: "films".to_string(),
-                iterator_accessed: "name".to_string(),
-                field_accessed: None,
-            }),
-        };
-
-        let actual = shape_tuple_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap()[0]);
-    }
-
-    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) Prefix Colon LeftBracket (Ident|Access) RightBracket Semicolon
+    /// (Ident Colon Ident) Prefix Colon LeftBracket (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn valid_shape_tuple_sintax_with_field_prefix() {
@@ -4457,45 +4431,14 @@ mod sintax_tests {
         assert_eq!(expected, actual.unwrap()[0]);
     }
 
-    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) LeftAngelBracket Uri RightAngleBracket LeftBracket (Ident|Access) RightBracket Semicolon
-    #[doc(hidden)]
-    #[test]
-    fn valid_shape_tuple_sintax_with_field_uri() {
-        let tokens_vector = vec![
-            Token::create_test_token("example", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
-            Token::create_test_token("films_name", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        let expected = ShapeTupleASTNode {
-            prefix: "example".to_string(),
-            identifier: "name".to_string(),
-            object_prefix: Some("https://example.com".to_string()),
-            object: IdentOrAccess::Ident("films_name".to_string()),
-        };
-
-        let actual = shape_tuple_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap()[0]);
-    }
-
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    /// (Ident Colon Ident)? LeftBracket (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_tuple_sintax_withouth_ident_prefix() {
         let fail_tokens_vector = vec![
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
             Token::create_test_token("films_name", 1, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
@@ -4506,12 +4449,12 @@ mod sintax_tests {
         check_parser_error::<Vec<ShapeTupleASTNode>>(
             shape_tuple_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '>' en la línea 1",
+            "Se esperaba un identificador después de : en la línea 1",
         );
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? (Ident|Access) RightBracket Semicolon
+    /// (Ident Colon Ident) (Ident Colon)? (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_tuple_sintax_withouth_left_bracket() {
@@ -4519,9 +4462,8 @@ mod sintax_tests {
             Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token("films_name", 1, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
@@ -4536,7 +4478,7 @@ mod sintax_tests {
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket RightBracket Semicolon
+    /// (Ident Colon Ident) (Ident Colon)? LeftBracket RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_tuple_sintax_withouth_ident_or_access_field() {
@@ -4544,9 +4486,8 @@ mod sintax_tests {
             Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
@@ -4556,12 +4497,12 @@ mod sintax_tests {
         check_parser_error::<Vec<ShapeTupleASTNode>>(
             shape_tuple_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '[' en la línea 1",
+            "Se esperaba un identificador después de [ en la línea 1",
         );
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) Semicolon
+    /// (Ident Colon Ident) (Ident Colon)? LeftBracket (Ident|Access) Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_tuple_sintax_withouth_right_bracket() {
@@ -4569,9 +4510,8 @@ mod sintax_tests {
             Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
             Token::create_test_token("films_name", 1, TokenType::Ident),
             Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
@@ -4586,7 +4526,7 @@ mod sintax_tests {
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket
+    /// Ident Colon Ident (Ident Colon)? LeftBracket (Ident|Access) RightBracket
     #[doc(hidden)]
     #[test]
     fn shape_tuple_sintax_withouth_semicolon() {
@@ -4594,9 +4534,8 @@ mod sintax_tests {
             Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
+            Token::create_test_token("example", 1, TokenType::Ident),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
             Token::create_test_token("films_name", 1, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
@@ -4611,7 +4550,7 @@ mod sintax_tests {
     }
 
     /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
-    /// Prefix Colon Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    /// Ident Colon Ident (Ident Colon)? LeftBracket (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn valid_shape_sintax_with_ident_prefix() {
@@ -4627,6 +4566,7 @@ mod sintax_tests {
             Token::create_test_token("id", 1, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
+            Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 2, TokenType::Colon),
             Token::create_test_token("name", 2, TokenType::Ident),
             Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
@@ -4641,105 +4581,6 @@ mod sintax_tests {
             prefix: "example".to_string(),
             identifier: "Films".to_string(),
             field_prefix: "example".to_string(),
-            field_identifier: IdentOrAccess::Access(AccessASTNode {
-                identifier: "films".to_string(),
-                iterator_accessed: "id".to_string(),
-                field_accessed: None,
-            }),
-            tuples: vec![ShapeTupleASTNode {
-                prefix: "example".to_string(),
-                identifier: "name".to_string(),
-                object_prefix: None,
-                object: IdentOrAccess::Ident("films_name".to_string()),
-            }],
-        };
-
-        let actual = shape_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap()[0]);
-    }
-
-    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
-    /// LeftAngelBracket Uri RightAngleBracket Ident (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
-    #[doc(hidden)]
-    #[test]
-    fn valid_shape_sintax_with_ident_uri() {
-        let tokens_vector = vec![
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token("Films", 1, TokenType::Ident),
-            Token::create_test_token("example", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
-            Token::create_test_token("films", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("id", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(COLON, 2, TokenType::Colon),
-            Token::create_test_token("name", 2, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
-            Token::create_test_token("films_name", 2, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EOF, 3, TokenType::EOF),
-        ];
-
-        let expected = ShapeASTNode {
-            prefix:"https://example.com".to_string(),
-            identifier: "Films".to_string(),
-            field_prefix: "example".to_string(),
-            field_identifier: IdentOrAccess::Access(AccessASTNode {
-                identifier: "films".to_string(),
-                iterator_accessed: "id".to_string(),
-                field_accessed: None,
-            }),
-            tuples: vec![ShapeTupleASTNode {
-                prefix: "example".to_string(),
-                identifier: "name".to_string(),
-                object_prefix: None,
-                object: IdentOrAccess::Ident("films_name".to_string()),
-            }],
-        };
-
-        let actual = shape_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap()[0]);
-    }
-
-    /// Comprueba que el parser de ShapeTuple parsea la secuencia de tokens:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) LeftAngelBracket Uri RightAngleBracket LeftBracket (Ident|Access) RightBracket Semicolon
-    #[doc(hidden)]
-    #[test]
-    fn valid_shape_sintax_with_field_uri() {
-        let tokens_vector = vec![
-            Token::create_test_token("example", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token("Films", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            // Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
-            Token::create_test_token("films", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("id", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(COLON, 2, TokenType::Colon),
-            Token::create_test_token("name", 2, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
-            Token::create_test_token("films_name", 2, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EOF, 3, TokenType::EOF),
-        ];
-
-        let expected = ShapeASTNode {
-            prefix: "example".to_string(),
-            identifier: "Films".to_string(),
-            field_prefix:"https://example.com".to_string(),
             field_identifier: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "id".to_string(),
@@ -4758,7 +4599,7 @@ mod sintax_tests {
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) RightBracket Semicolon
+    /// (Ident Colon)? LeftBracket (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_sintax_withouth_ident_prefix() {
@@ -4784,12 +4625,12 @@ mod sintax_tests {
         check_parser_error::<Vec<ShapeASTNode>>(
             shape_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de ':' en la línea 1",
+            "Se esperaba un identificador después de : en la línea 1",
         );
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? (Ident|Access) RightBracket Semicolon
+    /// Ident Colon Ident (Ident Colon)? (Ident|Access) RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_sintax_withouth_left_bracket() {
@@ -4822,7 +4663,7 @@ mod sintax_tests {
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket RightBracket Semicolon
+    /// Ident Colon Ident (Ident Colon)? LeftBracket RightBracket Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_sintax_withouth_ident_field() {
@@ -4847,12 +4688,12 @@ mod sintax_tests {
         check_parser_error::<Vec<ShapeASTNode>>(
             shape_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de '[' en la línea 1",
+            "Se esperaba un identificador después de [ en la línea 1",
         );
     }
 
     /// Comprueba que el parser de ShapeTuple no parsea como tales aquellas secuencias de tokens que son:
-    /// (Prefix Colon Ident|LeftAngelBracket Uri RightAngleBracket Ident) (Prefix Colon|LeftAngelBracket Uri RightAngleBracket)? LeftBracket (Ident|Access) Semicolon
+    /// Ident Colon Ident (Ident Colon)? LeftBracket (Ident|Access) Semicolon
     #[doc(hidden)]
     #[test]
     fn shape_sintax_withouth_right_bracket() {

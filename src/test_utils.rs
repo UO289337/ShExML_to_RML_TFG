@@ -72,7 +72,7 @@ impl TestUtilities {
     pub fn create_valid_iterator_test(num_line: u16) -> Vec<Token> {
         let mut iterator = vec![
             Token::create_test_token(ITERATOR, num_line, TokenType::Iterator),
-            Token::create_test_token("film_csv", num_line, TokenType::Ident),
+            Token::create_test_token("films_csv", num_line, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
             Token::create_test_token("inline_query", num_line, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
@@ -144,7 +144,7 @@ impl TestUtilities {
             Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
             Token::create_test_token("films_csv_file", num_line, TokenType::Ident),
             Token::create_test_token(ACCESS_DOT, num_line, TokenType::AccessDot),
-            Token::create_test_token("film_csv", num_line, TokenType::Ident),
+            Token::create_test_token("films_csv", num_line, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
         ]
     }
@@ -213,8 +213,7 @@ impl TestUtilities {
                 num_line + 5,
                 TokenType::ClosingCurlyBrace,
             ),
-            Token::create_test_token(EOF, num_line + 5, TokenType::EOF),
-        ] // Ya incluye el EOF al ser las Shapes las últimas
+        ]
     }
 
     // TestUtilities de los nodos del AST
@@ -267,9 +266,13 @@ impl TestUtilities {
         }])
     }
 
+    /// Crea un nodo Iterator del AST que tiene unos valores por defecto
+    /// 
+    /// # Retorna
+    /// Un vector de nodos Iterator del AST que contiene un nodo Iterator
     pub fn create_default_iterators_for_file_node() -> Vec<IteratorASTNode> {
         vec![IteratorASTNode {
-            identifier: "film_csv".to_string(),
+            identifier: "films_csv".to_string(),
             iterator_access: "inline_query".to_string(),
             fields: vec![
                 FieldASTNode {
@@ -292,18 +295,28 @@ impl TestUtilities {
         }]
     }
 
-    pub fn create_default_expressions_for_file_node() -> Option<Vec<ExpressionASTNode>> {
-        Some(vec![ExpressionASTNode {
+    /// Crea un nodo Expression del AST que tiene unos valores por defecto
+    /// 
+    /// # Retorna
+    /// Un vector de nodos Expression del AST que contiene un nodo Expression
+    pub fn create_default_expressions_for_file_node() -> Vec<ExpressionASTNode> {
+        vec![ExpressionASTNode {
             identifier: "films".to_string(),
             expression_type: ExpressionType::BASIC,
             accesses: vec![AccessASTNode {
                 identifier: "films_csv_file".to_string(),
-                iterator_accessed: "film_csv".to_string(),
+                iterator_accessed: "films_csv".to_string(),
                 field_accessed: None,
             }],
-        }])
+        }]
     }
 
+    /// Crea un nodo Shape del AST que tiene unos valores por defecto
+    /// 
+    /// El nodo Shape incluye las Shape Tuples
+    /// 
+    /// # Retorna
+    /// Un vector de nodos Shape del AST que contiene un nodo Shape
     pub fn create_default_shapes_for_file_node() -> Vec<ShapeASTNode> {
         vec![ShapeASTNode {
             prefix: "example".to_string(),

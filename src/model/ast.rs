@@ -46,7 +46,7 @@ pub struct FileASTNode {
     pub sources: Vec<SourceASTNode>,
     pub queries: Option<Vec<QueryASTNode>>,
     pub iterators: Vec<IteratorASTNode>,
-    pub expressions: Option<Vec<ExpressionASTNode>>,
+    pub expressions: Vec<ExpressionASTNode>,
     pub shapes: Vec<ShapeASTNode>,
 }
 

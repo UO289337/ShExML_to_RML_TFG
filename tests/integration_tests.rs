@@ -13,8 +13,23 @@ mod integration_lexer_syntax_analyzers_tests {
     #[test]
     fn integration_with_valid_input() {
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.csv>
-            QUERY query_sql <sql: SELECT * FROM example;>";
+            PREFIX dbr: <http://dbpedia.org/resource/>
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY inline_query <sql: SELECT * FROM example;>
+            ITERATOR films_csv <csvperrow> {
+                FIELD id <@id>
+                FIELD name <name>
+                FIELD year <year>
+                FIELD country <country>
+                FIELD director <director>
+            }
+            EXPRESSION films <films_csv_file.films_csv>
+            example:Films example:[films.id] {
+                example:name [films.name] ;
+                example:year [films.year] ;
+                example:country dbr:[films.country] ;
+                example:director dbr:[films.director] ;
+            }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
         let semantic_result =
@@ -27,12 +42,18 @@ mod integration_lexer_syntax_analyzers_tests {
             .unwrap()
             .is_empty()
             && !file.sources.is_empty()
-            && file.queries.is_some()));
+            && file.queries.is_some()
+            && !file.iterators.is_empty()
+            && !file.expressions.is_empty()
+            && !file.shapes.is_empty()));
 
         let _ = sintax_result.as_ref().map(|file| {
-            assert_eq!(file.prefixes.as_deref().unwrap().len(), 1);
+            assert_eq!(file.prefixes.as_ref().unwrap().len(), 2);
             assert_eq!(file.sources.len(), 1);
             assert_eq!(file.queries.as_ref().unwrap().len(), 1);
+            assert_eq!(file.iterators.len(), 1);
+            assert_eq!(file.expressions.len(), 1);
+            assert_eq!(file.shapes.len(), 1);
         });
     }
 
@@ -41,8 +62,23 @@ mod integration_lexer_syntax_analyzers_tests {
     #[test]
     fn integration_with_lexer_fail() {
         let mut input = "PREFIX 123example: <http://example.com/>
-            SOURCE films_xml_file <https://shexml.herminiogarcia.com/files/films.csv>
-            QUERY query_sql <sql: SELECT * FROM example;>";
+            PREFIX dbr: <http://dbpedia.org/resource/>
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY inline_query <sql: SELECT * FROM example;>
+            ITERATOR films_csv <csvperrow> {
+                FIELD id <@id>
+                FIELD name <name>
+                FIELD year <year>
+                FIELD country <country>
+                FIELD director <director>
+            }
+            EXPRESSION films <films_csv_file.films_csv>
+            example:Films example:[films.id] {
+                example:name [films.name] ;
+                example:year [films.year] ;
+                example:country dbr:[films.country] ;
+                example:director dbr:[films.director] ;
+            }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         assert!(lexer_result.is_err());
     }
@@ -52,8 +88,23 @@ mod integration_lexer_syntax_analyzers_tests {
     #[test]
     fn integration_with_syntax_fail() {
         let mut input = "PREFIX example: <http://example.com/>
-            SOURCE <https://shexml.herminiogarcia.com/files/films.csv>
-            QUERY query_sql <sql: SELECT * FROM example;>";
+            PREFIX dbr: <http://dbpedia.org/resource/>
+            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY inline_query <sql: SELECT * FROM example;>
+            ITERATOR films_csv <csvperrow> {
+                FIELD id <@id>
+                FIELD name <name>
+                FIELD year <year>
+                FIELD country <country>
+                FIELD director <director>
+            }
+            EXPRESSION films <films_csv_file.films_csv>
+            example: example:[films.id] {
+                example:name [films.name] ;
+                example:year [films.year] ;
+                example:country dbr:[films.country] ;
+                example:director dbr:[films.director] ;
+            }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
 
@@ -70,13 +121,28 @@ mod integration_lexer_syntax_analyzers_tests {
     #[test]
     fn integration_with_semantic_fail() {
         let mut input = "PREFIX example: <http://example.com/>
+            PREFIX example: <http://dbpedia.org/resource/>
             SOURCE example <https://shexml.herminiogarcia.com/files/films.csv>
-            QUERY query_sql <sql: SELECT * FROM example;>";
+            QUERY example <sql: SELECT * FROM example;>
+            ITERATOR films_csv <csvperrow> {
+                FIELD id <@id>
+                FIELD name <name>
+                FIELD year <year>
+                FIELD country <country>
+                FIELD director <director>
+            }
+            EXPRESSION films <films_csv_file.films_csv>
+            example:Films example:[films.id] {
+                example:name [films.name] ;
+                example:year [films.year] ;
+                example:country dbr:[films.country] ;
+                example:director dbr:[films.director] ;
+            }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
         let semantic_result =
             model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 
-        assert_eq!(semantic_result.len(), 1);
+        assert_eq!(semantic_result.len(), 3);
     }
 }

@@ -543,7 +543,7 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
             ^(
                 [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas
                 |
-                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])*[\w\-.\\\/*]+\.\w+     # rutas relativas
+                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas
             )$
             ",
     )
@@ -1392,7 +1392,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn path_with_invalid_relative_path() {
-        let actual = path(&mut "ejemplo/");
+        let actual = path(&mut "ejemplo.csv");
         check_error(actual);
     }
 
@@ -1429,6 +1429,7 @@ mod lexer_tests {
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
                 FIELD id <@id>
                 FIELD name <name>
@@ -1445,45 +1446,149 @@ mod lexer_tests {
             }";
 
         let expected: Vec<Token> = vec![
+            // Prefix
             Token::create_test_token(PREFIX, 1, TokenType::Prefix),
             Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
             Token::create_test_token("http://example.com/", 1, TokenType::Uri),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(SOURCE, 2, TokenType::Source),
-            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
+            Token::create_test_token(PREFIX, 2, TokenType::Prefix),
+            Token::create_test_token("dbr", 2, TokenType::Ident),
+            Token::create_test_token(COLON, 2, TokenType::Colon),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
+            Token::create_test_token("http://dbpedia.org/resource/", 2, TokenType::Uri),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
+
+            // Source
+            Token::create_test_token(SOURCE, 3, TokenType::Source),
+            Token::create_test_token("films_csv_file", 3, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
             Token::create_test_token(
                 "https://shexml.herminiogarcia.com/files/films.csv",
-                2,
+                3,
                 TokenType::Uri,
             ),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-            Token::create_test_token(QUERY, 3, TokenType::Query),
-            Token::create_test_token("query_sql", 3, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
-            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-            Token::create_test_token(ITERATOR, 4, TokenType::Iterator),
-            Token::create_test_token("iterator", 4, TokenType::Ident),
+
+            // Query
+            Token::create_test_token(QUERY, 4, TokenType::Query),
+            Token::create_test_token("inline_query", 4, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
-            Token::create_test_token("query_sql", 4, TokenType::Ident),
+            Token::create_test_token(SQL_TYPE, 4, TokenType::SqlType),
+            Token::create_test_token("SELECT * FROM example;", 4, TokenType::SqlQuery),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 4, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(FIELD, 5, TokenType::Field),
-            Token::create_test_token("field1", 5, TokenType::Ident),
+
+            // Iterator
+            Token::create_test_token(ITERATOR, 5, TokenType::Iterator),
+            Token::create_test_token("films_csv", 5, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
-            Token::create_test_token("@key", 5, TokenType::KeyIdentifier),
+            Token::create_test_token(CSV_PER_ROW, 5, TokenType::CsvPerRow),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 5, TokenType::OpeningCurlyBrace),
+            // Field
             Token::create_test_token(FIELD, 6, TokenType::Field),
-            Token::create_test_token("field2", 6, TokenType::Ident),
+            Token::create_test_token("id", 6, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
-            Token::create_test_token("attribute", 6, TokenType::Ident),
+            Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 7, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EOF, 7, TokenType::EOF),
+            // Field
+            Token::create_test_token(FIELD, 7, TokenType::Field),
+            Token::create_test_token("name", 7, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
+            Token::create_test_token("name", 7, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
+            // Field
+            Token::create_test_token(FIELD, 8, TokenType::Field),
+            Token::create_test_token("year", 8, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 8, TokenType::LeftAngleBracket),
+            Token::create_test_token("year", 8, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 8, TokenType::RightAngleBracket),
+            // Field
+            Token::create_test_token(FIELD, 9, TokenType::Field),
+            Token::create_test_token("country", 9, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 9, TokenType::LeftAngleBracket),
+            Token::create_test_token("country", 9, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 9, TokenType::RightAngleBracket),
+            // Field
+            Token::create_test_token(FIELD, 10, TokenType::Field),
+            Token::create_test_token("director", 10, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 10, TokenType::LeftAngleBracket),
+            Token::create_test_token("director", 10, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 10, TokenType::RightAngleBracket),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 11, TokenType::ClosingCurlyBrace),
+            
+            // Expression
+            Token::create_test_token(EXPRESSION, 12, TokenType::Expression),
+            Token::create_test_token("films", 12, TokenType::Ident),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 12, TokenType::LeftAngleBracket),
+            Token::create_test_token("films_csv_file", 12, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
+            Token::create_test_token("films_csv", 12, TokenType::Ident),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 12, TokenType::RightAngleBracket),
+
+            // Shape
+            Token::create_test_token("example", 13, TokenType::Ident),
+            Token::create_test_token(COLON, 13, TokenType::Colon),
+            Token::create_test_token("Films", 13, TokenType::Ident),
+            Token::create_test_token("example", 13, TokenType::Ident),
+            Token::create_test_token(COLON, 13, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 13, TokenType::LeftBracket),
+            Token::create_test_token("films", 13, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 13, TokenType::AccessDot),
+            Token::create_test_token("id", 13, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 13, TokenType::RightBracket),
+            Token::create_test_token(OPENING_CURLY_BRACE, 13, TokenType::OpeningCurlyBrace),
+            // ShapeTuple
+            Token::create_test_token("example", 14, TokenType::Ident),
+            Token::create_test_token(COLON, 14, TokenType::Colon),
+            Token::create_test_token("name", 14, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 14, TokenType::LeftBracket),
+            Token::create_test_token("films", 14, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 14, TokenType::AccessDot),
+            Token::create_test_token("name", 14, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 14, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 14, TokenType::SemiColon),
+            // ShapeTuple
+            Token::create_test_token("example", 15, TokenType::Ident),
+            Token::create_test_token(COLON, 15, TokenType::Colon),
+            Token::create_test_token("year", 15, TokenType::Ident),
+            Token::create_test_token(LEFT_BRACKET, 15, TokenType::LeftBracket),
+            Token::create_test_token("films", 15, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 15, TokenType::AccessDot),
+            Token::create_test_token("year", 15, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 15, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 15, TokenType::SemiColon),
+            // ShapeTuple
+            Token::create_test_token("example", 16, TokenType::Ident),
+            Token::create_test_token(COLON, 16, TokenType::Colon),
+            Token::create_test_token("country", 16, TokenType::Ident),
+            Token::create_test_token("dbr", 16, TokenType::Ident),
+            Token::create_test_token(COLON, 16, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 16, TokenType::LeftBracket),
+            Token::create_test_token("films", 16, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 16, TokenType::AccessDot),
+            Token::create_test_token("country", 16, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 16, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 16, TokenType::SemiColon),
+            // ShapeTuple
+            Token::create_test_token("example", 17, TokenType::Ident),
+            Token::create_test_token(COLON, 17, TokenType::Colon),
+            Token::create_test_token("director", 17, TokenType::Ident),
+            Token::create_test_token("dbr", 17, TokenType::Ident),
+            Token::create_test_token(COLON, 17, TokenType::Colon),
+            Token::create_test_token(LEFT_BRACKET, 17, TokenType::LeftBracket),
+            Token::create_test_token("films", 17, TokenType::Ident),
+            Token::create_test_token(ACCESS_DOT, 17, TokenType::AccessDot),
+            Token::create_test_token("director", 17, TokenType::Ident),
+            Token::create_test_token(RIGHT_BRACKET, 17, TokenType::RightBracket),
+            Token::create_test_token(SEMICOLON, 17, TokenType::SemiColon),
+            Token::create_test_token(
+                CLOSING_CURLY_BRACE,
+                18,
+                TokenType::ClosingCurlyBrace,
+            ),
+            Token::create_test_token(EOF, 18, TokenType::EOF),
         ];
         let actual = lexer(&mut input).unwrap();
         assert_eq!(expected, actual);

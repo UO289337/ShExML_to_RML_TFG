@@ -107,6 +107,8 @@ fn get_queries_identifiers(queries: &Vec<QueryASTNode>) -> Vec<String> {
 #[cfg(test)]
 mod lexer_tests {
 
+    use crate::test_utils::TestUtilities;
+
     use super::*;
 
     /// Comprueba que se detectan identificadores duplicados de PREFIX
@@ -154,7 +156,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: None,
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
             shapes: vec![ShapeASTNode {
                 prefix: "example".to_string(),
                 identifier: "Films".to_string(),
@@ -263,7 +265,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: None,
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
             shapes: vec![ShapeASTNode {
                 prefix: "example".to_string(),
                 identifier: "Films".to_string(),
@@ -371,7 +373,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: None,
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
             shapes: vec![ShapeASTNode {
                 prefix: "example".to_string(),
                 identifier: "Films".to_string(),
@@ -473,7 +475,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: None,
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
             shapes: vec![ShapeASTNode {
                 prefix: "example".to_string(),
                 identifier: "Films".to_string(),
