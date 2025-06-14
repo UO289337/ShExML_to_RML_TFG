@@ -32,15 +32,28 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
         .then(shape_parser())
         .then_ignore(eof_parser())
         .map(
-            |(((((prefixes, sources), queries), iterators), expressions), shapes)| FileASTNode {
-                prefixes,
-                sources,
-                queries,
-                iterators,
-                expressions,
-                shapes,
+            |(((((prefixes, sources), queries), iterators), expressions), shapes)| {
+                build_file_ast_node(prefixes, sources, queries, iterators, expressions, shapes)
             },
         )
+}
+
+fn build_file_ast_node(
+    prefixes: Option<Vec<PrefixASTNode>>,
+    sources: Vec<SourceASTNode>,
+    queries: Option<Vec<QueryASTNode>>,
+    iterators: Vec<IteratorASTNode>,
+    expressions: Option<Vec<ExpressionASTNode>>,
+    shapes: Vec<ShapeASTNode>,
+) -> FileASTNode {
+    FileASTNode {
+        prefixes,
+        sources,
+        queries,
+        iterators,
+        expressions,
+        shapes,
+    }
 }
 
 /// Parsea los tokens para generar un nodo Prefix del AST
@@ -53,10 +66,7 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
 /// # Errores
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Token>> {
-    prefix_token_parser()
-        .then(identifier_parser(PREFIX))
-        .then_ignore(colon_parser())
-        .then(uri_with_angle_brackets_parser())
+    single_prefix_parser()
         .map(|((_, ident), uri)| PrefixASTNode {
             identifier: ident.lexeme.clone(),
             uri: uri.lexeme.clone(),
@@ -64,6 +74,13 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
         .repeated()
         .at_least(1)
         .collect()
+}
+
+fn single_prefix_parser() -> Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, impl Parser<Token, Token, Error = Simple<Token>>> {
+    prefix_token_parser()
+        .then(identifier_parser(PREFIX))
+        .then_ignore(colon_parser())
+        .then(uri_with_angle_brackets_parser())
 }
 
 /// Parsea los tokens para generar un nodo Source del AST
@@ -76,16 +93,7 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {
-    source_token_parser()
-        .then(identifier_parser(SOURCE))
-        .then_ignore(left_angle_bracket_parser("la URL o ruta"))
-        .then(
-            uri_parser()
-                .or(file_path_parser())
-                .or(path_parser())
-                .or(jdbc_url_parser()),
-        )
-        .then_ignore(right_angle_bracket_parser("la URL o ruta"))
+    single_source_parser()
         .map(|((_, ident), source_definition)| SourceASTNode {
             identifier: ident.lexeme.clone(),
             source_definition: source_definition.lexeme.clone(),
@@ -93,6 +101,21 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
         .repeated()
         .at_least(1)
         .collect()
+}
+
+fn single_source_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, Or<Or<Or<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
+    source_token_parser()
+        .then(identifier_parser(SOURCE))
+        .then_ignore(left_angle_bracket_parser("la URL o ruta"))
+        .then(source_definition_parser())
+        .then_ignore(right_angle_bracket_parser("la URL o ruta"))
+}
+
+fn source_definition_parser() -> Or<Or<Or<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>> {
+    uri_parser()
+        .or(file_path_parser())
+        .or(path_parser())
+        .or(jdbc_url_parser())
 }
 
 /// Parsea los tokens para generar un nodo Query del AST
@@ -105,12 +128,7 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>> {
-    query_token_parser()
-        .then(identifier_parser(QUERY))
-        .then_ignore(left_angle_bracket_parser("la consulta SQL"))
-        .then_ignore(sql_type_parser())
-        .then(sql_query_token_parser())
-        .then_ignore(right_angle_bracket_parser("la consulta SQL"))
+    single_query_parser()
         .map(|((_, ident), sql_query)| QueryASTNode {
             identifier: ident.lexeme.clone(),
             sql_query: sql_query.lexeme.clone(),
@@ -118,6 +136,15 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
         .repeated()
         .at_least(1)
         .collect()
+}
+
+fn single_query_parser() -> Map<Then<Then<Map<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
+    query_token_parser()
+        .then(identifier_parser(QUERY))
+        .then_ignore(left_angle_bracket_parser("la consulta SQL"))
+        .then_ignore(sql_type_parser())
+        .then(sql_query_token_parser())
+        .then_ignore(right_angle_bracket_parser("la consulta SQL"))
 }
 
 /// Parsea los tokens para generar un nodo Iterator del AST
@@ -130,33 +157,43 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
+// Parser de todos los iteradores (al menos uno)
 fn iterator_parser() -> impl Parser<Token, Vec<IteratorASTNode>, Error = Simple<Token>> {
-    iterator_token_parser()
-        .then(identifier_parser(ITERATOR))
-        .then_ignore(left_angle_bracket_parser(
-            "la consulta SQL, identificador o csvperrow",
-        ))
-        .then(
-            // Es necesario utilizar tuplas para poner concatenar el SqlType y el SqlQuery
-            identifier_parser(LEFT_ANGLE_BRACKET)
-                .map(|token| (token, None))
-                .or(csv_per_row_parser().map(|token| (token, None)))
-                .or(sql_type_parser()
-                    .then(sql_query_token_parser())
-                    .map(|(sql_type, sql_query)| (sql_type, Some(sql_query)))),
-        )
-        .then_ignore(right_angle_bracket_parser(
-            "la consulta SQL, identificador o csvperrow",
-        ))
-        .then_ignore(opening_curly_brace_parser("los campos"))
-        .then(field_parser())
-        .then_ignore(closing_curly_brace_parser("los campos"))
-        .map(|(((_, ident), iterator_access), fields)| {
-            create_iterator_ast_node(ident, iterator_access, fields)
-        })
+    single_iterator_parser()
         .repeated()
         .at_least(1)
         .collect()
+}
+
+fn iterator_access_parser() -> impl Parser<Token, (Token, Option<Token>), Error = Simple<Token>> {
+    identifier_parser(LEFT_ANGLE_BRACKET)
+        .map(|token| (token, None))
+        .or(csv_per_row_parser().map(|token| (token, None)))
+        .or(
+            sql_type_parser()
+                .then(sql_query_token_parser())
+                .map(|(sql_type, sql_query)| (sql_type, Some(sql_query))),
+        )
+}
+
+// Parser para el bloque de campos { ... }
+fn iterator_fields_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
+    opening_curly_brace_parser("los campos")
+        .ignore_then(field_parser())
+        .then_ignore(closing_curly_brace_parser("los campos"))
+}
+
+// Parser completo para un único iterador
+fn single_iterator_parser() -> impl Parser<Token, IteratorASTNode, Error = Simple<Token>> {
+    iterator_token_parser()
+        .then(identifier_parser(ITERATOR))
+        .then_ignore(left_angle_bracket_parser("la consulta SQL, identificador o csvperrow"))
+        .then(iterator_access_parser())
+        .then_ignore(right_angle_bracket_parser("la consulta SQL, identificador o csvperrow"))
+        .then(iterator_fields_parser())
+        .map(|(((_, ident), iterator_access), fields)| {
+            create_iterator_ast_node(ident, iterator_access, fields)
+        })
 }
 
 /// Crea un nodo Iterator del AST
@@ -203,11 +240,7 @@ fn create_iterator_ast_node(
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
-    field_token_parser()
-        .then(identifier_parser(FIELD))
-        .then_ignore(left_angle_bracket_parser("el identificador"))
-        .then(identifier_parser(LEFT_ANGLE_BRACKET).or(key_identifier_parser()))
-        .then_ignore(right_angle_bracket_parser("el identificador"))
+    single_field_parser()
         .map(|((_, ident), access_ident)| FieldASTNode {
             field_identifier: ident.lexeme.clone(),
             access_field_identifier: access_ident.lexeme.clone(),
@@ -215,6 +248,14 @@ fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>
         .repeated()
         .at_least(1)
         .collect()
+}
+
+fn single_field_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, Or<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
+    field_token_parser()
+        .then(identifier_parser(FIELD))
+        .then_ignore(left_angle_bracket_parser("el identificador"))
+        .then(identifier_parser(LEFT_ANGLE_BRACKET).or(key_identifier_parser()))
+        .then_ignore(right_angle_bracket_parser("el identificador"))
 }
 
 /// Parsea los tokens para generar un nodo Expression del AST
@@ -227,34 +268,54 @@ fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
+// Parser para una lista de expresiones
 fn expression_parser() -> impl Parser<Token, Vec<ExpressionASTNode>, Error = Simple<Token>> {
-    expression_token_parser()
-        .then(identifier_parser(EXPRESSION))
-        .then_ignore(left_angle_bracket_parser("el acceso"))
-        .then(access_parser(LEFT_ANGLE_BRACKET))
-        .then(
-            union_parser()
-                .then(access_parser(UNION))
-                .map(|(union, access)| (union, access, None, None))
-                .or(join_parser()
-                    .then(access_parser(JOIN))
-                    .then_ignore(on_parser())
-                    .then(access_parser(ON))
-                    .then_ignore(equal_parser())
-                    .then(access_parser(EQUAL))
-                    .map(|(((join, access_join), access_on), access_equal)| {
-                        (join, access_join, Some(access_on), Some(access_equal))
-                    }))
-                .or_not(),
-        )
-        .then_ignore(right_angle_bracket_parser("el acceso"))
-        .map(|(((_, ident), iterator_access), more_accesses)| {
-            create_expression_node(ident, iterator_access, more_accesses)
-        })
+    single_expression_parser()
         .repeated()
         .at_least(1)
         .collect()
 }
+
+// Parser de UNION: union <access>
+fn union_access_parser() -> impl Parser<Token, (Token, AccessASTNode, Option<AccessASTNode>, Option<AccessASTNode>), Error = Simple<Token>> {
+    union_parser()
+        .then(access_parser(UNION))
+        .map(|(union_token, access)| (union_token, access, None, None))
+}
+
+// Parser de JOIN: join <access> on <access> = <access>
+fn join_access_parser() -> impl Parser<Token, (Token, AccessASTNode, Option<AccessASTNode>, Option<AccessASTNode>), Error = Simple<Token>> {
+    join_parser()
+        .then(access_parser(JOIN))
+        .then_ignore(on_parser())
+        .then(access_parser(ON))
+        .then_ignore(equal_parser())
+        .then(access_parser(EQUAL))
+        .map(|(((join_token, access_join), access_on), access_equal)| {
+            (join_token, access_join, Some(access_on), Some(access_equal))
+        })
+}
+
+// Parser para un bloque opcional de UNION o JOIN
+fn optional_union_or_join_parser() -> impl Parser<Token, Option<(Token, AccessASTNode, Option<AccessASTNode>, Option<AccessASTNode>)>, Error = Simple<Token>> {
+    union_access_parser()
+        .or(join_access_parser())
+        .or_not()
+}
+
+// Parser para una sola expresión completa
+fn single_expression_parser() -> impl Parser<Token, ExpressionASTNode, Error = Simple<Token>> {
+    expression_token_parser()
+        .then(identifier_parser(EXPRESSION))
+        .then_ignore(left_angle_bracket_parser("el acceso"))
+        .then(access_parser(LEFT_ANGLE_BRACKET))
+        .then(optional_union_or_join_parser())
+        .then_ignore(right_angle_bracket_parser("el acceso"))
+        .map(|(((_, ident), iterator_access), more_accesses)| {
+            create_expression_node(ident, iterator_access, more_accesses)
+        })
+}
+
 
 /// Crea un nodo Expression del AST
 ///
@@ -358,14 +419,16 @@ fn access_parser(previous_token: &str) -> impl Parser<Token, AccessASTNode, Erro
     identifier_parser(previous_token)
         .then_ignore(access_dot_parser())
         .then(identifier_parser(ACCESS_DOT))
-        .then(
-            access_dot_parser()
-                .then(identifier_parser(ACCESS_DOT))
-                .or_not(),
-        )
+        .then(third_access_parser())
         .map(|((ident, iterator_accessed), field_accessed)| {
             create_access_node(ident, iterator_accessed, field_accessed)
         })
+}
+
+fn third_access_parser() -> OrNot<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>> {
+    access_dot_parser()
+        .then(identifier_parser(ACCESS_DOT))
+        .or_not()
 }
 
 /// Crea un nodo Access del AST
@@ -409,37 +472,47 @@ fn create_access_node(
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
+// Parser de múltiples shapes
 fn shape_parser() -> impl Parser<Token, Vec<ShapeASTNode>, Error = Simple<Token>> {
-    prefix_or_uri_parser()
-        .then(
-            colon_parser()
-                .map(|_| None)
-                .or(uri_with_angle_brackets_parser().map(|uri| Some(uri))),
-        )
-        .then_ignore(left_bracket_parser("identificador"))
-        .then(
-            identifier_parser(LEFT_BRACKET)
-                .map(|token| (Some(token), None))
-                .or(access_parser(LEFT_BRACKET).map(|access| (None, Some(access)))),
-        )
-        .then_ignore(right_bracket_parser("identificador"))
-        .then_ignore(opening_curly_brace_parser("las tuplas de la Shape"))
-        .then(shape_tuple_parser())
-        .then_ignore(closing_curly_brace_parser("las tuplas de la Shape"))
-        .map(
-            |(((shape_prefix_or_uri, shape_field_prefix_or_uri), field_ident), shape_tuples)| {
-                create_shape_node(
-                    shape_prefix_or_uri,
-                    shape_field_prefix_or_uri,
-                    field_ident,
-                    shape_tuples,
-                )
-            },
-        )
+    single_shape_parser()
         .repeated()
         .at_least(1)
         .collect()
 }
+
+// Parser para el campo identificador (puede ser identificador o access)
+fn shape_field_identifier_parser() -> impl Parser<Token, (Option<Token>, Option<AccessASTNode>), Error = Simple<Token>> {
+    identifier_parser(LEFT_BRACKET)
+        .map(|token| (Some(token), None))
+        .or(access_parser(LEFT_BRACKET).map(|access| (None, Some(access))))
+}
+
+// Parser para el contenido de la shape entre llaves: { tuplas }
+fn shape_body_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Simple<Token>> {
+    opening_curly_brace_parser("las tuplas de la Shape")
+        .ignore_then(shape_tuple_parser())
+        .then_ignore(closing_curly_brace_parser("las tuplas de la Shape"))
+}
+
+// Parser para una sola shape
+fn single_shape_parser() -> impl Parser<Token, ShapeASTNode, Error = Simple<Token>> {
+    prefix_or_uri_parser()
+        .then(field_prefix_or_uri_parser())
+        .then_ignore(left_bracket_parser("identificador"))
+        .then(shape_field_identifier_parser())
+        .then_ignore(right_bracket_parser("identificador"))
+        .then(shape_body_parser())
+        .map(|(((shape_prefix, shape_uri), field_ident), shape_tuples)| {
+            create_shape_node(shape_prefix, shape_uri, field_ident, shape_tuples)
+        })
+}
+
+fn field_prefix_or_uri_parser() -> Or<Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> Option<Token>, Token>, Map<impl Parser<Token, Token, Error = Simple<Token>>, impl Fn(Token) -> Option<Token>, Token>> {
+    colon_parser()
+        .map(|_| None)
+        .or(uri_with_angle_brackets_parser().map(|uri| Some(uri)))
+}
+
 
 /// Crea un nodo Shape del AST
 ///
@@ -497,31 +570,47 @@ fn create_shape_node(
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
+// Parser para una lista de tuplas
 fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Simple<Token>> {
-    prefix_or_uri_parser()
-        .then(
-            colon_parser()
-                .map(|_| None)
-                .or(uri_with_angle_brackets_parser().map(|uri| Some(uri)))
-                .or_not(),
-        )
-        .then_ignore(left_bracket_parser("identificador"))
-        .then(
-            identifier_parser(LEFT_BRACKET)
-                .map(|token| (Some(token), None))
-                .or(access_parser(LEFT_BRACKET).map(|access| (None, Some(access)))),
-        )
-        .then_ignore(right_bracket_parser("identificador"))
-        .then_ignore(semicolon_parser())
-        .map(
-            |((tuple_prefix_or_uri, object_prefix_or_uri), tuple_object)| {
-                create_shape_tuple_node(tuple_prefix_or_uri, object_prefix_or_uri, tuple_object)
-            },
-        )
+    single_shape_tuple_parser()
         .repeated()
         .at_least(1)
         .collect()
 }
+
+// Parser para el prefijo o URI del sujeto (de la tupla)
+fn tuple_subject_prefix_parser() -> impl Parser<Token, (Token, Option<Token>), Error = Simple<Token>> {
+    prefix_or_uri_parser()
+}
+
+// Parser para el prefijo o URI del objeto (después de ":")
+fn tuple_object_prefix_parser() -> impl Parser<Token, Option<Option<Token>>, Error = Simple<Token>> {
+    colon_parser()
+        .map(|_| None)
+        .or(uri_with_angle_brackets_parser().map(Some))
+        .or_not()
+}
+
+// Parser para el valor del objeto: identificador o acceso
+fn tuple_object_value_parser() -> impl Parser<Token, (Option<Token>, Option<AccessASTNode>), Error = Simple<Token>> {
+    identifier_parser(LEFT_BRACKET)
+        .map(|token| (Some(token), None))
+        .or(access_parser(LEFT_BRACKET).map(|access| (None, Some(access))))
+}
+
+// Parser para una sola tupla de Shape
+fn single_shape_tuple_parser() -> impl Parser<Token, ShapeTupleASTNode, Error = Simple<Token>> {
+    tuple_subject_prefix_parser()
+        .then(tuple_object_prefix_parser())
+        .then_ignore(left_bracket_parser("identificador"))
+        .then(tuple_object_value_parser())
+        .then_ignore(right_bracket_parser("identificador"))
+        .then_ignore(semicolon_parser())
+        .map(|((tuple_prefix_or_uri, object_prefix_or_uri), tuple_object)| {
+            create_shape_tuple_node(tuple_prefix_or_uri, object_prefix_or_uri, tuple_object)
+        })
+}
+
 
 /// Crea un nodo ShapeTuple del AST
 ///

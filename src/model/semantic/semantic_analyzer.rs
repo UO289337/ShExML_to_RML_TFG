@@ -5,10 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::model::{
-    ast::*,
-    compiler_error::CompilerError,
-};
+use crate::model::{ast::*, compiler_error::CompilerError};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -35,9 +32,7 @@ fn check_duplicate_identifiers(node: &FileASTNode) -> Vec<CompilerError> {
     let mut identifiers = Vec::new();
     let mut duplicate_idents_errors = Vec::new();
 
-    if node.prefixes.is_some() {
-        identifiers.extend(get_prefix_identifiers(&node.prefixes.as_ref().unwrap()));
-    }
+    identifiers.extend(get_prefix_identifiers(&node.prefixes));
     identifiers.extend(get_source_identifiers(&node.sources));
 
     if node.queries.is_some() {
@@ -65,9 +60,9 @@ fn check_duplicate_identifiers(node: &FileASTNode) -> Vec<CompilerError> {
 ///
 /// # Retorna
 /// El vector con los identificadores de los PREFIX
-fn get_prefix_identifiers(prefixes: &Vec<PrefixASTNode>) -> Vec<String> {
+fn get_prefix_identifiers(prefixes: &Option<Vec<PrefixASTNode>>) -> Vec<String> {
     let mut identifiers = Vec::new();
-    for prefix in prefixes {
+    for prefix in prefixes.as_deref().unwrap() {
         identifiers.push(prefix.identifier.clone());
     }
     identifiers
@@ -119,10 +114,16 @@ mod lexer_tests {
     #[test]
     fn detect_duplicate_prefix_identifiers() {
         let input = FileASTNode {
-            prefixes: Some(vec![PrefixASTNode {
-                identifier: "example".to_string(),
-                uri: "https://example.com/".to_string(),
-            }]),
+            prefixes: Some(vec![
+                PrefixASTNode {
+                    identifier: "example".to_string(),
+                    uri: "https://example.com/".to_string(),
+                },
+                PrefixASTNode {
+                    identifier: "example".to_string(),
+                    uri: "http://notexample.es/".to_string(),
+                },
+            ]),
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
@@ -153,15 +154,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: Some(vec![ExpressionASTNode {
-                identifier: "films".to_string(),
-                expression_type: ExpressionType::BASIC,
-                accesses: vec![AccessASTNode {
-                    identifier: "films_csv_file".to_string(),
-                    iterator_accessed: "film_csv".to_string(),
-                    field_accessed: None,
-                }],
-            }]),
+            expressions: None,
             shapes: vec![ShapeASTNode {
                 prefix_or_uri: PrefixOrURI::Prefix,
                 identifier: "Films".to_string(),
@@ -233,10 +226,17 @@ mod lexer_tests {
                 identifier: "example".to_string(),
                 uri: "https://example.com/".to_string(),
             }]),
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
+            sources: vec![
+                SourceASTNode {
+                    identifier: "films_csv_file".to_string(),
+                    source_definition: "https://shexml.herminiogarcia.com/files/films.csv"
+                        .to_string(),
+                },
+                SourceASTNode {
+                    identifier: "films_csv_file".to_string(),
+                    source_definition: "https://another.csv".to_string(),
+                },
+            ],
             queries: Some(vec![QueryASTNode {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
@@ -263,15 +263,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: Some(vec![ExpressionASTNode {
-                identifier: "films".to_string(),
-                expression_type: ExpressionType::BASIC,
-                accesses: vec![AccessASTNode {
-                    identifier: "films_csv_file".to_string(),
-                    iterator_accessed: "film_csv".to_string(),
-                    field_accessed: None,
-                }],
-            }]),
+            expressions: None,
             shapes: vec![ShapeASTNode {
                 prefix_or_uri: PrefixOrURI::Prefix,
                 identifier: "Films".to_string(),
@@ -347,10 +339,16 @@ mod lexer_tests {
                 identifier: "films_csv_file".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
-            queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
+            queries: Some(vec![
+                QueryASTNode {
+                    identifier: "query_sql".to_string(),
+                    sql_query: "SELECT * FROM example;".to_string(),
+                },
+                QueryASTNode {
+                    identifier: "query_sql".to_string(),
+                    sql_query: "SELECT name FROM anothertable;".to_string(),
+                },
+            ]),
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
@@ -373,15 +371,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: Some(vec![ExpressionASTNode {
-                identifier: "films".to_string(),
-                expression_type: ExpressionType::BASIC,
-                accesses: vec![AccessASTNode {
-                    identifier: "films_csv_file".to_string(),
-                    iterator_accessed: "film_csv".to_string(),
-                    field_accessed: None,
-                }],
-            }]),
+            expressions: None,
             shapes: vec![ShapeASTNode {
                 prefix_or_uri: PrefixOrURI::Prefix,
                 identifier: "Films".to_string(),
@@ -450,15 +440,15 @@ mod lexer_tests {
     fn detect_duplicate_identifiers_between_structures() {
         let input = FileASTNode {
             prefixes: Some(vec![PrefixASTNode {
-                identifier: "example".to_string(),
+                identifier: "duplicate".to_string(),
                 uri: "https://example.com/".to_string(),
             }]),
             sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
+                identifier: "duplicate".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
             }],
             queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
+                identifier: "duplicate".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
             iterators: vec![IteratorASTNode {
@@ -483,15 +473,7 @@ mod lexer_tests {
                     },
                 ],
             }],
-            expressions: Some(vec![ExpressionASTNode {
-                identifier: "films".to_string(),
-                expression_type: ExpressionType::BASIC,
-                accesses: vec![AccessASTNode {
-                    identifier: "films_csv_file".to_string(),
-                    iterator_accessed: "film_csv".to_string(),
-                    field_accessed: None,
-                }],
-            }]),
+            expressions: None,
             shapes: vec![ShapeASTNode {
                 prefix_or_uri: PrefixOrURI::Prefix,
                 identifier: "Films".to_string(),
