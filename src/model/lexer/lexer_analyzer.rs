@@ -1459,7 +1459,6 @@ mod lexer_tests {
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
             Token::create_test_token("http://dbpedia.org/resource/", 2, TokenType::Uri),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-
             // Source
             Token::create_test_token(SOURCE, 3, TokenType::Source),
             Token::create_test_token("films_csv_file", 3, TokenType::Ident),
@@ -1470,7 +1469,6 @@ mod lexer_tests {
                 TokenType::Uri,
             ),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-
             // Query
             Token::create_test_token(QUERY, 4, TokenType::Query),
             Token::create_test_token("inline_query", 4, TokenType::Ident),
@@ -1478,7 +1476,6 @@ mod lexer_tests {
             Token::create_test_token(SQL_TYPE, 4, TokenType::SqlType),
             Token::create_test_token("SELECT * FROM example;", 4, TokenType::SqlQuery),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
-
             // Iterator
             Token::create_test_token(ITERATOR, 5, TokenType::Iterator),
             Token::create_test_token("films_csv", 5, TokenType::Ident),
@@ -1517,7 +1514,6 @@ mod lexer_tests {
             Token::create_test_token("director", 10, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 10, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 11, TokenType::ClosingCurlyBrace),
-            
             // Expression
             Token::create_test_token(EXPRESSION, 12, TokenType::Expression),
             Token::create_test_token("films", 12, TokenType::Ident),
@@ -1526,7 +1522,6 @@ mod lexer_tests {
             Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
             Token::create_test_token("films_csv", 12, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 12, TokenType::RightAngleBracket),
-
             // Shape
             Token::create_test_token("example", 13, TokenType::Ident),
             Token::create_test_token(COLON, 13, TokenType::Colon),
@@ -1583,11 +1578,7 @@ mod lexer_tests {
             Token::create_test_token("director", 17, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, 17, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, 17, TokenType::SemiColon),
-            Token::create_test_token(
-                CLOSING_CURLY_BRACE,
-                18,
-                TokenType::ClosingCurlyBrace,
-            ),
+            Token::create_test_token(CLOSING_CURLY_BRACE, 18, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 18, TokenType::EOF),
         ];
         let actual = lexer(&mut input).unwrap();

@@ -895,7 +895,9 @@ fn shape_parser() -> impl Parser<Token, Vec<ShapeASTNode>, Error = Simple<Token>
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn single_shape_parser() -> impl Parser<Token, ShapeASTNode, Error = Simple<Token>> {
     prefix_with_ident_parser()
-        .then(prefix_shape_parser("en la Shape, después del identificador del Prefix del acceso"))
+        .then(prefix_shape_parser(
+            "en la Shape, después del identificador del Prefix del acceso",
+        ))
         .then_ignore(left_bracket_parser("el identificador"))
         .then(ident_or_access_parser())
         .then_ignore(right_bracket_parser("el identificador"))
@@ -981,16 +983,17 @@ fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Si
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn single_shape_tuple_parser() -> impl Parser<Token, ShapeTupleASTNode, Error = Simple<Token>> {
     prefix_with_ident_parser()
-        .then(prefix_shape_parser("en la tupla del Shape, después del identificador del Prefix").or_not())
+        .then(
+            prefix_shape_parser("en la tupla del Shape, después del identificador del Prefix")
+                .or_not(),
+        )
         .then_ignore(left_bracket_parser("el identificador"))
         .then(ident_or_access_parser())
         .then_ignore(right_bracket_parser("el identificador"))
         .then_ignore(semicolon_parser())
-        .map(
-            |((tuple_prefix, object_prefix), tuple_object)| {
-                create_shape_tuple_node(tuple_prefix, object_prefix, tuple_object)
-            },
-        )
+        .map(|((tuple_prefix, object_prefix), tuple_object)| {
+            create_shape_tuple_node(tuple_prefix, object_prefix, tuple_object)
+        })
 }
 
 /// Crea un nodo ShapeTuple del AST
@@ -1056,7 +1059,38 @@ fn ident_or_access_parser(
 ///
 /// # Retorna
 /// Un Parser con una tupla con el identificador del Prefix y con la URI o el identificador después del Prefix, dependiendo de lo que se encuentre
-fn prefix_with_ident_parser() -> Map<Then<Map<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Token, Token)) -> Token, (Token, Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, impl Fn((Token, Token)) -> (Token, Token), (Token, Token)> {
+fn prefix_with_ident_parser() -> Map<
+    Then<
+        Map<
+            Then<
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+            >,
+            fn((Token, Token)) -> Token,
+            (Token, Token),
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+    impl Fn((Token, Token)) -> (Token, Token),
+    (Token, Token),
+> {
     identifier_parser("la expresión o Shape, al principio de una Shape")
         .then_ignore(colon_parser("antes del identificador"))
         .then(identifier_parser(COLON))
@@ -1074,7 +1108,24 @@ fn prefix_with_ident_parser() -> Map<Then<Map<Then<MapErr<Map<Filter<impl Fn(&To
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn prefix_shape_parser(
     message: &str,
-) -> Map<Map<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Token, Token)) -> Token, (Token, Token)>, impl Fn(Token) -> Token, Token> {
+) -> Map<
+    Map<
+        Then<
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+        >,
+        fn((Token, Token)) -> Token,
+        (Token, Token),
+    >,
+    impl Fn(Token) -> Token,
+    Token,
+> {
     identifier_parser(COLON)
         .then_ignore(colon_parser(message))
         .map(|ident| ident)

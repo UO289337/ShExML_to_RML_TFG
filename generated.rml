@@ -5,5 +5,4 @@
 @prefix map:      <http://mapping.example.com/> .
 @prefix example:     <http://example.com/> .
 @prefix dbr:     <http://dbpedia.org/resource/> .
-@prefix schema:     <http://schema.org/> .
 

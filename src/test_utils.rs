@@ -267,7 +267,7 @@ impl TestUtilities {
     }
 
     /// Crea un nodo Iterator del AST que tiene unos valores por defecto
-    /// 
+    ///
     /// # Retorna
     /// Un vector de nodos Iterator del AST que contiene un nodo Iterator
     pub fn create_default_iterators_for_file_node() -> Vec<IteratorASTNode> {
@@ -296,7 +296,7 @@ impl TestUtilities {
     }
 
     /// Crea un nodo Expression del AST que tiene unos valores por defecto
-    /// 
+    ///
     /// # Retorna
     /// Un vector de nodos Expression del AST que contiene un nodo Expression
     pub fn create_default_expressions_for_file_node() -> Vec<ExpressionASTNode> {
@@ -312,9 +312,9 @@ impl TestUtilities {
     }
 
     /// Crea un nodo Shape del AST que tiene unos valores por defecto
-    /// 
+    ///
     /// El nodo Shape incluye las Shape Tuples
-    /// 
+    ///
     /// # Retorna
     /// Un vector de nodos Shape del AST que contiene un nodo Shape
     pub fn create_default_shapes_for_file_node() -> Vec<ShapeASTNode> {
