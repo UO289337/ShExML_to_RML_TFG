@@ -41,7 +41,7 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
 /// Crea un nodo File del AST; el nodo raíz
 ///
 /// A partir de los datos obtenidos de los parsers crea un nodo FileASTNode, que representa el nodo raíz del AST.
-/// 
+///
 /// # Parámetros
 /// * `prefixex` - Un Option que contiene el vector de nodos Prefix parseados
 /// * `sources` - Un vector con los nodos Source parseados
@@ -99,7 +99,37 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 ///
 /// # Errores
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_prefix_parser() -> Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, impl Parser<Token, Token, Error = Simple<Token>>> {
+fn single_prefix_parser() -> Then<
+    Map<
+        Then<
+            Then<
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+            >,
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+        >,
+        fn(((Token, Token), Token)) -> (Token, Token),
+        ((Token, Token), Token),
+    >,
+    impl Parser<Token, Token, Error = Simple<Token>>,
+> {
     prefix_token_parser()
         .then(identifier_parser(PREFIX))
         .then_ignore(colon_parser("después del identificador"))
@@ -135,7 +165,88 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_source_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, Or<Or<Or<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
+fn single_source_parser() -> Map<
+    Then<
+        Then<
+            Map<
+                Then<
+                    Then<
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                    >,
+                    MapErr<
+                        Map<
+                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                            impl Fn(Token) -> Token,
+                            Token,
+                        >,
+                        impl Fn(Simple<Token>) -> Simple<Token>,
+                    >,
+                >,
+                fn(((Token, Token), Token)) -> (Token, Token),
+                ((Token, Token), Token),
+            >,
+            Or<
+                Or<
+                    Or<
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                    >,
+                    MapErr<
+                        Map<
+                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                            impl Fn(Token) -> Token,
+                            Token,
+                        >,
+                        impl Fn(Simple<Token>) -> Simple<Token>,
+                    >,
+                >,
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+            >,
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+    fn((((Token, Token), Token), Token)) -> ((Token, Token), Token),
+    (((Token, Token), Token), Token),
+> {
     source_token_parser()
         .then(identifier_parser(SOURCE))
         .then_ignore(left_angle_bracket_parser("la URL o ruta"))
@@ -152,7 +263,28 @@ fn single_source_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl 
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn source_definition_parser() -> Or<Or<Or<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>> {
+fn source_definition_parser() -> Or<
+    Or<
+        Or<
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+    MapErr<
+        Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+        impl Fn(Simple<Token>) -> Simple<Token>,
+    >,
+> {
     uri_parser()
         .or(file_path_parser())
         .or(path_parser())
@@ -188,7 +320,68 @@ fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_query_parser() -> Map<Then<Then<Map<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
+fn single_query_parser() -> Map<
+    Then<
+        Then<
+            Map<
+                Then<
+                    Map<
+                        Then<
+                            Then<
+                                MapErr<
+                                    Map<
+                                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                        impl Fn(Token) -> Token,
+                                        Token,
+                                    >,
+                                    impl Fn(Simple<Token>) -> Simple<Token>,
+                                >,
+                                MapErr<
+                                    Map<
+                                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                        impl Fn(Token) -> Token,
+                                        Token,
+                                    >,
+                                    impl Fn(Simple<Token>) -> Simple<Token>,
+                                >,
+                            >,
+                            MapErr<
+                                Map<
+                                    Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                    impl Fn(Token) -> Token,
+                                    Token,
+                                >,
+                                impl Fn(Simple<Token>) -> Simple<Token>,
+                            >,
+                        >,
+                        fn(((Token, Token), Token)) -> (Token, Token),
+                        ((Token, Token), Token),
+                    >,
+                    MapErr<
+                        Map<
+                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                            impl Fn(Token) -> Token,
+                            Token,
+                        >,
+                        impl Fn(Simple<Token>) -> Simple<Token>,
+                    >,
+                >,
+                fn(((Token, Token), Token)) -> (Token, Token),
+                ((Token, Token), Token),
+            >,
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+    fn((((Token, Token), Token), Token)) -> ((Token, Token), Token),
+    (((Token, Token), Token), Token),
+> {
     query_token_parser()
         .then(identifier_parser(QUERY))
         .then_ignore(left_angle_bracket_parser("la consulta SQL"))
@@ -207,10 +400,7 @@ fn single_query_parser() -> Map<Then<Then<Map<Then<Map<Then<Then<MapErr<Map<Filt
 /// # Errores
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn iterator_parser() -> impl Parser<Token, Vec<IteratorASTNode>, Error = Simple<Token>> {
-    single_iterator_parser()
-        .repeated()
-        .at_least(1)
-        .collect()
+    single_iterator_parser().repeated().at_least(1).collect()
 }
 
 /// Parsea los tokens para generar un nodo Iterator del AST
@@ -226,9 +416,13 @@ fn iterator_parser() -> impl Parser<Token, Vec<IteratorASTNode>, Error = Simple<
 fn single_iterator_parser() -> impl Parser<Token, IteratorASTNode, Error = Simple<Token>> {
     iterator_token_parser()
         .then(identifier_parser(ITERATOR))
-        .then_ignore(left_angle_bracket_parser("la consulta SQL, identificador o csvperrow"))
+        .then_ignore(left_angle_bracket_parser(
+            "la consulta SQL, identificador o csvperrow",
+        ))
         .then(iterator_access_parser())
-        .then_ignore(right_angle_bracket_parser("la consulta SQL, identificador o csvperrow"))
+        .then_ignore(right_angle_bracket_parser(
+            "la consulta SQL, identificador o csvperrow",
+        ))
         .then(iterator_fields_parser())
         .map(|(((_, ident), iterator_access), fields)| {
             create_iterator_ast_node(ident, iterator_access, fields)
@@ -237,7 +431,7 @@ fn single_iterator_parser() -> impl Parser<Token, IteratorASTNode, Error = Simpl
 
 /// Parsea los tokens del acceso de un Iterator
 ///
-/// Realiza el parseo de los tokens para parsear la secuencia: (CsvPerRow|Ident|SqlType SqlQuery) 
+/// Realiza el parseo de los tokens para parsear la secuencia: (CsvPerRow|Ident|SqlType SqlQuery)
 ///
 /// # Retorna
 /// Una tupla con el token del identificador, csvperrow o :sql y un Option con la consulta SQL en el caso de que el primer token sea :sql
@@ -248,16 +442,14 @@ fn iterator_access_parser() -> impl Parser<Token, (Token, Option<Token>), Error 
     identifier_parser(LEFT_ANGLE_BRACKET)
         .map(|token| (token, None))
         .or(csv_per_row_parser().map(|token| (token, None)))
-        .or(
-            sql_type_parser()
-                .then(sql_query_token_parser())
-                .map(|(sql_type, sql_query)| (sql_type, Some(sql_query))),
-        )
+        .or(sql_type_parser()
+            .then(sql_query_token_parser())
+            .map(|(sql_type, sql_query)| (sql_type, Some(sql_query))))
 }
 
 /// Parsea los tokens del cuerpo de los campos (fields) de un Iterator
 ///
-/// Realiza el parseo de los tokens para parsear la secuencia: OpeningCurlyBrace Fields CLosingCurlyBrace 
+/// Realiza el parseo de los tokens para parsear la secuencia: OpeningCurlyBrace Fields CLosingCurlyBrace
 ///
 /// # Retorna
 /// El parser del acceso de un Iterator
@@ -333,7 +525,68 @@ fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_field_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, Or<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
+fn single_field_parser() -> Map<
+    Then<
+        Then<
+            Map<
+                Then<
+                    Then<
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                    >,
+                    MapErr<
+                        Map<
+                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                            impl Fn(Token) -> Token,
+                            Token,
+                        >,
+                        impl Fn(Simple<Token>) -> Simple<Token>,
+                    >,
+                >,
+                fn(((Token, Token), Token)) -> (Token, Token),
+                ((Token, Token), Token),
+            >,
+            Or<
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+            >,
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+    fn((((Token, Token), Token), Token)) -> ((Token, Token), Token),
+    (((Token, Token), Token), Token),
+> {
     field_token_parser()
         .then(identifier_parser(FIELD))
         .then_ignore(left_angle_bracket_parser("el identificador"))
@@ -351,10 +604,7 @@ fn single_field_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl F
 /// # Errores
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn expression_parser() -> impl Parser<Token, Vec<ExpressionASTNode>, Error = Simple<Token>> {
-    single_expression_parser()
-        .repeated()
-        .at_least(1)
-        .collect()
+    single_expression_parser().repeated().at_least(1).collect()
 }
 
 /// Parsea los tokens para generar un nodo Expression del AST
@@ -388,10 +638,17 @@ fn single_expression_parser() -> impl Parser<Token, ExpressionASTNode, Error = S
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn optional_union_or_join_parser() -> impl Parser<Token, Option<(Token, AccessASTNode, Option<AccessASTNode>, Option<AccessASTNode>)>, Error = Simple<Token>> {
-    union_access_parser()
-        .or(join_access_parser())
-        .or_not()
+fn optional_union_or_join_parser() -> impl Parser<
+    Token,
+    Option<(
+        Token,
+        AccessASTNode,
+        Option<AccessASTNode>,
+        Option<AccessASTNode>,
+    )>,
+    Error = Simple<Token>,
+> {
+    union_access_parser().or(join_access_parser()).or_not()
 }
 
 /// Parsea los tokens del Access con UNION
@@ -403,7 +660,16 @@ fn optional_union_or_join_parser() -> impl Parser<Token, Option<(Token, AccessAS
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn union_access_parser() -> impl Parser<Token, (Token, AccessASTNode, Option<AccessASTNode>, Option<AccessASTNode>), Error = Simple<Token>> {
+fn union_access_parser() -> impl Parser<
+    Token,
+    (
+        Token,
+        AccessASTNode,
+        Option<AccessASTNode>,
+        Option<AccessASTNode>,
+    ),
+    Error = Simple<Token>,
+> {
     union_parser()
         .then(access_parser(UNION))
         .map(|(union_token, access)| (union_token, access, None, None))
@@ -418,7 +684,16 @@ fn union_access_parser() -> impl Parser<Token, (Token, AccessASTNode, Option<Acc
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn join_access_parser() -> impl Parser<Token, (Token, AccessASTNode, Option<AccessASTNode>, Option<AccessASTNode>), Error = Simple<Token>> {
+fn join_access_parser() -> impl Parser<
+    Token,
+    (
+        Token,
+        AccessASTNode,
+        Option<AccessASTNode>,
+        Option<AccessASTNode>,
+    ),
+    Error = Simple<Token>,
+> {
     join_parser()
         .then(access_parser(JOIN))
         .then_ignore(on_parser())
@@ -547,7 +822,18 @@ fn access_parser(previous_token: &str) -> impl Parser<Token, AccessASTNode, Erro
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn third_access_parser() -> OrNot<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>> {
+fn third_access_parser() -> OrNot<
+    Then<
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+> {
     access_dot_parser()
         .then(identifier_parser(ACCESS_DOT))
         .or_not()
@@ -594,10 +880,7 @@ fn create_access_node(
 /// # Errores
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn shape_parser() -> impl Parser<Token, Vec<ShapeASTNode>, Error = Simple<Token>> {
-    single_shape_parser()
-        .repeated()
-        .at_least(1)
-        .collect()
+    single_shape_parser().repeated().at_least(1).collect()
 }
 
 /// Parsea los tokens para generar el nodo Shape del AST
@@ -693,10 +976,7 @@ fn create_shape_node(
 /// # Errores
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Simple<Token>> {
-    single_shape_tuple_parser()
-        .repeated()
-        .at_least(1)
-        .collect()
+    single_shape_tuple_parser().repeated().at_least(1).collect()
 }
 
 /// Parsea los tokens para generar un nodo ShapeTuples del AST
@@ -716,9 +996,11 @@ fn single_shape_tuple_parser() -> impl Parser<Token, ShapeTupleASTNode, Error = 
         .then(ident_or_access_parser())
         .then_ignore(right_bracket_parser("el identificador"))
         .then_ignore(semicolon_parser())
-        .map(|((tuple_prefix_or_uri, object_prefix_or_uri), tuple_object)| {
-            create_shape_tuple_node(tuple_prefix_or_uri, object_prefix_or_uri, tuple_object)
-        })
+        .map(
+            |((tuple_prefix_or_uri, object_prefix_or_uri), tuple_object)| {
+                create_shape_tuple_node(tuple_prefix_or_uri, object_prefix_or_uri, tuple_object)
+            },
+        )
 }
 
 /// Crea un nodo ShapeTuple del AST
@@ -782,10 +1064,11 @@ fn create_shape_tuple_node(
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn ident_or_access_parser() -> impl Parser<Token, (Option<Token>, Option<AccessASTNode>), Error = Simple<Token>> {
-    access_parser(LEFT_BRACKET).map(|access| (None, Some(access)))
-        .or(identifier_parser(LEFT_BRACKET)
-        .map(|token| (Some(token), None)))
+fn ident_or_access_parser(
+) -> impl Parser<Token, (Option<Token>, Option<AccessASTNode>), Error = Simple<Token>> {
+    access_parser(LEFT_BRACKET)
+        .map(|access| (None, Some(access)))
+        .or(identifier_parser(LEFT_BRACKET).map(|token| (Some(token), None)))
 }
 
 /// Realiza el parseo de un Prefix o Uri, junto con el Ident que acompaña a Prefix y la URI que acompaña a esta
@@ -836,7 +1119,19 @@ fn prefix_or_uri_with_ident_parser() -> Or<
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn prefix_or_uri_parser(message: &str) -> Or<Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> Option<Token>, Token>, Map<impl Parser<Token, Token, Error = Simple<Token>>, impl Fn(Token) -> Option<Token>, Token>> {
+fn prefix_or_uri_parser(
+    message: &str,
+) -> Or<
+    Map<
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+        impl Fn(Token) -> Option<Token>,
+        Token,
+    >,
+    Map<impl Parser<Token, Token, Error = Simple<Token>>, impl Fn(Token) -> Option<Token>, Token>,
+> {
     colon_parser(message)
         .map(|_| None)
         .or(uri_with_angle_brackets_parser().map(|uri| Some(uri)))
@@ -1175,7 +1470,9 @@ fn sql_query_token_parser() -> MapErr<
 ///
 /// # Errores
 /// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo :
-fn colon_parser(message: &str) -> MapErr<
+fn colon_parser(
+    message: &str,
+) -> MapErr<
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
@@ -1798,8 +2095,11 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_colon() {
-        let actual =
-            colon_parser("antes del identificador").parse(vec![Token::create_test_token("ident", 1, TokenType::Ident)]);
+        let actual = colon_parser("antes del identificador").parse(vec![Token::create_test_token(
+            "ident",
+            1,
+            TokenType::Ident,
+        )]);
         check_error(actual);
     }
 
@@ -2035,7 +2335,11 @@ mod sintax_parsers_tests {
 /// Contiene los tests que se encargan de comprobar que los diferentes parsers del analizador sintáctico funcionan correctamente
 #[cfg(test)]
 mod sintax_tests {
+    use std::vec;
+
     use chumsky::error::SimpleReason;
+
+    use crate::test_utils::TestUtilities;
 
     use super::*;
 
@@ -2043,122 +2347,27 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn file_parser_with_valid_sintax() {
-        let tokens_vector: Vec<Token> = vec![
-            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
-            Token::create_test_token("example", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(SOURCE, 2, TokenType::Source),
-            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token(
-                "https://shexml.herminiogarcia.com/files/films.csv",
-                2,
-                TokenType::Uri,
-            ),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-            Token::create_test_token(QUERY, 3, TokenType::Query),
-            Token::create_test_token("query_sql", 3, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
-            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-            Token::create_test_token(ITERATOR, 4, TokenType::Iterator),
-            Token::create_test_token("film_csv", 4, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
-            Token::create_test_token("query_sql", 4, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 4, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(FIELD, 5, TokenType::Field),
-            Token::create_test_token("id", 5, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
-            Token::create_test_token("@id", 5, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 6, TokenType::Field),
-            Token::create_test_token("name", 6, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
-            Token::create_test_token("name", 6, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 7, TokenType::Field),
-            Token::create_test_token("year", 7, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
-            Token::create_test_token("year", 7, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 8, TokenType::Field),
-            Token::create_test_token("country", 8, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 8, TokenType::LeftAngleBracket),
-            Token::create_test_token("country", 8, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 8, TokenType::RightAngleBracket),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 9, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EXPRESSION, 10, TokenType::Expression),
-            Token::create_test_token("films", 10, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 10, TokenType::LeftAngleBracket),
-            Token::create_test_token("films_csv_file", 10, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 10, TokenType::AccessDot),
-            Token::create_test_token("film_csv", 10, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 10, TokenType::RightAngleBracket),
+        let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
+        tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
+        tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
+        tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(4));
+        tokens_vector.append(&mut TestUtilities::create_valid_expression_test(10));
+        tokens_vector.append(&mut TestUtilities::create_valid_shape_test(11));
 
-            Token::create_test_token(COLON, 11, TokenType::Colon),
-            Token::create_test_token("Films", 11, TokenType::Ident),
-            Token::create_test_token(COLON, 11, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 11, TokenType::LeftBracket),
-            Token::create_test_token("films", 11, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 11, TokenType::AccessDot),
-            Token::create_test_token("id", 11, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 11, TokenType::RightBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 11, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(COLON, 12, TokenType::Colon),
-            Token::create_test_token("name", 12, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 12, TokenType::LeftBracket),
-            Token::create_test_token("films", 12, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
-            Token::create_test_token("name", 12, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 12, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 12, TokenType::SemiColon),
-            Token::create_test_token(COLON, 13, TokenType::Colon),
-            Token::create_test_token("year", 13, TokenType::Ident),
-            Token::create_test_token(COLON, 13, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 13, TokenType::LeftBracket),
-            Token::create_test_token("films", 13, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 13, TokenType::AccessDot),
-            Token::create_test_token("year", 13, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 13, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 13, TokenType::SemiColon),
-            Token::create_test_token(COLON, 14, TokenType::Colon),
-            Token::create_test_token("country", 14, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 14, TokenType::LeftBracket),
-            Token::create_test_token("films", 14, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 14, TokenType::AccessDot),
-            Token::create_test_token("country", 14, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 14, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 14, TokenType::SemiColon),
-            Token::create_test_token(COLON, 15, TokenType::Colon),
-            Token::create_test_token("director", 15, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 15, TokenType::LeftBracket),
-            Token::create_test_token("films", 15, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 15, TokenType::AccessDot),
-            Token::create_test_token("director", 15, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 15, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 15, TokenType::SemiColon),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 16, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EOF, 16, TokenType::EOF),
-        ];
-
+        // Unicamente se utilizan algunas funciones comunes debido a que el resto de nodos tienen varias maneras de ser construidos
         let expected = FileASTNode {
-            prefixes: Some(vec![PrefixASTNode {
-                identifier: "example".to_string(),
-                uri: "https://example.com/".to_string(),
-            }]),
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
-            queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
+            prefixes: TestUtilities::create_prefixes_for_file_node(
+                "example",
+                "https://example.com/",
+            ),
+            sources: TestUtilities::create_sources_for_file_node(
+                "films_csv_file",
+                "https://shexml.herminiogarcia.com/files/films.csv",
+            ),
+            queries: TestUtilities::create_queries_for_file_node(
+                "query_sql",
+                "SELECT * FROM example;",
+            ),
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
@@ -2252,111 +2461,21 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn file_parser_with_valid_sintax_and_withouth_query() {
-        let tokens_vector = vec![
-            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
-            Token::create_test_token("example", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(SOURCE, 2, TokenType::Source),
-            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token(
-                "https://shexml.herminiogarcia.com/files/films.csv",
-                2,
-                TokenType::Uri,
-            ),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-            Token::create_test_token(ITERATOR, 3, TokenType::Iterator),
-            Token::create_test_token("film_csv", 3, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
-            Token::create_test_token("query_sql", 3, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 3, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(FIELD, 4, TokenType::Field),
-            Token::create_test_token("id", 4, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
-            Token::create_test_token("@id", 4, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 5, TokenType::Field),
-            Token::create_test_token("name", 5, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
-            Token::create_test_token("name", 5, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 6, TokenType::Field),
-            Token::create_test_token("year", 6, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
-            Token::create_test_token("year", 6, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 7, TokenType::Field),
-            Token::create_test_token("country", 7, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
-            Token::create_test_token("country", 7, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 8, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EXPRESSION, 9, TokenType::Expression),
-            Token::create_test_token("films", 9, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 9, TokenType::LeftAngleBracket),
-            Token::create_test_token("films_csv_file", 9, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 9, TokenType::AccessDot),
-            Token::create_test_token("film_csv", 9, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 9, TokenType::RightAngleBracket),
-            Token::create_test_token(COLON, 10, TokenType::Colon),
-            Token::create_test_token("Films", 10, TokenType::Ident),
-            Token::create_test_token(COLON, 10, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 10, TokenType::LeftBracket),
-            Token::create_test_token("films", 10, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 10, TokenType::AccessDot),
-            Token::create_test_token("id", 10, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 10, TokenType::RightBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 10, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(COLON, 11, TokenType::Colon),
-            Token::create_test_token("name", 11, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 11, TokenType::LeftBracket),
-            Token::create_test_token("films", 11, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 11, TokenType::AccessDot),
-            Token::create_test_token("name", 11, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 11, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 11, TokenType::SemiColon),
-            Token::create_test_token(COLON, 12, TokenType::Colon),
-            Token::create_test_token("year", 12, TokenType::Ident),
-            Token::create_test_token(COLON, 12, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 12, TokenType::LeftBracket),
-            Token::create_test_token("films", 12, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
-            Token::create_test_token("year", 12, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 12, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 12, TokenType::SemiColon),
-            Token::create_test_token(COLON, 13, TokenType::Colon),
-            Token::create_test_token("country", 13, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 13, TokenType::LeftBracket),
-            Token::create_test_token("films", 13, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 13, TokenType::AccessDot),
-            Token::create_test_token("country", 13, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 13, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 13, TokenType::SemiColon),
-            Token::create_test_token(COLON, 14, TokenType::Colon),
-            Token::create_test_token("director", 14, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 14, TokenType::LeftBracket),
-            Token::create_test_token("films", 14, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 14, TokenType::AccessDot),
-            Token::create_test_token("director", 14, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 14, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 14, TokenType::SemiColon),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 15, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EOF, 15, TokenType::EOF),
-        ];
+        let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
+        tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
+        tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
+        tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
+        tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
 
         let expected = FileASTNode {
-            prefixes: Some(vec![PrefixASTNode {
-                identifier: "example".to_string(),
-                uri: "https://example.com/".to_string(),
-            }]),
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
+            prefixes: TestUtilities::create_prefixes_for_file_node(
+                "example",
+                "https://example.com/",
+            ),
+            sources: TestUtilities::create_sources_for_file_node(
+                "films_csv_file",
+                "https://shexml.herminiogarcia.com/files/films.csv",
+            ),
             queries: None,
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
@@ -2451,115 +2570,25 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn file_parser_with_valid_sintax_and_withouth_expression() {
-        let tokens_vector = vec![
-            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
-            Token::create_test_token("example", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://example.com/", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(SOURCE, 2, TokenType::Source),
-            Token::create_test_token("films_csv_file", 2, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token(
-                "https://shexml.herminiogarcia.com/files/films.csv",
-                2,
-                TokenType::Uri,
-            ),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-            Token::create_test_token(QUERY, 3, TokenType::Query),
-            Token::create_test_token("query_sql", 3, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
-            Token::create_test_token(SQL_TYPE, 3, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 3, TokenType::SqlQuery),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-            Token::create_test_token(ITERATOR, 4, TokenType::Iterator),
-            Token::create_test_token("film_csv", 4, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
-            Token::create_test_token("query_sql", 4, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 4, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(FIELD, 5, TokenType::Field),
-            Token::create_test_token("id", 5, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
-            Token::create_test_token("@id", 5, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 6, TokenType::Field),
-            Token::create_test_token("name", 6, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
-            Token::create_test_token("name", 6, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 7, TokenType::Field),
-            Token::create_test_token("year", 7, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
-            Token::create_test_token("year", 7, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 8, TokenType::Field),
-            Token::create_test_token("country", 8, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 8, TokenType::LeftAngleBracket),
-            Token::create_test_token("country", 8, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 8, TokenType::RightAngleBracket),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 9, TokenType::ClosingCurlyBrace),
-
-            Token::create_test_token(COLON, 10, TokenType::Colon),
-            Token::create_test_token("Films", 10, TokenType::Ident),
-            Token::create_test_token(COLON, 10, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 10, TokenType::LeftBracket),
-            Token::create_test_token("films", 10, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 10, TokenType::AccessDot),
-            Token::create_test_token("id", 10, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 10, TokenType::RightBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 10, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(COLON, 11, TokenType::Colon),
-            Token::create_test_token("name", 11, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 11, TokenType::LeftBracket),
-            Token::create_test_token("films", 11, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 11, TokenType::AccessDot),
-            Token::create_test_token("name", 11, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 11, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 11, TokenType::SemiColon),
-            Token::create_test_token(COLON, 12, TokenType::Colon),
-            Token::create_test_token("year", 12, TokenType::Ident),
-            Token::create_test_token(COLON, 12, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 12, TokenType::LeftBracket),
-            Token::create_test_token("films", 12, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
-            Token::create_test_token("year", 12, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 12, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 12, TokenType::SemiColon),
-            Token::create_test_token(COLON, 13, TokenType::Colon),
-            Token::create_test_token("country", 13, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 13, TokenType::LeftBracket),
-            Token::create_test_token("films", 13, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 13, TokenType::AccessDot),
-            Token::create_test_token("country", 13, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 13, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 13, TokenType::SemiColon),
-            Token::create_test_token(COLON, 14, TokenType::Colon),
-            Token::create_test_token("director", 14, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 14, TokenType::LeftBracket),
-            Token::create_test_token("films", 14, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 14, TokenType::AccessDot),
-            Token::create_test_token("director", 14, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 14, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 14, TokenType::SemiColon),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 15, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EOF, 15, TokenType::EOF),
-        ];
+        let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
+        tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
+        tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
+        tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(4));
+        tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
 
         let expected = FileASTNode {
-            prefixes: Some(vec![PrefixASTNode {
-                identifier: "example".to_string(),
-                uri: "https://example.com/".to_string(),
-            }]),
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
-            queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
+            prefixes: TestUtilities::create_prefixes_for_file_node(
+                "example",
+                "https://example.com/",
+            ),
+            sources: TestUtilities::create_sources_for_file_node(
+                "films_csv_file",
+                "https://shexml.herminiogarcia.com/files/films.csv",
+            ),
+            queries: TestUtilities::create_queries_for_file_node(
+                "query_sql",
+                "SELECT * FROM example;",
+            ),
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
@@ -2645,106 +2674,22 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn file_parser_withouth_prefixes() {
-        let tokens_vector = vec![
-            Token::create_test_token(SOURCE, 1, TokenType::Source),
-            Token::create_test_token("films_csv_file", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token(
-                "https://shexml.herminiogarcia.com/files/films.csv",
-                1,
-                TokenType::Uri,
-            ),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(QUERY, 2, TokenType::Query),
-            Token::create_test_token("query_sql", 2, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token(SQL_TYPE, 2, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 2, TokenType::SqlQuery),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
-            Token::create_test_token(ITERATOR, 3, TokenType::Iterator),
-            Token::create_test_token("film_csv", 3, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
-            Token::create_test_token("query_sql", 3, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 3, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(FIELD, 4, TokenType::Field),
-            Token::create_test_token("id", 4, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 4, TokenType::LeftAngleBracket),
-            Token::create_test_token("@id", 4, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 4, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 5, TokenType::Field),
-            Token::create_test_token("name", 5, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 5, TokenType::LeftAngleBracket),
-            Token::create_test_token("name", 5, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 5, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 6, TokenType::Field),
-            Token::create_test_token("year", 6, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
-            Token::create_test_token("year", 6, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
-            Token::create_test_token(FIELD, 7, TokenType::Field),
-            Token::create_test_token("country", 7, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 7, TokenType::LeftAngleBracket),
-            Token::create_test_token("country", 7, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 7, TokenType::RightAngleBracket),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 8, TokenType::ClosingCurlyBrace),
-
-            Token::create_test_token(COLON, 9, TokenType::Colon),
-            Token::create_test_token("Films", 9, TokenType::Ident),
-            Token::create_test_token(COLON, 9, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 9, TokenType::LeftBracket),
-            Token::create_test_token("films", 9, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 9, TokenType::AccessDot),
-            Token::create_test_token("id", 9, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 9, TokenType::RightBracket),
-            Token::create_test_token(OPENING_CURLY_BRACE, 9, TokenType::OpeningCurlyBrace),
-            Token::create_test_token(COLON, 10, TokenType::Colon),
-            Token::create_test_token("name", 10, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 10, TokenType::LeftBracket),
-            Token::create_test_token("films", 10, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 10, TokenType::AccessDot),
-            Token::create_test_token("name", 10, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 10, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 10, TokenType::SemiColon),
-            Token::create_test_token(COLON, 11, TokenType::Colon),
-            Token::create_test_token("year", 11, TokenType::Ident),
-            Token::create_test_token(COLON, 11, TokenType::Colon),
-            Token::create_test_token(LEFT_BRACKET, 11, TokenType::LeftBracket),
-            Token::create_test_token("films", 11, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 11, TokenType::AccessDot),
-            Token::create_test_token("year", 11, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 11, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 11, TokenType::SemiColon),
-            Token::create_test_token(COLON, 12, TokenType::Colon),
-            Token::create_test_token("country", 12, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 12, TokenType::LeftBracket),
-            Token::create_test_token("films", 12, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 12, TokenType::AccessDot),
-            Token::create_test_token("country", 12, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 12, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 12, TokenType::SemiColon),
-            Token::create_test_token(COLON, 13, TokenType::Colon),
-            Token::create_test_token("director", 13, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, 13, TokenType::LeftBracket),
-            Token::create_test_token("films", 13, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 13, TokenType::AccessDot),
-            Token::create_test_token("director", 13, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, 13, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, 13, TokenType::SemiColon),
-            Token::create_test_token(CLOSING_CURLY_BRACE, 14, TokenType::ClosingCurlyBrace),
-            Token::create_test_token(EOF, 14, TokenType::EOF),
-        ];
+        let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_source_test(1);
+        tokens_vector.append(&mut TestUtilities::create_valid_query_test(2));
+        tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
+        tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
+        tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
 
         let expected = FileASTNode {
             prefixes: None,
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
-            queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
+            sources: TestUtilities::create_sources_for_file_node(
+                "films_csv_file",
+                "https://shexml.herminiogarcia.com/files/films.csv",
+            ),
+            queries: TestUtilities::create_queries_for_file_node(
+                "query_sql",
+                "SELECT * FROM example;",
+            ),
             iterators: vec![IteratorASTNode {
                 identifier: "film_csv".to_string(),
                 iterator_access: "query_sql".to_string(),
@@ -2830,15 +2775,11 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn file_parser_withouth_sources() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
-            Token::create_test_token("ident", 1, TokenType::Ident),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
+        let mut fail_tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_query_test(2));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
 
         check_parser_error::<FileASTNode>(
             file_parser(),
@@ -5051,10 +4992,10 @@ mod sintax_tests {
             prefix_or_uri: PrefixOrURI::Prefix,
             identifier: "Films".to_string(),
             field_prefix_or_uri: PrefixOrURI::Prefix,
-            field_identifier: IdentOrAccess::Access(AccessASTNode { 
-                identifier: "films".to_string(), 
-                iterator_accessed: "id".to_string(), 
-                field_accessed: None, 
+            field_identifier: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "id".to_string(),
+                field_accessed: None,
             }),
             tuples: vec![ShapeTupleASTNode {
                 prefix_or_uri: PrefixOrURI::Prefix,
@@ -5099,10 +5040,10 @@ mod sintax_tests {
             prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
             identifier: "Films".to_string(),
             field_prefix_or_uri: PrefixOrURI::Prefix,
-            field_identifier: IdentOrAccess::Access(AccessASTNode { 
-                identifier: "films".to_string(), 
-                iterator_accessed: "id".to_string(), 
-                field_accessed: None, 
+            field_identifier: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "id".to_string(),
+                field_accessed: None,
             }),
             tuples: vec![ShapeTupleASTNode {
                 prefix_or_uri: PrefixOrURI::Prefix,
@@ -5147,10 +5088,10 @@ mod sintax_tests {
             prefix_or_uri: PrefixOrURI::Prefix,
             identifier: "Films".to_string(),
             field_prefix_or_uri: PrefixOrURI::URI("https://example.com".to_string()),
-            field_identifier: IdentOrAccess::Access(AccessASTNode { 
-                identifier: "films".to_string(), 
-                iterator_accessed: "id".to_string(), 
-                field_accessed: None, 
+            field_identifier: IdentOrAccess::Access(AccessASTNode {
+                identifier: "films".to_string(),
+                iterator_accessed: "id".to_string(),
+                field_accessed: None,
             }),
             tuples: vec![ShapeTupleASTNode {
                 prefix_or_uri: PrefixOrURI::Prefix,
