@@ -7,3 +7,5 @@ pub mod sintax;
 
 pub mod ast;
 pub mod compiler_error;
+
+mod visitor;

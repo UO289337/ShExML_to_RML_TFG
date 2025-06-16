@@ -5,7 +5,8 @@
 use std::fs;
 use std::io::prelude::*;
 
-use crate::model::generator::visitor::{Generator, Visitor};
+use crate::model::generator::generator_visitor::Generator;
+use crate::model::visitor::Visitor;
 
 use super::super::ast::FileASTNode;
 
