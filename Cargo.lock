@@ -143,6 +143,7 @@ name = "shexml_to_rml_tfg"
 version = "0.1.0"
 dependencies = [
  "chumsky",
+ "once_cell",
  "regex",
  "tinyfiledialogs",
  "winnow",

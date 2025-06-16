@@ -860,9 +860,9 @@ fn create_access_node(
     if field_accessed.is_some() {
         return AccessASTNode {
             identifier: ident.lexeme.clone(),
-            iterator_accessed: iterator_accessed.lexeme.clone(),
-            field_accessed: Some(field_accessed.unwrap().1.lexeme.clone()), // El 1 apunta al identificador; el 0 al punto ('.')
-            source: None,
+            first_access: iterator_accessed.lexeme.clone(),
+            second_access: Some(field_accessed.unwrap().1.lexeme.clone()), // El 1 apunta al identificador; el 0 al punto ('.')
+            source_or_expression: None,
             iterator: None,
             field: None,
         };
@@ -870,9 +870,9 @@ fn create_access_node(
 
     AccessASTNode {
         identifier: ident.lexeme.clone(),
-        iterator_accessed: iterator_accessed.lexeme.clone(),
-        field_accessed: None,
-        source: None,
+        first_access: iterator_accessed.lexeme.clone(),
+        second_access: None,
+        source_or_expression: None,
         iterator: None,
         field: None,
     }
@@ -3769,9 +3769,9 @@ mod sintax_tests {
 
         let expected = AccessASTNode {
             identifier: "ident".to_string(),
-            iterator_accessed: "iterator".to_string(),
-            field_accessed: None,
-            source: None,
+            first_access: "iterator".to_string(),
+            second_access: None,
+            source_or_expression: None,
             iterator: None,
             field: None,
         };
@@ -3794,9 +3794,9 @@ mod sintax_tests {
 
         let expected = AccessASTNode {
             identifier: "ident".to_string(),
-            iterator_accessed: "iterator".to_string(),
-            field_accessed: Some("field".to_string()),
-            source: None,
+            first_access: "iterator".to_string(),
+            second_access: Some("field".to_string()),
+            source_or_expression: None,
             iterator: None,
             field: None,
         };
@@ -3876,9 +3876,9 @@ mod sintax_tests {
         // No dará error en este parser pero si en el siguiente que se ejecute al estar un ident suelto
         let expected = AccessASTNode {
             identifier: "ident".to_string(),
-            iterator_accessed: "iterator".to_string(),
-            field_accessed: None,
-            source: None,
+            first_access: "iterator".to_string(),
+            second_access: None,
+            source_or_expression: None,
             iterator: None,
             field: None,
         };
@@ -3901,9 +3901,9 @@ mod sintax_tests {
         // No dará error en este parser pero si en el siguiente que se ejecute al estar un '.' suelto
         let expected = AccessASTNode {
             identifier: "ident".to_string(),
-            iterator_accessed: "iterator".to_string(),
-            field_accessed: None,
-            source: None,
+            first_access: "iterator".to_string(),
+            second_access: None,
+            source_or_expression: None,
             iterator: None,
             field: None,
         };
@@ -3932,9 +3932,9 @@ mod sintax_tests {
             expression_type: ExpressionType::BASIC,
             accesses: vec![AccessASTNode {
                 identifier: "id".to_string(),
-                iterator_accessed: "iterator".to_string(),
-                field_accessed: None,
-                source: None,
+                first_access: "iterator".to_string(),
+                second_access: None,
+                source_or_expression: None,
                 iterator: None,
                 field: None,
             }],
@@ -3970,17 +3970,17 @@ mod sintax_tests {
             accesses: vec![
                 AccessASTNode {
                     identifier: "id1".to_string(),
-                    iterator_accessed: "iterator1".to_string(),
-                    field_accessed: None,
-                    source: None,
+                    first_access: "iterator1".to_string(),
+                    second_access: None,
+                    source_or_expression: None,
                     iterator: None,
                     field: None,
                 },
                 AccessASTNode {
                     identifier: "id2".to_string(),
-                    iterator_accessed: "iterator2".to_string(),
-                    field_accessed: None,
-                    source: None,
+                    first_access: "iterator2".to_string(),
+                    second_access: None,
+                    source_or_expression: None,
                     iterator: None,
                     field: None,
                 },
@@ -4029,33 +4029,33 @@ mod sintax_tests {
             accesses: vec![
                 AccessASTNode {
                     identifier: "id1".to_string(),
-                    iterator_accessed: "iterator1".to_string(),
-                    field_accessed: None,
-                    source: None,
+                    first_access: "iterator1".to_string(),
+                    second_access: None,
+                    source_or_expression: None,
                     iterator: None,
                     field: None,
                 },
                 AccessASTNode {
                     identifier: "id2".to_string(),
-                    iterator_accessed: "iterator2".to_string(),
-                    field_accessed: None,
-                    source: None,
+                    first_access: "iterator2".to_string(),
+                    second_access: None,
+                    source_or_expression: None,
                     iterator: None,
                     field: None,
                 },
                 AccessASTNode {
                     identifier: "id3".to_string(),
-                    iterator_accessed: "iterator3".to_string(),
-                    field_accessed: Some("field3".to_string()),
-                    source: None,
+                    first_access: "iterator3".to_string(),
+                    second_access: Some("field3".to_string()),
+                    source_or_expression: None,
                     iterator: None,
                     field: None,
                 },
                 AccessASTNode {
                     identifier: "id4".to_string(),
-                    iterator_accessed: "iterator4".to_string(),
-                    field_accessed: Some("field4".to_string()),
-                    source: None,
+                    first_access: "iterator4".to_string(),
+                    second_access: Some("field4".to_string()),
+                    source_or_expression: None,
                     iterator: None,
                     field: None,
                 },
@@ -4489,9 +4489,9 @@ mod sintax_tests {
             object_prefix: None,
             object: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
-                iterator_accessed: "name".to_string(),
-                field_accessed: None,
-                source: None,
+                first_access: "name".to_string(),
+                second_access: None,
+                source_or_expression: None,
                 iterator: None,
                 field: None,
             }),
@@ -4529,9 +4529,9 @@ mod sintax_tests {
             object_prefix: None,
             object: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
-                iterator_accessed: "name".to_string(),
-                field_accessed: None,
-                source: None,
+                first_access: "name".to_string(),
+                second_access: None,
+                source_or_expression: None,
                 iterator: None,
                 field: None,
             }),
@@ -4695,9 +4695,9 @@ mod sintax_tests {
             field_prefix: None,
             field_identifier: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
-                iterator_accessed: "id".to_string(),
-                field_accessed: None,
-                source: None,
+                first_access: "id".to_string(),
+                second_access: None,
+                source_or_expression: None,
                 iterator: None,
                 field: None,
             }),

@@ -1,4 +1,6 @@
 //! Estructura del AST (Abstract Syntax Tree) del compilador
+//! 
+//! En los nodos del AST no se utilizan referencias dado que los struct son dueños de los datos
 
 use crate::model::lexer::token::{Token, TokenType};
 
@@ -20,6 +22,16 @@ pub enum IdentOrAccess {
     Ident(String),
     Access(AccessASTNode),
 }
+
+/// Source o Expression
+///
+/// Enumerador que contiene el nodo Source o Expression que puede haber en un acceso en un Shape
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum SourceOrExpression {
+    Source(SourceASTNode),
+    Expression(ExpressionASTNode),
+}
+
 
 impl ExpressionType {
     /// Obtiene el tipo de una expresión a partir de un token
@@ -53,7 +65,7 @@ pub struct FileASTNode {
 /// Nodo de tipo Prefix del AST
 ///
 /// Se corresponde con los Prefix de ShEXMl; contiene un identificador y una URI
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct PrefixASTNode {
     pub identifier: String,
     pub uri: String,
@@ -102,7 +114,7 @@ pub struct FieldASTNode {
 /// Nodo de tipo Expression del AST
 ///
 /// Se corresponde con los Expression de SheXMl; contiene un identificador, el tipo de la expresión y los accesos a iteradores y/o campos que se realizan
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone, Hash)]
 pub struct ExpressionASTNode {
     pub identifier: String,
     pub expression_type: ExpressionType,
@@ -115,11 +127,11 @@ pub struct ExpressionASTNode {
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct AccessASTNode {
     pub identifier: String,
-    pub iterator_accessed: String,
-    pub field_accessed: Option<String>,
+    pub first_access: String,
+    pub second_access: Option<String>,
 
     // Fase identificación
-    pub source: Option<SourceASTNode>,
+    pub source_or_expression: Option<SourceOrExpression>,
     pub iterator: Option<IteratorASTNode>,
     pub field: Option<FieldASTNode>,
 }
@@ -127,7 +139,7 @@ pub struct AccessASTNode {
 /// Nodo de tipo Shape del AST
 ///
 /// Se corresponde con los Shape de ShExML
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ShapeASTNode {
     pub prefix_ident: String,
     pub identifier: String,
@@ -143,7 +155,7 @@ pub struct ShapeASTNode {
 /// Nodo de tipo ShapeTuples del AST
 ///
 /// Se corresponde con las tuplas de los Shape de ShExML
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct ShapeTupleASTNode {
     pub prefix_ident: String,
     pub identifier: String,

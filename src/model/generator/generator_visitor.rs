@@ -38,6 +38,38 @@ impl Visitor<String> for Generator {
         prefix_generation
     }
 
+    fn visit_source(&mut self, source_node: SourceASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_query(&mut self, query_node: QueryASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_iterator(&mut self, iterator_node: IteratorASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_field(&mut self, field_node: FieldASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_expression(&mut self, expression_node: ExpressionASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_shape(&mut self, shape_node: ShapeASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_shape_tuple(&mut self, shape_tuple_node: ShapeTupleASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_access(&mut self, access_node: AccessASTNode) -> String {
+        todo!()
+    }
+    
     /* fn visit_source(&mut self, s: SourceASTNode) -> String {
         todo!()
     } */
