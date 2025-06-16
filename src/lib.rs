@@ -6,5 +6,4 @@ pub mod controller;
 pub mod model;
 pub mod view;
 
-#[cfg(test)]
-mod test_utils;
+pub mod test_utils;

@@ -24,12 +24,15 @@ pub enum TokenType {
     Path,
     SqlQuery,
     Colon,
+    SemiColon,
     Equal,
     AccessDot,
     LeftAngleBracket,
     RightAngleBracket,
     OpeningCurlyBrace,
     ClosingCurlyBrace,
+    LeftBracket,
+    RightBracket,
     EOF,
 }
 
@@ -45,12 +48,15 @@ pub const ON: &str = "ON";
 pub const SQL_TYPE: &str = "sql:";
 pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";
+pub const SEMICOLON: &str = ";";
 pub const EQUAL: &str = "=";
 pub const ACCESS_DOT: &str = ".";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";
 pub const OPENING_CURLY_BRACE: &str = "{";
 pub const CLOSING_CURLY_BRACE: &str = "}";
+pub const LEFT_BRACKET: &str = "[";
+pub const RIGHT_BRACKET: &str = "]";
 pub const EOF: &str = " ";
 
 /// Estructura de los token
@@ -96,6 +102,9 @@ impl Token {
     ///
     /// Debido a que se trata de un token especial, se crea en una función con el lexema vacío
     ///
+    /// # Parámetros
+    /// * `num_line` - El número de línea en el que se encuentra el token
+    ///
     /// # Retorna
     /// A si mismo
     pub fn create_eof_token(num_line: u16) -> Self {
@@ -104,5 +113,17 @@ impl Token {
             token_type: TokenType::EOF,
             num_line: num_line,
         }
+    }
+
+    /// Crea un token para ser utilizado en los tests
+    ///
+    /// # Parámetros
+    /// * `lexeme` - El lexeme (valor) del token
+    /// * `num_line` - El número de línea en el que se encuentra el token
+    /// * `token_type` - El tipo del token
+    pub fn create_test_token(lexeme: &str, num_line: u16, token_type: TokenType) -> Token {
+        let mut token = Token::new(lexeme.to_string(), token_type);
+        token.set_num_line(num_line);
+        token
     }
 }

@@ -5,10 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::model::{
-    ast::{FileASTNode, PrefixASTNode, QueryASTNode, SourceASTNode},
-    compiler_error::CompilerError,
-};
+use crate::model::{ast::*, compiler_error::CompilerError};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -63,9 +60,9 @@ fn check_duplicate_identifiers(node: &FileASTNode) -> Vec<CompilerError> {
 ///
 /// # Retorna
 /// El vector con los identificadores de los PREFIX
-fn get_prefix_identifiers(prefixes: &Vec<PrefixASTNode>) -> Vec<String> {
+fn get_prefix_identifiers(prefixes: &Option<Vec<PrefixASTNode>>) -> Vec<String> {
     let mut identifiers = Vec::new();
-    for prefix in prefixes {
+    for prefix in prefixes.as_deref().unwrap() {
         identifiers.push(prefix.identifier.clone());
     }
     identifiers
@@ -110,6 +107,8 @@ fn get_queries_identifiers(queries: &Vec<QueryASTNode>) -> Vec<String> {
 #[cfg(test)]
 mod lexer_tests {
 
+    use crate::test_utils::TestUtilities;
+
     use super::*;
 
     /// Comprueba que se detectan identificadores duplicados de PREFIX
@@ -117,7 +116,7 @@ mod lexer_tests {
     #[test]
     fn detect_duplicate_prefix_identifiers() {
         let input = FileASTNode {
-            prefixes: vec![
+            prefixes: Some(vec![
                 PrefixASTNode {
                     identifier: "example".to_string(),
                     uri: "https://example.com/".to_string(),
@@ -126,7 +125,7 @@ mod lexer_tests {
                     identifier: "example".to_string(),
                     uri: "http://notexample.es/".to_string(),
                 },
-            ],
+            ]),
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
@@ -135,8 +134,81 @@ mod lexer_tests {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
-            iterators: None,
-            expressions: None,
+            iterators: vec![IteratorASTNode {
+                identifier: "film_csv".to_string(),
+                iterator_access: "query_sql".to_string(),
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
+            }],
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
+            shapes: vec![ShapeASTNode {
+                prefix: "example".to_string(),
+                identifier: "Films".to_string(),
+                field_prefix: "example".to_string(),
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "name".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "year".to_string(),
+                        object_prefix: Some("example".to_string()),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "country".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "director".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -152,10 +224,10 @@ mod lexer_tests {
     #[test]
     fn detect_duplicate_source_identifiers() {
         let input = FileASTNode {
-            prefixes: vec![PrefixASTNode {
+            prefixes: Some(vec![PrefixASTNode {
                 identifier: "example".to_string(),
                 uri: "https://example.com/".to_string(),
-            }],
+            }]),
             sources: vec![
                 SourceASTNode {
                     identifier: "films_csv_file".to_string(),
@@ -171,8 +243,81 @@ mod lexer_tests {
                 identifier: "query_sql".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
-            iterators: None,
-            expressions: None,
+            iterators: vec![IteratorASTNode {
+                identifier: "film_csv".to_string(),
+                iterator_access: "query_sql".to_string(),
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
+            }],
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
+            shapes: vec![ShapeASTNode {
+                prefix: "example".to_string(),
+                identifier: "Films".to_string(),
+                field_prefix: "example".to_string(),
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "name".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "year".to_string(),
+                        object_prefix: Some("example".to_string()),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "country".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "director".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -188,10 +333,10 @@ mod lexer_tests {
     #[test]
     fn detect_duplicate_query_identifiers() {
         let input = FileASTNode {
-            prefixes: vec![PrefixASTNode {
+            prefixes: Some(vec![PrefixASTNode {
                 identifier: "example".to_string(),
                 uri: "https://example.com/".to_string(),
-            }],
+            }]),
             sources: vec![SourceASTNode {
                 identifier: "films_csv_file".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
@@ -206,8 +351,81 @@ mod lexer_tests {
                     sql_query: "SELECT name FROM anothertable;".to_string(),
                 },
             ]),
-            iterators: None,
-            expressions: None,
+            iterators: vec![IteratorASTNode {
+                identifier: "film_csv".to_string(),
+                iterator_access: "query_sql".to_string(),
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
+            }],
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
+            shapes: vec![ShapeASTNode {
+                prefix: "example".to_string(),
+                identifier: "Films".to_string(),
+                field_prefix: "example".to_string(),
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "name".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "year".to_string(),
+                        object_prefix: Some("example".to_string()),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "country".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "director".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);
@@ -223,10 +441,10 @@ mod lexer_tests {
     #[test]
     fn detect_duplicate_identifiers_between_structures() {
         let input = FileASTNode {
-            prefixes: vec![PrefixASTNode {
+            prefixes: Some(vec![PrefixASTNode {
                 identifier: "duplicate".to_string(),
                 uri: "https://example.com/".to_string(),
-            }],
+            }]),
             sources: vec![SourceASTNode {
                 identifier: "duplicate".to_string(),
                 source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
@@ -235,8 +453,81 @@ mod lexer_tests {
                 identifier: "duplicate".to_string(),
                 sql_query: "SELECT * FROM example;".to_string(),
             }]),
-            iterators: None,
-            expressions: None,
+            iterators: vec![IteratorASTNode {
+                identifier: "film_csv".to_string(),
+                iterator_access: "query_sql".to_string(),
+                fields: vec![
+                    FieldASTNode {
+                        field_identifier: "id".to_string(),
+                        access_field_identifier: "@id".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "name".to_string(),
+                        access_field_identifier: "name".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "year".to_string(),
+                        access_field_identifier: "year".to_string(),
+                    },
+                    FieldASTNode {
+                        field_identifier: "country".to_string(),
+                        access_field_identifier: "country".to_string(),
+                    },
+                ],
+            }],
+            expressions: TestUtilities::create_default_expressions_for_file_node(),
+            shapes: vec![ShapeASTNode {
+                prefix: "example".to_string(),
+                identifier: "Films".to_string(),
+                field_prefix: "example".to_string(),
+                field_identifier: IdentOrAccess::Access(AccessASTNode {
+                    identifier: "films".to_string(),
+                    iterator_accessed: "id".to_string(),
+                    field_accessed: None,
+                }),
+                tuples: vec![
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "name".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "name".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "year".to_string(),
+                        object_prefix: Some("example".to_string()),
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "year".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "country".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "country".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                    ShapeTupleASTNode {
+                        prefix: "example".to_string(),
+                        identifier: "director".to_string(),
+                        object_prefix: None,
+                        object: IdentOrAccess::Access(AccessASTNode {
+                            identifier: "films".to_string(),
+                            iterator_accessed: "director".to_string(),
+                            field_accessed: None,
+                        }),
+                    },
+                ],
+            }],
         };
 
         let actual = check_duplicate_identifiers(&input);

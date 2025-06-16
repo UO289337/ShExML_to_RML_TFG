@@ -1,11 +1,17 @@
 PREFIX example: <http://example.com/>
 PREFIX dbr: <http://dbpedia.org/resource/>
-PREFIX schema: <http://schema.org/>
 SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
-QUERY inline_query <sql: SELECT * FROM example;>
-ITERATOR film <inline_query> {
-    FIELD id <@id>
-    FIELD name <name>
-    FIELD year <year>
-    FIELD country <country>
+ITERATOR films_csv <csvperrow> {
+  FIELD id <@id>
+  FIELD name <name>
+  FIELD year <year>
+  FIELD country <country>
+  FIELD director <director>
+}
+EXPRESSION films <films_csv_file.films_csv>
+example:Films example:[films.id] {
+  example:name [films.name] ;
+  example:year [films.year] ;
+  example:country dbr:[films.country] ;
+  example:director dbr:[films.director] ;
 }
