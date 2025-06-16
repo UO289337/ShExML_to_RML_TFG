@@ -485,12 +485,14 @@ fn create_iterator_ast_node(
             identifier: ident.lexeme.clone(),
             iterator_access: token1.lexeme.clone(),
             fields: fields,
+            query: None,
         }
     } else {
         IteratorASTNode {
             identifier: ident.lexeme.clone(),
             iterator_access: token2.unwrap().lexeme.clone().to_string(),
             fields: fields,
+            query: None,
         }
     }
 }
@@ -860,6 +862,9 @@ fn create_access_node(
             identifier: ident.lexeme.clone(),
             iterator_accessed: iterator_accessed.lexeme.clone(),
             field_accessed: Some(field_accessed.unwrap().1.lexeme.clone()), // El 1 apunta al identificador; el 0 al punto ('.')
+            source: None,
+            iterator: None,
+            field: None,
         };
     }
 
@@ -867,6 +872,9 @@ fn create_access_node(
         identifier: ident.lexeme.clone(),
         iterator_accessed: iterator_accessed.lexeme.clone(),
         field_accessed: None,
+        source: None,
+        iterator: None,
+        field: None,
     }
 }
 
@@ -950,11 +958,13 @@ fn create_shape_node(
     }
 
     ShapeASTNode {
-        prefix: prefix.lexeme,
+        prefix_ident: prefix.lexeme,
         identifier: shape_ident.lexeme,
-        field_prefix: shape_field_prefix.lexeme,
+        field_prefix_ident: shape_field_prefix.lexeme,
         field_identifier: field_ident,
         tuples: shape_tuples,
+        prefix: None,
+        field_prefix: None,
     }
 }
 
@@ -1030,10 +1040,12 @@ fn create_shape_tuple_node(
     }
 
     ShapeTupleASTNode {
-        prefix: prefix.lexeme,
+        prefix_ident: prefix.lexeme,
         identifier: ident.lexeme,
-        object_prefix: obj_prefix,
+        object_prefix_ident: obj_prefix,
         object: object_ident,
+        prefix: None,
+        object_prefix: None,
     }
 }
 
@@ -3354,6 +3366,7 @@ mod sintax_tests {
                 field_identifier: "field".to_string(),
                 access_field_identifier: "@field".to_string(),
             }],
+            query: None,
         };
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -3400,6 +3413,7 @@ mod sintax_tests {
                     access_field_identifier: "field".to_string(),
                 },
             ],
+            query: None,
         };
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -3433,6 +3447,7 @@ mod sintax_tests {
                 field_identifier: "field".to_string(),
                 access_field_identifier: "@field".to_string(),
             }],
+            query: None,
         };
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -3466,6 +3481,7 @@ mod sintax_tests {
                 field_identifier: "field".to_string(),
                 access_field_identifier: "@field".to_string(),
             }],
+            query: None,
         };
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -3755,6 +3771,9 @@ mod sintax_tests {
             identifier: "ident".to_string(),
             iterator_accessed: "iterator".to_string(),
             field_accessed: None,
+            source: None,
+            iterator: None,
+            field: None,
         };
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
@@ -3777,6 +3796,9 @@ mod sintax_tests {
             identifier: "ident".to_string(),
             iterator_accessed: "iterator".to_string(),
             field_accessed: Some("field".to_string()),
+            source: None,
+            iterator: None,
+            field: None,
         };
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
@@ -3856,6 +3878,9 @@ mod sintax_tests {
             identifier: "ident".to_string(),
             iterator_accessed: "iterator".to_string(),
             field_accessed: None,
+            source: None,
+            iterator: None,
+            field: None,
         };
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
@@ -3878,6 +3903,9 @@ mod sintax_tests {
             identifier: "ident".to_string(),
             iterator_accessed: "iterator".to_string(),
             field_accessed: None,
+            source: None,
+            iterator: None,
+            field: None,
         };
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
@@ -3906,6 +3934,9 @@ mod sintax_tests {
                 identifier: "id".to_string(),
                 iterator_accessed: "iterator".to_string(),
                 field_accessed: None,
+                source: None,
+                iterator: None,
+                field: None,
             }],
         };
 
@@ -3941,11 +3972,17 @@ mod sintax_tests {
                     identifier: "id1".to_string(),
                     iterator_accessed: "iterator1".to_string(),
                     field_accessed: None,
+                    source: None,
+                    iterator: None,
+                    field: None,
                 },
                 AccessASTNode {
                     identifier: "id2".to_string(),
                     iterator_accessed: "iterator2".to_string(),
                     field_accessed: None,
+                    source: None,
+                    iterator: None,
+                    field: None,
                 },
             ],
         };
@@ -3994,21 +4031,33 @@ mod sintax_tests {
                     identifier: "id1".to_string(),
                     iterator_accessed: "iterator1".to_string(),
                     field_accessed: None,
+                    source: None,
+                    iterator: None,
+                    field: None,
                 },
                 AccessASTNode {
                     identifier: "id2".to_string(),
                     iterator_accessed: "iterator2".to_string(),
                     field_accessed: None,
+                    source: None,
+                    iterator: None,
+                    field: None,
                 },
                 AccessASTNode {
                     identifier: "id3".to_string(),
                     iterator_accessed: "iterator3".to_string(),
                     field_accessed: Some("field3".to_string()),
+                    source: None,
+                    iterator: None,
+                    field: None,
                 },
                 AccessASTNode {
                     identifier: "id4".to_string(),
                     iterator_accessed: "iterator4".to_string(),
                     field_accessed: Some("field4".to_string()),
+                    source: None,
+                    iterator: None,
+                    field: None,
                 },
             ],
         };
@@ -4433,13 +4482,18 @@ mod sintax_tests {
         ];
 
         let expected = ShapeTupleASTNode {
-            prefix: "example".to_string(),
+            prefix_ident: "example".to_string(),
             identifier: "name".to_string(),
+            object_prefix_ident: None,
+            prefix: None,
             object_prefix: None,
             object: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "name".to_string(),
                 field_accessed: None,
+                source: None,
+                iterator: None,
+                field: None,
             }),
         };
 
@@ -4468,13 +4522,18 @@ mod sintax_tests {
         ];
 
         let expected = ShapeTupleASTNode {
-            prefix: "example".to_string(),
+            prefix_ident: "example".to_string(),
             identifier: "name".to_string(),
-            object_prefix: Some("example".to_string()),
+            object_prefix_ident: Some("example".to_string()),
+            prefix: None,
+            object_prefix: None,
             object: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "name".to_string(),
                 field_accessed: None,
+                source: None,
+                iterator: None,
+                field: None,
             }),
         };
 
@@ -4629,19 +4688,26 @@ mod sintax_tests {
         ];
 
         let expected = ShapeASTNode {
-            prefix: "example".to_string(),
+            prefix_ident: "example".to_string(),
             identifier: "Films".to_string(),
-            field_prefix: "example".to_string(),
+            field_prefix_ident: "example".to_string(),
+            prefix: None,
+            field_prefix: None,
             field_identifier: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "id".to_string(),
                 field_accessed: None,
+                source: None,
+                iterator: None,
+                field: None,
             }),
             tuples: vec![ShapeTupleASTNode {
-                prefix: "example".to_string(),
+                prefix_ident: "example".to_string(),
                 identifier: "name".to_string(),
-                object_prefix: None,
+                object_prefix_ident: None,
                 object: IdentOrAccess::Ident("films_name".to_string()),
+                prefix: None,
+                object_prefix: None,
             }],
         };
 

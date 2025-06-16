@@ -62,7 +62,7 @@ pub struct PrefixASTNode {
 /// Nodo de tipo Source del AST
 ///
 /// Se corresponde con los Source de SheXMl; contiene un identificador y un path o URL
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct SourceASTNode {
     pub identifier: String,
     pub source_definition: String,
@@ -71,7 +71,7 @@ pub struct SourceASTNode {
 /// Nodo de tipo Query del AST
 ///
 /// Se corresponde con los Query de SheXMl; contiene un identificador y una consulta SQL
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq,Clone, Eq, Hash)]
 pub struct QueryASTNode {
     pub identifier: String,
     pub sql_query: String,
@@ -80,17 +80,20 @@ pub struct QueryASTNode {
 /// Nodo de tipo Iterator del AST
 ///
 /// Se corresponde con los Iterator de SheXMl; contiene un identificador, como se accede (identificador, csvperrow o consulta SQL) y un vector de fields
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct IteratorASTNode {
     pub identifier: String,
     pub iterator_access: String,
     pub fields: Vec<FieldASTNode>,
+
+    // Fase identificación
+    pub query: Option<QueryASTNode>,
 }
 
 /// Nodo de tipo Field del AST
 ///
 /// Se corresponde con los Field de un ITERATOR de SheXMl; contiene un identificador para el field y otro para el campo accedido
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub struct FieldASTNode {
     pub field_identifier: String,
     pub access_field_identifier: String,
@@ -114,6 +117,11 @@ pub struct AccessASTNode {
     pub identifier: String,
     pub iterator_accessed: String,
     pub field_accessed: Option<String>,
+
+    // Fase identificación
+    pub source: Option<SourceASTNode>,
+    pub iterator: Option<IteratorASTNode>,
+    pub field: Option<FieldASTNode>,
 }
 
 /// Nodo de tipo Shape del AST
@@ -121,11 +129,15 @@ pub struct AccessASTNode {
 /// Se corresponde con los Shape de ShExML
 #[derive(Debug, PartialEq)]
 pub struct ShapeASTNode {
-    pub prefix: String,
+    pub prefix_ident: String,
     pub identifier: String,
-    pub field_prefix: String,
+    pub field_prefix_ident: String,
     pub field_identifier: IdentOrAccess,
     pub tuples: Vec<ShapeTupleASTNode>,
+
+    // Fase Identificación
+    pub prefix: Option<PrefixASTNode>,
+    pub field_prefix: Option<PrefixASTNode>,
 }
 
 /// Nodo de tipo ShapeTuples del AST
@@ -133,8 +145,12 @@ pub struct ShapeASTNode {
 /// Se corresponde con las tuplas de los Shape de ShExML
 #[derive(Debug, PartialEq)]
 pub struct ShapeTupleASTNode {
-    pub prefix: String,
+    pub prefix_ident: String,
     pub identifier: String,
-    pub object_prefix: Option<String>,
+    pub object_prefix_ident: Option<String>,
     pub object: IdentOrAccess,
+
+    // Fase Identificación
+    pub prefix: Option<PrefixASTNode>,
+    pub object_prefix: Option<PrefixASTNode>,
 }

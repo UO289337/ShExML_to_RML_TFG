@@ -292,6 +292,7 @@ impl TestUtilities {
                     access_field_identifier: "country".to_string(),
                 },
             ],
+            query: None,
         }]
     }
 
@@ -307,6 +308,9 @@ impl TestUtilities {
                 identifier: "films_csv_file".to_string(),
                 iterator_accessed: "films_csv".to_string(),
                 field_accessed: None,
+                source: None,
+                iterator: None,
+                field: None,
             }],
         }]
     }
@@ -319,54 +323,79 @@ impl TestUtilities {
     /// Un vector de nodos Shape del AST que contiene un nodo Shape
     pub fn create_default_shapes_for_file_node() -> Vec<ShapeASTNode> {
         vec![ShapeASTNode {
-            prefix: "example".to_string(),
+            prefix_ident: "example".to_string(),
             identifier: "Films".to_string(),
-            field_prefix: "example".to_string(),
+            field_prefix_ident: "example".to_string(),
+            prefix: None,
+            field_prefix: None,
             field_identifier: IdentOrAccess::Access(AccessASTNode {
                 identifier: "films".to_string(),
                 iterator_accessed: "id".to_string(),
                 field_accessed: None,
+                source: None,
+                        iterator: None,
+                        field: None,
             }),
             tuples: vec![
                 ShapeTupleASTNode {
-                    prefix: "example".to_string(),
+                    prefix_ident: "example".to_string(),
                     identifier: "name".to_string(),
-                    object_prefix: None,
+                    object_prefix_ident: None,
                     object: IdentOrAccess::Access(AccessASTNode {
                         identifier: "films".to_string(),
                         iterator_accessed: "name".to_string(),
                         field_accessed: None,
+                        source: None,
+                        iterator: None,
+                        field: None,
                     }),
+                    prefix: None,
+                    object_prefix: None,
                 },
                 ShapeTupleASTNode {
-                    prefix: "example".to_string(),
+                    prefix_ident: "example".to_string(),
                     identifier: "year".to_string(),
-                    object_prefix: Some("example".to_string()),
+                    object_prefix_ident: Some("example".to_string()),
                     object: IdentOrAccess::Access(AccessASTNode {
                         identifier: "films".to_string(),
                         iterator_accessed: "year".to_string(),
                         field_accessed: None,
+                        source: None,
+                        iterator: None,
+                        field: None,
                     }),
+                    prefix: None,
+                    object_prefix: None,
                 },
                 ShapeTupleASTNode {
-                    prefix: "example".to_string(),
+                    prefix_ident: "example".to_string(),
                     identifier: "country".to_string(),
-                    object_prefix: None,
+                    object_prefix_ident: None,
                     object: IdentOrAccess::Access(AccessASTNode {
                         identifier: "films".to_string(),
                         iterator_accessed: "country".to_string(),
                         field_accessed: None,
+                        source: None,
+                        iterator: None,
+                        field: None,
                     }),
+                    prefix: None,
+                    object_prefix: None,
                 },
                 ShapeTupleASTNode {
-                    prefix: "example".to_string(),
+                    prefix_ident: "example".to_string(),
                     identifier: "director".to_string(),
-                    object_prefix: None,
+                    object_prefix_ident: None,
                     object: IdentOrAccess::Access(AccessASTNode {
                         identifier: "films".to_string(),
                         iterator_accessed: "director".to_string(),
                         field_accessed: None,
+                        source: None,
+                        iterator: None,
+                        field: None,
                     }),
+                    prefix: None,
+                    object_prefix: None,
                 },
             ],
         }]
