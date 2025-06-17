@@ -86,7 +86,7 @@ mod integration_lexer_syntax_analyzers_tests {
     fn integration_with_syntax_fail() {
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
-            SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
+            SOURCE <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
                 FIELD id <@id>

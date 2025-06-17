@@ -972,7 +972,7 @@ fn ident_or_access_parser(
 /// Un Parser con una tupla con el identificador del Prefix y con la URI o el identificador después del Prefix, dependiendo de lo que se encuentre
 fn prefix_with_ident_parser() -> Map<Then<Map<Then<OrNot<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Option<Token>, Token)) -> Option<Token>, (Option<Token>, Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, impl Fn((Option<Token>, Token)) -> (Option<Token>, Token), (Option<Token>, Token)> {
     identifier_parser("la expresión o Shape, al principio de una Shape").or_not()
-        .then_ignore(colon_parser("antes del identificador"))
+        .then_ignore(colon_parser("antes del identificador en la Shape"))
         .then(identifier_parser(COLON))
         .map(|(colon_ident, ident)| (colon_ident, ident))
 }
@@ -2214,20 +2214,23 @@ mod sintax_tests {
 
         
         let prefixes = TestUtilities::create_prefixes_for_ast(
-                "example",
-                "https://example.com/",
+            "example",
+            "https://example.com/",
+        1
             );
         let sources = TestUtilities::create_sources_for_ast(
-                "films_csv_file",
-                "https://shexml.herminiogarcia.com/files/films.csv",
+            "films_csv_file",
+            "https://shexml.herminiogarcia.com/files/films.csv",
+        2
             );
         let queries = TestUtilities::create_queries_for_ast(
-                "inline_query",
-                "SELECT * FROM example;",
+            "inline_query",
+        "SELECT * FROM example;",
+        3
             );
-        let iterators = TestUtilities::create_default_iterators_for_ast();
-        let expressions = TestUtilities::create_default_expressions_for_ast();
-        let shapes = TestUtilities::create_default_shapes_for_ast();
+        let iterators = TestUtilities::create_default_iterators_for_ast(4);
+        let expressions = TestUtilities::create_default_expressions_for_ast(10);
+        let shapes = TestUtilities::create_default_shapes_for_ast(11);
 
         let expected = AST::new(prefixes, sources, queries, iterators, expressions, shapes);
         
@@ -2245,19 +2248,21 @@ mod sintax_tests {
         tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
         tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
         tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
-        tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
+        tokens_vector.append(&mut vec![Token::create_test_token(EOF, 14, TokenType::EOF)]);
 
         let prefixes = TestUtilities::create_prefixes_for_ast(
-                "example",
-                "https://example.com/",
+            "example",
+            "https://example.com/",
+                1
             );
         let sources = TestUtilities::create_sources_for_ast(
-                "films_csv_file",
-                "https://shexml.herminiogarcia.com/files/films.csv",
+            "films_csv_file",
+            "https://shexml.herminiogarcia.com/files/films.csv",
+            2
             );
-        let iterators = TestUtilities::create_default_iterators_for_ast();
-        let expressions = TestUtilities::create_default_expressions_for_ast();
-        let shapes = TestUtilities::create_default_shapes_for_ast();
+        let iterators = TestUtilities::create_default_iterators_for_ast(3);
+        let expressions = TestUtilities::create_default_expressions_for_ast(9);
+        let shapes = TestUtilities::create_default_shapes_for_ast(10);
 
         let expected = AST::new(prefixes, sources, None, iterators, expressions, shapes);
 
@@ -2333,7 +2338,7 @@ mod sintax_tests {
         check_parser_error::<AST>(
             ast_parser(),
             fail_tokens_vector,
-            "Se esperaba un identificador después de la expresión o Shape, al principio de una Shape en la línea 11",
+            "Faltan los ':' antes del identificador en la Shape en la línea 11",
         );
     }
 
@@ -2345,8 +2350,8 @@ mod sintax_tests {
         let prefix_uri_1 = Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri);
 
         let mut tokens_vector = vec![
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
             prefix_ident_1.clone(),
-            Token::create_test_token("ident", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
             prefix_uri_1.clone(),
@@ -2395,8 +2400,8 @@ mod sintax_tests {
             Token::create_test_token(PREFIX, 1, TokenType::Prefix),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
             uri.clone(),
+            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
@@ -3192,7 +3197,7 @@ mod sintax_tests {
         let field_ident1 = Token::create_test_token("field", 2, TokenType::Ident);
         let field_access1 = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
         let field_ident2 = Token::create_test_token("field2", 3, TokenType::Ident);
-        let field_access2 = Token::create_test_token("field", 3, TokenType::KeyIdentifier);
+        let field_access2 = Token::create_test_token("field", 3, TokenType::Ident);
 
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
@@ -3208,7 +3213,7 @@ mod sintax_tests {
             field_access1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(FIELD, 3, TokenType::Field),
-            field_ident1.clone(),
+            field_ident2.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
             field_access2.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
@@ -3229,9 +3234,9 @@ mod sintax_tests {
     #[test]
     fn valid_iterator_sintax_with_ident() {
         let ident = Token::create_test_token("ident", 1, TokenType::Ident);
-        let access_ident = Token::create_test_token("inline_query", 2, TokenType::Ident);
-        let field_ident = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
-        let field_access = Token::create_test_token("field", 3, TokenType::KeyIdentifier);
+        let access_ident = Token::create_test_token("inline_query", 1, TokenType::Ident);
+        let field_ident = Token::create_test_token("field", 2, TokenType::Ident);
+        let field_access = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
 
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
@@ -3262,8 +3267,8 @@ mod sintax_tests {
     fn valid_iterator_sintax_with_csv_per_row() {
         let ident = Token::create_test_token("ident", 1, TokenType::Ident);
         let csvperrow = Token::create_test_token(CSV_PER_ROW, 1, TokenType::CsvPerRow);
-        let field_ident = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
-        let field_access = Token::create_test_token("field", 3, TokenType::KeyIdentifier);
+        let field_ident = Token::create_test_token("field", 2, TokenType::Ident);
+        let field_access = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
 
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
@@ -3716,7 +3721,7 @@ mod sintax_tests {
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let accesses = vec![AccessASTNode::new(access_ident, iterator, None)];
+        let accesses = vec![AccessASTNode::new(iterator, access_ident, None)];
         let expected = ExpressionASTNode::new(ident, ExpressionType::BASIC, accesses);
 
         let actual = expression_parser().parse(tokens_vector.clone());
@@ -3805,7 +3810,7 @@ mod sintax_tests {
             AccessASTNode::new(iterator2, access_ident2, None),
             AccessASTNode::new(iterator3, access_ident3, Some(field3)),
             AccessASTNode::new(iterator4, access_ident4, Some(field4))];
-        let expected = ExpressionASTNode::new(ident, ExpressionType::UNION, accesses);
+        let expected = ExpressionASTNode::new(ident, ExpressionType::JOIN, accesses);
 
         let actual = expression_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);

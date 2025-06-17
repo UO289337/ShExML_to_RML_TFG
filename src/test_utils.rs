@@ -82,9 +82,9 @@ impl TestUtilities {
         iterator.append(&mut Self::create_valid_field_key_identifier_test(
             num_line + 1,
         ));
-        iterator.append(&mut Self::create_valid_field_test(num_line + 2, "name"));
-        iterator.append(&mut Self::create_valid_field_test(num_line + 3, "year"));
-        iterator.append(&mut Self::create_valid_field_test(num_line + 4, "country"));
+        iterator.append(&mut Self::create_valid_field_test(num_line + 2, "name", false));
+        iterator.append(&mut Self::create_valid_field_test(num_line + 3, "year", false));
+        iterator.append(&mut Self::create_valid_field_test(num_line + 4, "country", false));
 
         iterator.append(&mut vec![Token::create_test_token(
             CLOSING_CURLY_BRACE,
@@ -120,14 +120,24 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un vector de tokens
-    pub fn create_valid_field_test(num_line: u16, ident: &str) -> Vec<Token> {
-        vec![
-            Token::create_test_token(FIELD, num_line, TokenType::Field),
-            Token::create_test_token(ident, num_line, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
-            Token::create_test_token(ident, num_line, TokenType::KeyIdentifier),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
-        ]
+    pub fn create_valid_field_test(num_line: u16, ident: &str, key: bool) -> Vec<Token> {
+        if key {
+            vec![
+                Token::create_test_token(FIELD, num_line, TokenType::Field),
+                Token::create_test_token(ident, num_line, TokenType::Ident),
+                Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
+                Token::create_test_token(ident, num_line, TokenType::KeyIdentifier),
+                Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
+            ]
+        } else {
+            vec![
+                Token::create_test_token(FIELD, num_line, TokenType::Field),
+                Token::create_test_token(ident, num_line, TokenType::Ident),
+                Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
+                Token::create_test_token(ident, num_line, TokenType::Ident),
+                Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
+            ]
+        }
     }
 
     /// Crea los tokens necesarios para tener un Expression correcto desde el punto de vista sintáctico
@@ -170,7 +180,7 @@ impl TestUtilities {
             Token::create_test_token("id", num_line, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line, TokenType::RightBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, num_line, TokenType::OpeningCurlyBrace),
-            Token::create_test_token("example", num_line, TokenType::Ident),
+            Token::create_test_token("example", num_line + 1, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 1, TokenType::Colon),
             Token::create_test_token("name", num_line + 1, TokenType::Ident),
             Token::create_test_token(LEFT_BRACKET, num_line + 1, TokenType::LeftBracket),
@@ -179,10 +189,9 @@ impl TestUtilities {
             Token::create_test_token("name", num_line + 1, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line + 1, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, num_line + 1, TokenType::SemiColon),
-            Token::create_test_token("example", num_line, TokenType::Ident),
+            Token::create_test_token("example", num_line + 2, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 2, TokenType::Colon),
             Token::create_test_token("year", num_line + 2, TokenType::Ident),
-            Token::create_test_token("example", num_line, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 2, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, num_line + 2, TokenType::LeftBracket),
             Token::create_test_token("films", num_line + 2, TokenType::Ident),
@@ -190,7 +199,7 @@ impl TestUtilities {
             Token::create_test_token("year", num_line + 2, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line + 2, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, num_line + 2, TokenType::SemiColon),
-            Token::create_test_token("example", num_line, TokenType::Ident),
+            Token::create_test_token("example", num_line + 3, TokenType::Ident),
             Token::create_test_token(COLON, num_line + 3, TokenType::Colon),
             Token::create_test_token("country", num_line + 3, TokenType::Ident),
             Token::create_test_token(LEFT_BRACKET, num_line + 3, TokenType::LeftBracket),
@@ -199,15 +208,6 @@ impl TestUtilities {
             Token::create_test_token("country", num_line + 3, TokenType::Ident),
             Token::create_test_token(RIGHT_BRACKET, num_line + 3, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, num_line + 3, TokenType::SemiColon),
-            Token::create_test_token("example", num_line, TokenType::Ident),
-            Token::create_test_token(COLON, num_line + 4, TokenType::Colon),
-            Token::create_test_token("director", num_line + 4, TokenType::Ident),
-            Token::create_test_token(LEFT_BRACKET, num_line + 4, TokenType::LeftBracket),
-            Token::create_test_token("films", num_line + 4, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, num_line + 4, TokenType::AccessDot),
-            Token::create_test_token("director", num_line + 4, TokenType::Ident),
-            Token::create_test_token(RIGHT_BRACKET, num_line + 4, TokenType::RightBracket),
-            Token::create_test_token(SEMICOLON, num_line + 4, TokenType::SemiColon),
             Token::create_test_token(
                 CLOSING_CURLY_BRACE,
                 num_line + 5,
@@ -226,9 +226,9 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un Option con un vector de nodos Prefix que unicamente contiene un nodo Prefix
-    pub fn create_prefixes_for_ast(ident: &str, uri: &str) -> Vec<PrefixASTNode> {
-        let identifier = Token::new(ident, TokenType::Ident);
-        let uri = Token::new(uri, TokenType::Uri);
+    pub fn create_prefixes_for_ast(ident: &str, uri: &str, num_line: u16) -> Vec<PrefixASTNode> {
+        let identifier = Token::create_test_token(ident, num_line, TokenType::Ident);
+        let uri = Token::create_test_token(uri, num_line, TokenType::Uri);
 
         vec![PrefixASTNode::new(Some(identifier), uri)]
     }
@@ -243,10 +243,10 @@ impl TestUtilities {
     /// Un Option con un vector de nodos Source que unicamente contiene un nodo Source
     pub fn create_sources_for_ast(
         ident: &str,
-        uri: &str,
+        uri: &str, num_line: u16
     ) -> Vec<SourceASTNode> {
-        let identifier = Token::new(ident, TokenType::Ident);
-        let source_definition = Token::new(uri, TokenType::Uri);
+        let identifier = Token::create_test_token(ident, num_line, TokenType::Ident);
+        let source_definition = Token::create_test_token(uri, num_line, TokenType::Uri);
 
         vec![SourceASTNode::new(identifier, source_definition)]
     }
@@ -259,9 +259,9 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un Option con un vector de nodos Query que unicamente contiene un nodo Query
-    pub fn create_queries_for_ast(ident: &str, sql_query: &str) -> Option<Vec<QueryASTNode>> {
-        let identifier = Token::new(ident, TokenType::Ident);
-        let query = Token::new(sql_query, TokenType::SqlQuery);
+    pub fn create_queries_for_ast(ident: &str, sql_query: &str, num_line: u16) -> Option<Vec<QueryASTNode>> {
+        let identifier = Token::create_test_token(ident, num_line, TokenType::Ident);
+        let query: Token = Token::create_test_token(sql_query, num_line, TokenType::SqlQuery);
 
         Some(vec![QueryASTNode::new(identifier, query)])
     }
@@ -270,14 +270,18 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un vector de nodos Iterator del AST que contiene un nodo Iterator
-    pub fn create_default_iterators_for_ast() -> Vec<IteratorASTNode> {
+    pub fn create_default_iterators_for_ast(num_line: u16) -> Vec<IteratorASTNode> {
         let fields = vec![
-            FieldASTNode::new(Token::new("id", TokenType::Ident), Token::new("@id", TokenType::KeyIdentifier)), 
-            FieldASTNode::new(Token::new("name", TokenType::Ident), Token::new("name", TokenType::Ident)), 
-            FieldASTNode::new(Token::new("year", TokenType::Ident), Token::new("year", TokenType::Ident)), 
-            FieldASTNode::new(Token::new("country", TokenType::Ident), Token::new("country", TokenType::Ident))];
-        let ident = Token::new("films_csv", TokenType::Ident);
-        let inline_query = Token::new("inline_query", TokenType::Ident);
+            FieldASTNode::new(Token::create_test_token("id", num_line + 1, TokenType::Ident), 
+                Token::create_test_token("@id", num_line + 1, TokenType::KeyIdentifier)), 
+            FieldASTNode::new(Token::create_test_token("name", num_line + 2, TokenType::Ident), 
+                Token::create_test_token("name", num_line + 2, TokenType::Ident)), 
+            FieldASTNode::new(Token::create_test_token("year", num_line + 3, TokenType::Ident), 
+                Token::create_test_token("year", num_line + 3, TokenType::Ident)), 
+            FieldASTNode::new(Token::create_test_token("country", num_line + 4, TokenType::Ident), 
+                Token::create_test_token("country", num_line + 4, TokenType::Ident))];
+        let ident = Token::create_test_token("films_csv", num_line, TokenType::Ident);
+        let inline_query = Token::create_test_token("inline_query", num_line, TokenType::Ident);
         
         vec![IteratorASTNode::new(ident, inline_query, fields)]
     }
@@ -286,12 +290,12 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un vector de nodos Expression del AST que contiene un nodo Expression
-    pub fn create_default_expressions_for_ast() -> Vec<ExpressionASTNode> {
-        let identifier = Token::new("films_csv_file", TokenType::Ident);
-        let first_access = Token::new("films_csv", TokenType::Ident);
+    pub fn create_default_expressions_for_ast(num_line: u16) -> Vec<ExpressionASTNode> {
+        let identifier = Token::create_test_token("films_csv_file", num_line, TokenType::Ident);
+        let first_access = Token::create_test_token("films_csv", num_line, TokenType::Ident);
         let accesses = vec![AccessASTNode::new(identifier, first_access, None)];
 
-        let identifier = Token::new("films", TokenType::Ident);
+        let identifier = Token::create_test_token("films", num_line, TokenType::Ident);
 
         vec![ExpressionASTNode::new(identifier, ExpressionType::BASIC, accesses)]
     }
@@ -302,21 +306,23 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un vector de nodos Shape del AST que contiene un nodo Shape
-    pub fn create_default_shapes_for_ast() -> Vec<ShapeASTNode> {
-        let prefix_ident = Token::new("example", TokenType::Ident);
-        let identifier = Token::new("Films", TokenType::Ident);
-        let field_prefix_ident = Token::new("example", TokenType::Ident);
-        let access = AccessASTNode::new(Token::new("films", TokenType::Ident), 
-            Token::new("id", TokenType::Ident), None);
+    pub fn create_default_shapes_for_ast(num_line: u16) -> Vec<ShapeASTNode> {
+        let prefix_ident = Token::create_test_token("example", num_line, TokenType::Ident);
+        let identifier = Token::create_test_token("Films", num_line, TokenType::Ident);
+        let field_prefix_ident = Token::create_test_token("example", num_line, TokenType::Ident);
+        let access = AccessASTNode::new(Token::create_test_token("films", num_line, TokenType::Ident), 
+            Token::create_test_token("id", num_line, TokenType::Ident), None);
         let tuples = vec![ShapeTupleASTNode::new(
-            Some(Token::new("example", TokenType::Ident)), Token::new("name", TokenType::Ident), None, 
-            IdentOrAccess::Access(AccessASTNode::new(Token::new("films", TokenType::Ident), Token::new("name", TokenType::Ident), None))),
+            Some(Token::create_test_token("example", num_line + 1, TokenType::Ident)), Token::create_test_token("name", num_line + 1, TokenType::Ident), None, 
+            IdentOrAccess::Access(AccessASTNode::new(Token::create_test_token("films", num_line + 1, TokenType::Ident), 
+            Token::create_test_token("name", num_line + 1, TokenType::Ident), None))),
             ShapeTupleASTNode::new(
-            Some(Token::new("example", TokenType::Ident)), Token::new("year", TokenType::Ident), None, 
-            IdentOrAccess::Access(AccessASTNode::new(Token::new("films", TokenType::Ident), Token::new("year", TokenType::Ident), None))),
+            Some(Token::create_test_token("example", num_line + 2, TokenType::Ident)), Token::create_test_token("year", num_line + 2, TokenType::Ident), None, 
+            IdentOrAccess::Access(AccessASTNode::new(Token::create_test_token("films", num_line + 2, TokenType::Ident), 
+            Token::create_test_token("year", num_line + 2, TokenType::Ident), None))),
             ShapeTupleASTNode::new(
-            Some(Token::new("example", TokenType::Ident)), Token::new("country", TokenType::Ident), None, 
-            IdentOrAccess::Access(AccessASTNode::new(Token::new("films", TokenType::Ident), Token::new("country", TokenType::Ident), None)))];
+            Some(Token::create_test_token("example", num_line + 3, TokenType::Ident)), Token::create_test_token("country", num_line + 3, TokenType::Ident), None, 
+            IdentOrAccess::Access(AccessASTNode::new(Token::create_test_token("films", num_line + 3, TokenType::Ident), Token::create_test_token("country", num_line + 3, TokenType::Ident), None)))];
 
         vec![ShapeASTNode::new(Some(prefix_ident), identifier, Some(field_prefix_ident), IdentOrAccess::Access(access), tuples)]
     }
