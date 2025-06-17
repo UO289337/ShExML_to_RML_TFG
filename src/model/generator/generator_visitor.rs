@@ -13,9 +13,9 @@ impl Visitor<String> for Generator {
     ///
     /// # Retorna
     /// Una cadena con el contenido del fichero RML
-    fn visit_file(&mut self, file_node: FileASTNode) -> String {
+    fn visit_ast(&mut self, ast: AST) -> String {
         let mut file_generation = String::new();
-        for prefix in file_node.prefixes.unwrap() {
+        for prefix in ast.get_prefixes() {
             file_generation.push_str(&format!("@prefix {} .\n", self.visit_prefix(prefix)));
         }
         file_generation
@@ -31,12 +31,14 @@ impl Visitor<String> for Generator {
     ///
     /// # Retorna
     /// Una cadena con el formato RML equivalente del prefix de ShExML
+    /*
     fn visit_prefix(&mut self, prefix_node: PrefixASTNode) -> String {
         let mut prefix_generation = String::new();
         prefix_generation.push_str(format!("{}:     ", prefix_node.identifier).as_str());
         prefix_generation.push_str(format!("<{}>", prefix_node.uri).as_str());
         prefix_generation
     }
+    */
 
     fn visit_source(&mut self, source_node: SourceASTNode) -> String {
         todo!()
@@ -67,6 +69,10 @@ impl Visitor<String> for Generator {
     }
     
     fn visit_access(&mut self, access_node: AccessASTNode) -> String {
+        todo!()
+    }
+    
+    fn visit_prefix(&mut self, prefix_node: PrefixASTNode) -> String {
         todo!()
     }
     

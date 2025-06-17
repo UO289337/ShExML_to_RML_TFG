@@ -218,7 +218,7 @@ impl TestUtilities {
 
     // TestUtilities de los nodos del AST
 
-    /// Crea un nodo Prefix del AST para ser utilizado en el nodo File
+    /// Crea un nodo Prefix del AST para ser utilizado en el AST
     ///
     /// # Parámetros
     /// `ident` - El identificador del Prefix
@@ -226,14 +226,14 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un Option con un vector de nodos Prefix que unicamente contiene un nodo Prefix
-    pub fn create_prefixes_for_file_node(ident: &str, uri: &str) -> Option<Vec<PrefixASTNode>> {
-        Some(vec![PrefixASTNode {
-            identifier: ident.to_string(),
-            uri: uri.to_string(),
-        }])
+    pub fn create_prefixes_for_ast(ident: &str, uri: &str) -> Vec<PrefixASTNode> {
+        let identifier = Token::new(ident, TokenType::Ident);
+        let uri = Token::new(uri, TokenType::Uri);
+
+        vec![PrefixASTNode::new(Some(identifier), uri)]
     }
 
-    /// Crea un nodo Source del AST para ser utilizado en el nodo File
+    /// Crea un nodo Source del AST para ser utilizado en el AST
     ///
     /// # Parámetros
     /// `ident` - El identificador del Source
@@ -241,17 +241,17 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un Option con un vector de nodos Source que unicamente contiene un nodo Source
-    pub fn create_sources_for_file_node(
+    pub fn create_sources_for_ast(
         ident: &str,
-        source_definition: &str,
+        uri: &str,
     ) -> Vec<SourceASTNode> {
-        vec![SourceASTNode {
-            identifier: ident.to_string(),
-            source_definition: source_definition.to_string(),
-        }]
+        let identifier = Token::new(ident, TokenType::Ident);
+        let source_definition = Token::new(uri, TokenType::Uri);
+
+        vec![SourceASTNode::new(identifier, source_definition)]
     }
 
-    /// Crea un nodo Query del AST para ser utilizado en el nodo File
+    /// Crea un nodo Query del AST para ser utilizado en el AST
     ///
     /// # Parámetros
     /// `ident` - El identificador del Query
@@ -259,60 +259,41 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un Option con un vector de nodos Query que unicamente contiene un nodo Query
-    pub fn create_queries_for_file_node(ident: &str, sql_query: &str) -> Option<Vec<QueryASTNode>> {
-        Some(vec![QueryASTNode {
-            identifier: ident.to_string(),
-            sql_query: sql_query.to_string(),
-        }])
+    pub fn create_queries_for_ast(ident: &str, sql_query: &str) -> Option<Vec<QueryASTNode>> {
+        let identifier = Token::new(ident, TokenType::Ident);
+        let query = Token::new(sql_query, TokenType::SqlQuery);
+
+        Some(vec![QueryASTNode::new(identifier, query)])
     }
 
     /// Crea un nodo Iterator del AST que tiene unos valores por defecto
     ///
     /// # Retorna
     /// Un vector de nodos Iterator del AST que contiene un nodo Iterator
-    pub fn create_default_iterators_for_file_node() -> Vec<IteratorASTNode> {
-        vec![IteratorASTNode {
-            identifier: "films_csv".to_string(),
-            iterator_access: "inline_query".to_string(),
-            fields: vec![
-                FieldASTNode {
-                    field_identifier: "id".to_string(),
-                    access_field_identifier: "@id".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "name".to_string(),
-                    access_field_identifier: "name".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "year".to_string(),
-                    access_field_identifier: "year".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "country".to_string(),
-                    access_field_identifier: "country".to_string(),
-                },
-            ],
-            query: None,
-        }]
+    pub fn create_default_iterators_for_ast() -> Vec<IteratorASTNode> {
+        let fields = vec![
+            FieldASTNode::new(Token::new("id", TokenType::Ident), Token::new("@id", TokenType::KeyIdentifier)), 
+            FieldASTNode::new(Token::new("name", TokenType::Ident), Token::new("name", TokenType::Ident)), 
+            FieldASTNode::new(Token::new("year", TokenType::Ident), Token::new("year", TokenType::Ident)), 
+            FieldASTNode::new(Token::new("country", TokenType::Ident), Token::new("country", TokenType::Ident))];
+        let ident = Token::new("films_csv", TokenType::Ident);
+        let inline_query = Token::new("inline_query", TokenType::Ident);
+        
+        vec![IteratorASTNode::new(ident, inline_query, fields)]
     }
 
     /// Crea un nodo Expression del AST que tiene unos valores por defecto
     ///
     /// # Retorna
     /// Un vector de nodos Expression del AST que contiene un nodo Expression
-    pub fn create_default_expressions_for_file_node() -> Vec<ExpressionASTNode> {
-        vec![ExpressionASTNode {
-            identifier: "films".to_string(),
-            expression_type: ExpressionType::BASIC,
-            accesses: vec![AccessASTNode {
-                identifier: "films_csv_file".to_string(),
-                first_access: "films_csv".to_string(),
-                second_access: None,
-                source_or_expression: None,
-                iterator: None,
-                field: None,
-            }],
-        }]
+    pub fn create_default_expressions_for_ast() -> Vec<ExpressionASTNode> {
+        let identifier = Token::new("films_csv_file", TokenType::Ident);
+        let first_access = Token::new("films_csv", TokenType::Ident);
+        let accesses = vec![AccessASTNode::new(identifier, first_access, None)];
+
+        let identifier = Token::new("films", TokenType::Ident);
+
+        vec![ExpressionASTNode::new(identifier, ExpressionType::BASIC, accesses)]
     }
 
     /// Crea un nodo Shape del AST que tiene unos valores por defecto
@@ -321,83 +302,22 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un vector de nodos Shape del AST que contiene un nodo Shape
-    pub fn create_default_shapes_for_file_node() -> Vec<ShapeASTNode> {
-        vec![ShapeASTNode {
-            prefix_ident: "example".to_string(),
-            identifier: "Films".to_string(),
-            field_prefix_ident: "example".to_string(),
-            prefix: None,
-            field_prefix: None,
-            field_identifier: IdentOrAccess::Access(AccessASTNode {
-                identifier: "films".to_string(),
-                first_access: "id".to_string(),
-                second_access: None,
-                source_or_expression: None,
-                        iterator: None,
-                        field: None,
-            }),
-            tuples: vec![
-                ShapeTupleASTNode {
-                    prefix_ident: "example".to_string(),
-                    identifier: "name".to_string(),
-                    object_prefix_ident: None,
-                    object: IdentOrAccess::Access(AccessASTNode {
-                        identifier: "films".to_string(),
-                        first_access: "name".to_string(),
-                        second_access: None,
-                        source_or_expression: None,
-                        iterator: None,
-                        field: None,
-                    }),
-                    prefix: None,
-                    object_prefix: None,
-                },
-                ShapeTupleASTNode {
-                    prefix_ident: "example".to_string(),
-                    identifier: "year".to_string(),
-                    object_prefix_ident: Some("example".to_string()),
-                    object: IdentOrAccess::Access(AccessASTNode {
-                        identifier: "films".to_string(),
-                        first_access: "year".to_string(),
-                        second_access: None,
-                        source_or_expression: None,
-                        iterator: None,
-                        field: None,
-                    }),
-                    prefix: None,
-                    object_prefix: None,
-                },
-                ShapeTupleASTNode {
-                    prefix_ident: "example".to_string(),
-                    identifier: "country".to_string(),
-                    object_prefix_ident: None,
-                    object: IdentOrAccess::Access(AccessASTNode {
-                        identifier: "films".to_string(),
-                        first_access: "country".to_string(),
-                        second_access: None,
-                        source_or_expression: None,
-                        iterator: None,
-                        field: None,
-                    }),
-                    prefix: None,
-                    object_prefix: None,
-                },
-                ShapeTupleASTNode {
-                    prefix_ident: "example".to_string(),
-                    identifier: "director".to_string(),
-                    object_prefix_ident: None,
-                    object: IdentOrAccess::Access(AccessASTNode {
-                        identifier: "films".to_string(),
-                        first_access: "director".to_string(),
-                        second_access: None,
-                        source_or_expression: None,
-                        iterator: None,
-                        field: None,
-                    }),
-                    prefix: None,
-                    object_prefix: None,
-                },
-            ],
-        }]
+    pub fn create_default_shapes_for_ast() -> Vec<ShapeASTNode> {
+        let prefix_ident = Token::new("example", TokenType::Ident);
+        let identifier = Token::new("Films", TokenType::Ident);
+        let field_prefix_ident = Token::new("example", TokenType::Ident);
+        let access = AccessASTNode::new(Token::new("films", TokenType::Ident), 
+            Token::new("id", TokenType::Ident), None);
+        let tuples = vec![ShapeTupleASTNode::new(
+            Some(Token::new("example", TokenType::Ident)), Token::new("name", TokenType::Ident), None, 
+            IdentOrAccess::Access(AccessASTNode::new(Token::new("films", TokenType::Ident), Token::new("name", TokenType::Ident), None))),
+            ShapeTupleASTNode::new(
+            Some(Token::new("example", TokenType::Ident)), Token::new("year", TokenType::Ident), None, 
+            IdentOrAccess::Access(AccessASTNode::new(Token::new("films", TokenType::Ident), Token::new("year", TokenType::Ident), None))),
+            ShapeTupleASTNode::new(
+            Some(Token::new("example", TokenType::Ident)), Token::new("country", TokenType::Ident), None, 
+            IdentOrAccess::Access(AccessASTNode::new(Token::new("films", TokenType::Ident), Token::new("country", TokenType::Ident), None)))];
+
+        vec![ShapeASTNode::new(Some(prefix_ident), identifier, Some(field_prefix_ident), IdentOrAccess::Access(access), tuples)]
     }
 }

@@ -13,18 +13,17 @@ use crate::model::lexer::token::*;
 use super::super::ast::*;
 use super::super::lexer::token::TokenType;
 
-/// Parsea los tokens para generar el nodo File del AST
+/// Parsea los tokens para generar el AST
 ///
-/// Realiza el parseo de los tokens de los prefijos y de las fuentes para poder crear el nodo File, que es el nodo raíz del AST
+/// Realiza el parseo de los tokens de los prefijos y de las fuentes para poder crear el AST
 ///
 /// # Retorna
-/// Un nodo File del AST
+/// El AST creado
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
+fn ast_parser() -> impl Parser<Token, AST, Error = Simple<Token>> {
     prefix_parser()
-        .or_not()
         .then(source_parser())
         .then(query_parser().or_not())
         .then(iterator_parser())
@@ -33,41 +32,9 @@ fn file_parser() -> impl Parser<Token, FileASTNode, Error = Simple<Token>> {
         .then_ignore(eof_parser())
         .map(
             |(((((prefixes, sources), queries), iterators), expressions), shapes)| {
-                build_file_ast_node(prefixes, sources, queries, iterators, expressions, shapes)
+                AST::new(prefixes, sources, queries, iterators, expressions, shapes)
             },
         )
-}
-
-/// Crea un nodo File del AST; el nodo raíz
-///
-/// A partir de los datos obtenidos de los parsers crea un nodo FileASTNode, que representa el nodo raíz del AST.
-///
-/// # Parámetros
-/// * `prefixex` - Un Option que contiene el vector de nodos Prefix parseados
-/// * `sources` - Un vector con los nodos Source parseados
-/// * `queries` - Un Option que contiene los nodos Query parseadas
-/// * `iterators` - Un vector con los nodos Iterator parseados
-/// * `expressions` - Un Option que contiene los nodos Expression parseados
-/// * `shapes` - Un vector con los nodo Shape parseados
-///
-/// # Retorna
-/// Un nodo File del AST
-fn build_file_ast_node(
-    prefixes: Option<Vec<PrefixASTNode>>,
-    sources: Vec<SourceASTNode>,
-    queries: Option<Vec<QueryASTNode>>,
-    iterators: Vec<IteratorASTNode>,
-    expressions: Vec<ExpressionASTNode>,
-    shapes: Vec<ShapeASTNode>,
-) -> FileASTNode {
-    FileASTNode {
-        prefixes,
-        sources,
-        queries,
-        iterators,
-        expressions,
-        shapes,
-    }
 }
 
 /// Parsea los tokens para generar un vector de nodos Prefix del AST
@@ -81,9 +48,8 @@ fn build_file_ast_node(
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Token>> {
     single_prefix_parser()
-        .map(|((_, ident), uri)| PrefixASTNode {
-            identifier: ident.lexeme.clone(),
-            uri: uri.lexeme.clone(),
+        .map(|((_, ident), uri)| {
+            create_prefix_node(ident, uri)
         })
         .repeated()
         .at_least(1)
@@ -92,48 +58,34 @@ fn prefix_parser() -> impl Parser<Token, Vec<PrefixASTNode>, Error = Simple<Toke
 
 /// Parsea los tokens para generar un nodo Prefix del AST
 ///
-/// Realiza el parseo de los tokens con la secuencia: Prefix Ident Colon LeftAngleBrackey Uri RightAngleBracket
+/// Realiza el parseo de los tokens con la secuencia: Prefix Ident? Colon LeftAngleBrackey Uri RightAngleBracket
 ///
 /// # Retorna
 /// Un nodo Prefix del AST
 ///
 /// # Errores
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_prefix_parser() -> Then<
-    Map<
-        Then<
-            Then<
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-            >,
-            MapErr<
-                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-                impl Fn(Simple<Token>) -> Simple<Token>,
-            >,
-        >,
-        fn(((Token, Token), Token)) -> (Token, Token),
-        ((Token, Token), Token),
-    >,
-    impl Parser<Token, Token, Error = Simple<Token>>,
-> {
+fn single_prefix_parser() -> Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, OrNot<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Option<Token>), Token)) -> (Token, Option<Token>), ((Token, Option<Token>), Token)>, impl Parser<Token, Token, Error = Simple<Token>>> {
     prefix_token_parser()
-        .then(identifier_parser(PREFIX))
+        .then(identifier_parser(PREFIX).or_not())
         .then_ignore(colon_parser("después del identificador"))
         .then(uri_with_angle_brackets_parser())
+}
+
+/// Crea un nodo Prefix del AST
+/// 
+/// # Argumentos
+/// * `ident` - El Option con el identificador del Prefix
+/// * `uri` - La URI del Prefix
+/// 
+/// # Retorna
+/// Un nodo Prefix del AST
+fn create_prefix_node(ident: Option<Token>, uri: Token) -> PrefixASTNode {
+    if let Some(identifier) = ident {
+        return PrefixASTNode::new(Some(identifier), uri);
+    }
+
+    PrefixASTNode::new(None, uri)
 }
 
 /// Parsea los tokens para generar un vector de nodos Source del AST
@@ -147,9 +99,8 @@ fn single_prefix_parser() -> Then<
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Token>> {
     single_source_parser()
-        .map(|((_, ident), source_definition)| SourceASTNode {
-            identifier: ident.lexeme.clone(),
-            source_definition: source_definition.lexeme.clone(),
+        .map(|((_, identifier), source_definition)| {
+            SourceASTNode::new(identifier, source_definition)
         })
         .repeated()
         .at_least(1)
@@ -302,9 +253,8 @@ fn source_definition_parser() -> Or<
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn query_parser() -> impl Parser<Token, Vec<QueryASTNode>, Error = Simple<Token>> {
     single_query_parser()
-        .map(|((_, ident), sql_query)| QueryASTNode {
-            identifier: ident.lexeme.clone(),
-            sql_query: sql_query.lexeme.clone(),
+        .map(|((_, identifier), sql_query)| {
+            QueryASTNode::new(identifier, sql_query)
         })
         .repeated()
         .at_least(1)
@@ -467,33 +417,23 @@ fn iterator_fields_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Sim
 /// Crea, a partir de los datos del parser de Iterator, el nodo AST de este
 ///
 /// # Parámetros
-/// * `ident` - El token identificador del Iterator
+/// * `identifier` - El token identificador del Iterator
 /// * `iterator_access` - Una tupla con el token Ident o CsvPerRow o con los tokens SqlType y SqlQuery
 /// * `fields` - El vector de fields del Iterator
 ///
 /// # Retorna
 /// Un nodo Iterator del AST
 fn create_iterator_ast_node(
-    ident: Token,
+    identifier: Token,
     iterator_access: (Token, Option<Token>),
     fields: Vec<FieldASTNode>,
 ) -> IteratorASTNode {
     let (token1, token2): (Token, Option<Token>) = iterator_access;
 
     if token2.is_none() {
-        IteratorASTNode {
-            identifier: ident.lexeme.clone(),
-            iterator_access: token1.lexeme.clone(),
-            fields: fields,
-            query: None,
-        }
+        IteratorASTNode::new(identifier, token1, fields)
     } else {
-        IteratorASTNode {
-            identifier: ident.lexeme.clone(),
-            iterator_access: token2.unwrap().lexeme.clone().to_string(),
-            fields: fields,
-            query: None,
-        }
+        IteratorASTNode::new(identifier, token2.unwrap(), fields)
     }
 }
 
@@ -508,9 +448,8 @@ fn create_iterator_ast_node(
 /// Devuelve un  `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>> {
     single_field_parser()
-        .map(|((_, ident), access_ident)| FieldASTNode {
-            field_identifier: ident.lexeme.clone(),
-            access_field_identifier: access_ident.lexeme.clone(),
+        .map(|((_, field_identifier), access_field_identifier)| {
+            FieldASTNode::new(field_identifier, access_field_identifier)
         })
         .repeated()
         .at_least(1)
@@ -712,7 +651,7 @@ fn join_access_parser() -> impl Parser<
 /// A partir de la información sacada del parser crea un nodo expresión del AST
 ///
 /// # Parámetros
-/// * `ident` - El identificado de la expresión
+/// * `identifier` - El identificado de la expresión
 /// * `iterator_access` - El nodo Access del AST de acceso al iterador
 /// * `union_or_join` - Un Option con el token UNION, JOIN o ninguno indicando el tipo de la expresión
 /// * `more_accesses` - Un Option con los posibles accesos a: el JOIN O UNION, el ON y el que puede haber después del =
@@ -723,7 +662,7 @@ fn join_access_parser() -> impl Parser<
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn create_expression_node(
-    ident: Token,
+    identifier: Token,
     iterator_access: AccessASTNode,
     more_accesses: Option<(
         Token,
@@ -736,27 +675,15 @@ fn create_expression_node(
     let (join_or_union_token, accesses) = create_vec_of_accesses(iterator_access, more_accesses);
 
     if basic_expression {
-        return ExpressionASTNode {
-            identifier: ident.lexeme.clone(),
-            expression_type: ExpressionType::BASIC,
-            accesses,
-        };
+        return ExpressionASTNode::new(identifier, ExpressionType::BASIC, accesses);
     }
 
     let expression_type = ExpressionType::from(join_or_union_token.unwrap());
 
     if expression_type == ExpressionType::UNION {
-        ExpressionASTNode {
-            identifier: ident.lexeme.clone(),
-            expression_type: ExpressionType::UNION,
-            accesses,
-        }
+        ExpressionASTNode::new(identifier, ExpressionType::UNION, accesses)
     } else {
-        ExpressionASTNode {
-            identifier: ident.lexeme.clone(),
-            expression_type: ExpressionType::JOIN,
-            accesses,
-        }
+        ExpressionASTNode::new(identifier, ExpressionType::JOIN, accesses)
     }
 }
 
@@ -846,36 +773,23 @@ fn third_access_parser() -> OrNot<
 /// A partir de una serie de identificadores y puntos de acceso (.), crea un nodo AccessASTNode
 ///
 /// # Parámetros
-/// * `ident` - El identificador de un SOURCE
+/// * `identifier` - El identificador de un SOURCE
 /// * `iterator_accessed` - El identificador del iterador accedido
 /// * `field_accesed` - El identificador del campo del iterador accedido
 ///
 /// # Retorna
 /// Un nodo Access del AST
 fn create_access_node(
-    ident: Token,
+    identifier: Token,
     iterator_accessed: Token,
     field_accessed: Option<(Token, Token)>,
 ) -> AccessASTNode {
     if field_accessed.is_some() {
-        return AccessASTNode {
-            identifier: ident.lexeme.clone(),
-            first_access: iterator_accessed.lexeme.clone(),
-            second_access: Some(field_accessed.unwrap().1.lexeme.clone()), // El 1 apunta al identificador; el 0 al punto ('.')
-            source_or_expression: None,
-            iterator: None,
-            field: None,
-        };
+        // El 1 apunta al identificador; el 0 al punto ('.')
+        return AccessASTNode::new(identifier, iterator_accessed, Some(field_accessed.unwrap().1));
     }
 
-    AccessASTNode {
-        identifier: ident.lexeme.clone(),
-        first_access: iterator_accessed.lexeme.clone(),
-        second_access: None,
-        source_or_expression: None,
-        iterator: None,
-        field: None,
-    }
+    AccessASTNode::new(identifier, iterator_accessed, None)
 }
 
 /// Parsea los tokens para generar un vector de nodos Shape del AST
@@ -937,35 +851,27 @@ fn shape_body_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Sim
 ///
 /// # Parámetros
 /// * `shape_prefix` - Una tupla con el Token del Prefix y del Ident después de este
-/// * `shape_field_prefix` - El Ident del Prefix del field
+/// * `field_prefix_ident` - El Ident del Prefix del field
 /// * `field_ident` - Una tupla con 2 Option, uno con el token del Ident y otro con el token del nodo Access
 /// * `shape_tuples` - Un vector con las tuplas de la Shape
 fn create_shape_node(
-    shape_prefix: (Token, Token),
-    shape_field_prefix: Token,
+    shape_prefix: (Option<Token>, Token),
+    field_prefix_ident: Option<Token>,
     field_ident: (Option<Token>, Option<AccessASTNode>),
     shape_tuples: Vec<ShapeTupleASTNode>,
 ) -> ShapeASTNode {
-    let (prefix, shape_ident) = shape_prefix;
+    let (prefix, identifier) = shape_prefix;
     let (shape_field_ident, shape_field_access) = field_ident;
 
     let field_ident;
 
     if shape_field_ident.is_some() {
-        field_ident = IdentOrAccess::Ident(shape_field_ident.unwrap().lexeme);
+        field_ident = IdentOrAccess::Ident(shape_field_ident.unwrap());
     } else {
         field_ident = IdentOrAccess::Access(shape_field_access.unwrap());
     }
 
-    ShapeASTNode {
-        prefix_ident: prefix.lexeme,
-        identifier: shape_ident.lexeme,
-        field_prefix_ident: shape_field_prefix.lexeme,
-        field_identifier: field_ident,
-        tuples: shape_tuples,
-        prefix: None,
-        field_prefix: None,
-    }
+    ShapeASTNode::new(prefix, identifier, field_prefix_ident, field_ident, shape_tuples)
 }
 
 /// Parsea los tokens para generar un vector de nodos ShapeTuple del AST
@@ -984,7 +890,7 @@ fn shape_tuple_parser() -> impl Parser<Token, Vec<ShapeTupleASTNode>, Error = Si
 /// Parsea los tokens para generar un nodo ShapeTuples del AST
 ///
 /// Realiza el parseo de los tokens para parsear la secuencia:
-/// PrefixOrUri PrefixOrUri? LeftBracket IdentOrAccess RightBracket Semicolon
+/// Prefix Ident Prefix? LeftBracket IdentOrAccess RightBracket Semicolon
 ///
 /// # Retorna
 /// Un nodo ShapeTuple del AST
@@ -1016,37 +922,30 @@ fn single_shape_tuple_parser() -> impl Parser<Token, ShapeTupleASTNode, Error = 
 /// * `object_prefix` - Un Option con el token del Prefix
 /// * `tuple_object` - Una tupla con 2 Option, uno con el token del Ident y otro con el token del nodo Access
 fn create_shape_tuple_node(
-    tuple_prefix: (Token, Token),
-    object_prefix: Option<Token>,
+    tuple_prefix: (Option<Token>, Token),
+    object_prefix: Option<Option<Token>>,
     tuple_object: (Option<Token>, Option<AccessASTNode>),
 ) -> ShapeTupleASTNode {
-    let (prefix, ident) = tuple_prefix;
+    let (prefix, identifier) = tuple_prefix;
     let (tuple_object_ident, tuple_field_access) = tuple_object;
 
     let object_ident;
 
     if tuple_object_ident.is_some() {
-        object_ident = IdentOrAccess::Ident(tuple_object_ident.unwrap().lexeme);
+        object_ident = IdentOrAccess::Ident(tuple_object_ident.unwrap());
     } else {
         object_ident = IdentOrAccess::Access(tuple_field_access.unwrap());
     }
 
-    let obj_prefix;
+    let object_prefix_ident;
 
     if object_prefix.is_some() {
-        obj_prefix = Some(object_prefix.unwrap().lexeme);
+        object_prefix_ident = object_prefix.unwrap();
     } else {
-        obj_prefix = None;
+        object_prefix_ident = None;
     }
 
-    ShapeTupleASTNode {
-        prefix_ident: prefix.lexeme,
-        identifier: ident.lexeme,
-        object_prefix_ident: obj_prefix,
-        object: object_ident,
-        prefix: None,
-        object_prefix: None,
-    }
+    ShapeTupleASTNode::new(prefix, identifier, object_prefix_ident, object_ident)
 }
 
 // Parsers auxiliares
@@ -1071,39 +970,8 @@ fn ident_or_access_parser(
 ///
 /// # Retorna
 /// Un Parser con una tupla con el identificador del Prefix y con la URI o el identificador después del Prefix, dependiendo de lo que se encuentre
-fn prefix_with_ident_parser() -> Map<
-    Then<
-        Map<
-            Then<
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-            >,
-            fn((Token, Token)) -> Token,
-            (Token, Token),
-        >,
-        MapErr<
-            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-            impl Fn(Simple<Token>) -> Simple<Token>,
-        >,
-    >,
-    impl Fn((Token, Token)) -> (Token, Token),
-    (Token, Token),
-> {
-    identifier_parser("la expresión o Shape, al principio de una Shape")
+fn prefix_with_ident_parser() -> Map<Then<Map<Then<OrNot<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Option<Token>, Token)) -> Option<Token>, (Option<Token>, Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, impl Fn((Option<Token>, Token)) -> (Option<Token>, Token), (Option<Token>, Token)> {
+    identifier_parser("la expresión o Shape, al principio de una Shape").or_not()
         .then_ignore(colon_parser("antes del identificador"))
         .then(identifier_parser(COLON))
         .map(|(colon_ident, ident)| (colon_ident, ident))
@@ -1120,25 +988,8 @@ fn prefix_with_ident_parser() -> Map<
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn prefix_shape_parser(
     message: &str,
-) -> Map<
-    Map<
-        Then<
-            MapErr<
-                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-                impl Fn(Simple<Token>) -> Simple<Token>,
-            >,
-            MapErr<
-                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-                impl Fn(Simple<Token>) -> Simple<Token>,
-            >,
-        >,
-        fn((Token, Token)) -> Token,
-        (Token, Token),
-    >,
-    impl Fn(Token) -> Token,
-    Token,
-> {
-    identifier_parser(COLON)
+) -> Map<Map<Then<OrNot<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((Option<Token>, Token)) -> Option<Token>, (Option<Token>, Token)>, impl Fn(Option<Token>) -> Option<Token>, Option<Token>> {
+    identifier_parser(COLON).or_not()
         .then_ignore(colon_parser(message))
         .map(|ident| ident)
 }
@@ -1694,29 +1545,29 @@ fn general_parser(
     Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
     impl Fn(Simple<Token>) -> Simple<Token>,
 > {
-    filter(move |token: &Token| token.token_type == token_type)
+    filter(move |token: &Token| token.get_token_type() == token_type)
         .map(|token| token.clone())
         .map_err(move |token: Simple<Token>| {
-            let line = token.found().map(|t| t.num_line).unwrap_or(0);
+            let line = token.found().map(|t| t.get_num_line()).unwrap_or(0);
             Simple::custom(token.span(), format!("{message} {}", line))
         })
 }
 
 /// Parsea el vector de tokens para generar el AST
 ///
-/// Toma como entrada el vector de tokens resultado del análisis léxico y genera un árbol AST que tiene un nodo File como raíz
+/// Toma como entrada el vector de tokens resultado del análisis léxico y genera un árbol AST que tiene un AST como raíz
 ///
 /// # Parámetros
 /// * `tokens` - El vector de tokens resultado del análisis léxico
 ///
 /// # Retorna
-/// Un nodo File del AST que será el nodo raíz de este
+/// Un AST del AST que será el nodo raíz de este
 ///
 /// # Errores
 /// * `[Vec<Simple<Token>>]` - Un vector con los errores que pueden aparecer al realizar el análisis sintáctico
-pub fn parser(tokens: Vec<Token>) -> Result<FileASTNode, Vec<Simple<Token>>> {
-    let file_parser = file_parser();
-    let parsed = file_parser.parse(tokens);
+pub fn parser(tokens: Vec<Token>) -> Result<AST, Vec<Simple<Token>>> {
+    let ast_parser = ast_parser();
+    let parsed = ast_parser.parse(tokens);
 
     match parsed {
         Ok(node) => Ok(node),
@@ -2341,7 +2192,7 @@ mod sintax_parsers_tests {
 /// Contiene los tests que se encargan de comprobar que los diferentes parsers del analizador sintáctico funcionan correctamente
 #[cfg(test)]
 mod sintax_tests {
-    use std::vec;
+    use std::{vec};
 
     use chumsky::error::SimpleReason;
 
@@ -2349,10 +2200,10 @@ mod sintax_tests {
 
     use super::*;
 
-    /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST
+    /// Comprueba que el parser general del AST es capaz de generarlo
     #[doc(hidden)]
     #[test]
-    fn file_parser_with_valid_sintax() {
+    fn ast_parser_with_valid_sintax() {
         let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
         tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
         tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
@@ -2361,33 +2212,34 @@ mod sintax_tests {
         tokens_vector.append(&mut TestUtilities::create_valid_shape_test(11));
         tokens_vector.append(&mut vec![Token::create_test_token(EOF, 17, TokenType::EOF)]);
 
-        // Unicamente se utilizan algunas funciones comunes debido a que el resto de nodos tienen varias maneras de ser construidos
-        let expected = FileASTNode {
-            prefixes: TestUtilities::create_prefixes_for_file_node(
+        
+        let prefixes = TestUtilities::create_prefixes_for_ast(
                 "example",
                 "https://example.com/",
-            ),
-            sources: TestUtilities::create_sources_for_file_node(
+            );
+        let sources = TestUtilities::create_sources_for_ast(
                 "films_csv_file",
                 "https://shexml.herminiogarcia.com/files/films.csv",
-            ),
-            queries: TestUtilities::create_queries_for_file_node(
+            );
+        let queries = TestUtilities::create_queries_for_ast(
                 "inline_query",
                 "SELECT * FROM example;",
-            ),
-            iterators: TestUtilities::create_default_iterators_for_file_node(),
-            expressions: TestUtilities::create_default_expressions_for_file_node(),
-            shapes: TestUtilities::create_default_shapes_for_file_node(),
-        };
+            );
+        let iterators = TestUtilities::create_default_iterators_for_ast();
+        let expressions = TestUtilities::create_default_expressions_for_ast();
+        let shapes = TestUtilities::create_default_shapes_for_ast();
 
-        let actual = file_parser().parse(tokens_vector.clone());
+        let expected = AST::new(prefixes, sources, queries, iterators, expressions, shapes);
+        
+
+        let actual = ast_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
 
-    /// Comprueba que el parser general de file es capaz de generar el nodo raíz del AST si no hay query y no hay errores sintácticos
+    /// Comprueba que el parser general del AST es capaz de generar el nodo raíz del AST si no hay query y no hay errores sintácticos
     #[doc(hidden)]
     #[test]
-    fn file_parser_with_valid_sintax_and_withouth_query() {
+    fn ast_parser_with_valid_sintax_and_withouth_query() {
         let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
         tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
         tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
@@ -2395,59 +2247,46 @@ mod sintax_tests {
         tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
         tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
 
-        let expected = FileASTNode {
-            prefixes: TestUtilities::create_prefixes_for_file_node(
+        let prefixes = TestUtilities::create_prefixes_for_ast(
                 "example",
                 "https://example.com/",
-            ),
-            sources: TestUtilities::create_sources_for_file_node(
+            );
+        let sources = TestUtilities::create_sources_for_ast(
                 "films_csv_file",
                 "https://shexml.herminiogarcia.com/files/films.csv",
-            ),
-            queries: None,
-            iterators: TestUtilities::create_default_iterators_for_file_node(),
-            expressions: TestUtilities::create_default_expressions_for_file_node(),
-            shapes: TestUtilities::create_default_shapes_for_file_node(),
-        };
+            );
+        let iterators = TestUtilities::create_default_iterators_for_ast();
+        let expressions = TestUtilities::create_default_expressions_for_ast();
+        let shapes = TestUtilities::create_default_shapes_for_ast();
 
-        let actual = file_parser().parse(tokens_vector.clone());
+        let expected = AST::new(prefixes, sources, None, iterators, expressions, shapes);
+
+        let actual = ast_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
 
-    /// Comprueba que el parser general de file genera el nodo raíz del AST si no hay prefixes
+    /// Comprueba que el parser general del AST lo genera si no hay prefixes
     #[doc(hidden)]
     #[test]
-    fn file_parser_withouth_prefixes() {
-        let mut tokens_vector: Vec<Token> = TestUtilities::create_valid_source_test(1);
-        tokens_vector.append(&mut TestUtilities::create_valid_query_test(2));
-        tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
-        tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
-        tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
-        tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
+    fn ast_parser_withouth_prefixes() {
+        let mut fail_tokens_vector: Vec<Token> = TestUtilities::create_valid_source_test(1);
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_query_test(2));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_expression_test(9));
+        fail_tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
+        fail_tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
 
-        let expected = FileASTNode {
-            prefixes: None,
-            sources: TestUtilities::create_sources_for_file_node(
-                "films_csv_file",
-                "https://shexml.herminiogarcia.com/files/films.csv",
-            ),
-            queries: TestUtilities::create_queries_for_file_node(
-                "inline_query",
-                "SELECT * FROM example;",
-            ),
-            iterators: TestUtilities::create_default_iterators_for_file_node(),
-            expressions: TestUtilities::create_default_expressions_for_file_node(),
-            shapes: TestUtilities::create_default_shapes_for_file_node(),
-        };
-
-        let actual = file_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap());
+        check_parser_error::<AST>(
+            ast_parser(),
+            fail_tokens_vector,
+            "Se esperaba un PREFIX en la línea 1",
+        );
     }
 
-    /// Comprueba que el parser general de file no genera el nodo raíz del AST si no hay sources
+    /// Comprueba que el parser general del AST no genera el nodo raíz del AST si no hay sources
     #[doc(hidden)]
     #[test]
-    fn file_parser_withouth_sources() {
+    fn ast_parser_withouth_sources() {
         let mut fail_tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
         fail_tokens_vector.append(&mut TestUtilities::create_valid_query_test(2));
         fail_tokens_vector.append(&mut TestUtilities::create_valid_iterator_test(3));
@@ -2455,17 +2294,17 @@ mod sintax_tests {
         fail_tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
         fail_tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
 
-        check_parser_error::<FileASTNode>(
-            file_parser(),
+        check_parser_error::<AST>(
+            ast_parser(),
             fail_tokens_vector,
             "Se esperaba un PREFIX o un SOURCE en la línea 2",
         );
     }
 
-    /// Comprueba que el parser general de file no genera el nodo raíz del AST si no hay expressions
+    /// Comprueba que el parser general del AST no lo genera si no hay expressions
     #[doc(hidden)]
     #[test]
-    fn file_parser_withouth_expressions() {
+    fn ast_parser_withouth_expressions() {
         let mut fail_tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
         fail_tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
         fail_tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
@@ -2473,17 +2312,17 @@ mod sintax_tests {
         fail_tokens_vector.append(&mut TestUtilities::create_valid_shape_test(10));
         fail_tokens_vector.append(&mut vec![Token::create_test_token(EOF, 16, TokenType::EOF)]);
 
-        check_parser_error::<FileASTNode>(
-            file_parser(),
+        check_parser_error::<AST>(
+            ast_parser(),
             fail_tokens_vector,
             "Se esperaba un EXPRESSION en la línea 10",
         );
     }
 
-    /// Comprueba que el parser general de file no genera el nodo raíz del AST si no hay Shapes
+    /// Comprueba que el parser general del AST no lo genera si no hay Shapes
     #[doc(hidden)]
     #[test]
-    fn file_parser_withouth_shapes() {
+    fn ast_parser_withouth_shapes() {
         let mut fail_tokens_vector: Vec<Token> = TestUtilities::create_valid_prefix_test(1);
         fail_tokens_vector.append(&mut TestUtilities::create_valid_source_test(2));
         fail_tokens_vector.append(&mut TestUtilities::create_valid_query_test(3));
@@ -2491,8 +2330,8 @@ mod sintax_tests {
         fail_tokens_vector.append(&mut TestUtilities::create_valid_expression_test(10));
         fail_tokens_vector.append(&mut vec![Token::create_test_token(EOF, 11, TokenType::EOF)]);
 
-        check_parser_error::<FileASTNode>(
-            file_parser(),
+        check_parser_error::<AST>(
+            ast_parser(),
             fail_tokens_vector,
             "Se esperaba un identificador después de la expresión o Shape, al principio de una Shape en la línea 11",
         );
@@ -2502,38 +2341,37 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_prefix_sintax() {
+        let prefix_ident_1 = Token::create_test_token("ident", 1, TokenType::Ident);
+        let prefix_uri_1 = Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri);
+
         let mut tokens_vector = vec![
-            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            prefix_ident_1.clone(),
             Token::create_test_token("ident", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            prefix_uri_1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = PrefixASTNode {
-            identifier: "ident".to_string(),
-            uri: "https://ejemplo.com".to_string(),
-        };
+        let expected = PrefixASTNode::new(Some(prefix_ident_1), prefix_uri_1);
         let actual = prefix_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
         // Se añaden más PREFIX
+        let prefix_ident_2 = Token::create_test_token("ident2", 2, TokenType::Ident);
+        let prefix_uri_2 = Token::create_test_token("https://ejemplo2.com", 2, TokenType::Uri);
+
         let eof_node = tokens_vector.pop();
         tokens_vector.push(Token::create_test_token(PREFIX, 2, TokenType::Prefix));
-        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(prefix_ident_2.clone());
         tokens_vector.push(Token::create_test_token(COLON, 2, TokenType::Colon));
         tokens_vector.push(Token::create_test_token(
             LEFT_ANGLE_BRACKET,
             2,
             TokenType::LeftAngleBracket,
         ));
-        tokens_vector.push(Token::create_test_token(
-            "https://ejemplo2.com",
-            2,
-            TokenType::Uri,
-        ));
+        tokens_vector.push(prefix_uri_2.clone());
         tokens_vector.push(Token::create_test_token(
             RIGHT_ANGLE_BRACKET,
             2,
@@ -2541,14 +2379,30 @@ mod sintax_tests {
         ));
         tokens_vector.push(eof_node.unwrap());
 
-        let expected2 = PrefixASTNode {
-            identifier: "ident2".to_string(),
-            uri: "https://ejemplo2.com".to_string(),
-        };
+        let expected2 = PrefixASTNode::new(Some(prefix_ident_2), prefix_uri_2);
 
         let expected_vector = vec![expected, expected2];
         let actual = prefix_parser().parse(tokens_vector);
         assert_eq!(expected_vector, actual.unwrap());
+    }
+
+    /// Comprueba que el parser de Prefix parsea la secuencia de tokens: Prefix Colon LeftAngleBracket URI RightAngleBracket
+    #[doc(hidden)]
+    #[test]
+    fn prefix_sintax_withouth_identifier() {
+        let uri = Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri);
+        let tokens_vector = vec![
+            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
+            Token::create_test_token(COLON, 1, TokenType::Colon),
+            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
+            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
+            uri.clone(),
+            Token::create_test_token(EOF, 1, TokenType::EOF),
+        ];
+
+        let expected = PrefixASTNode::new(None, uri);
+        let actual = prefix_parser().parse(tokens_vector.clone());
+        assert_eq!(expected, actual.unwrap()[0]);
     }
 
     /// Comprueba que el parser de Prefix no parsea como tales aquellas secuencias de tokens que son: Ident Colon LeftAngleBracket URI RightAngleBracket
@@ -2568,26 +2422,6 @@ mod sintax_tests {
             prefix_parser(),
             fail_tokens_vector,
             "Se esperaba un PREFIX en la línea 1",
-        );
-    }
-
-    /// Comprueba que el parser de Prefix no parsea como tales aquellas secuencias de tokens que son: Prefix Colon LeftAngleBracket URI RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn prefix_sintax_withouth_identifier() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(PREFIX, 1, TokenType::Prefix),
-            Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://ejemplo.com", 1, TokenType::Uri),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        check_parser_error::<Vec<PrefixASTNode>>(
-            prefix_parser(),
-            fail_tokens_vector,
-            "Se esperaba un identificador después de PREFIX en la línea 1",
         );
     }
 
@@ -2694,36 +2528,35 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source_sintax_with_uri() {
+        let ident1 = Token::create_test_token("ident", 1, TokenType::Ident);
+        let uri1 = Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri);
+
         let mut tokens_vector = vec![
             Token::create_test_token(SOURCE, 1, TokenType::Source),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident1.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("https://ejemplo.com/fichero.csv", 1, TokenType::Uri),
+            uri1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = SourceASTNode {
-            identifier: "ident".to_string(),
-            source_definition: "https://ejemplo.com/fichero.csv".to_string(),
-        };
+        let expected = SourceASTNode::new(ident1, uri1);
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
         // Se añaden más SOURCE
+        let ident2 = Token::create_test_token("ident2", 2, TokenType::Ident);
+        let uri2 = Token::create_test_token("https://ejemplo2.com/fichero.csv",2, TokenType::Uri);
+
         let eof_node = tokens_vector.pop();
         tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
-        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(ident2.clone());
         tokens_vector.push(Token::create_test_token(
             LEFT_ANGLE_BRACKET,
             2,
             TokenType::LeftAngleBracket,
         ));
-        tokens_vector.push(Token::create_test_token(
-            "https://ejemplo2.com/fichero.csv",
-            2,
-            TokenType::Uri,
-        ));
+        tokens_vector.push(uri2.clone());
         tokens_vector.push(Token::create_test_token(
             RIGHT_ANGLE_BRACKET,
             2,
@@ -2731,10 +2564,7 @@ mod sintax_tests {
         ));
         tokens_vector.push(eof_node.unwrap());
 
-        let expected2 = SourceASTNode {
-            identifier: "ident2".to_string(),
-            source_definition: "https://ejemplo2.com/fichero.csv".to_string(),
-        };
+        let expected2 = SourceASTNode::new(ident2, uri2);
 
         let expected_vector = vec![expected, expected2];
         let actual = source_parser().parse(tokens_vector);
@@ -2745,36 +2575,35 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source_sintax_with_jdbc_url() {
+        let ident1 = Token::create_test_token("ident", 1, TokenType::Ident);
+        let jdbc_url1 = Token::create_test_token("jdbc:mysql://localhost:3306/mydb", 1, TokenType::JdbcUrl);
+        
         let mut tokens_vector = vec![
             Token::create_test_token(SOURCE, 1, TokenType::Source),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident1.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("jdbc:mysql://localhost:3306/mydb", 1, TokenType::JdbcUrl),
+            jdbc_url1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = SourceASTNode {
-            identifier: "ident".to_string(),
-            source_definition: "jdbc:mysql://localhost:3306/mydb".to_string(),
-        };
+        let expected = SourceASTNode::new(ident1, jdbc_url1);
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
         // Se añaden más SOURCE
+        let ident2 = Token::create_test_token("ident2", 2, TokenType::Ident);
+        let jdbc_url2 = Token::create_test_token("jdbc:mysql://localhost:3356/anotherdb", 2, TokenType::JdbcUrl);
+
         let eof_node = tokens_vector.pop();
         tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
-        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(ident2.clone());
         tokens_vector.push(Token::create_test_token(
             LEFT_ANGLE_BRACKET,
             2,
             TokenType::LeftAngleBracket,
         ));
-        tokens_vector.push(Token::create_test_token(
-            "jdbc:mysql://localhost:3356/anotherdb",
-            2,
-            TokenType::JdbcUrl,
-        ));
+        tokens_vector.push(jdbc_url2.clone());
         tokens_vector.push(Token::create_test_token(
             RIGHT_ANGLE_BRACKET,
             2,
@@ -2782,10 +2611,7 @@ mod sintax_tests {
         ));
         tokens_vector.push(eof_node.unwrap());
 
-        let expected2 = SourceASTNode {
-            identifier: "ident2".to_string(),
-            source_definition: "jdbc:mysql://localhost:3356/anotherdb".to_string(),
-        };
+        let expected2 = SourceASTNode::new(ident2, jdbc_url2);
 
         let expected_vector = vec![expected, expected2];
         let actual = source_parser().parse(tokens_vector);
@@ -2796,40 +2622,35 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source_sintax_with_file_path() {
+        let ident1 = Token::create_test_token("ident", 1, TokenType::Ident);
+        let file_path1 = Token::create_test_token("file:///ejemplo/path/a/fichero/fichero.csv", 1, TokenType::FilePath);
+
         let mut tokens_vector = vec![
             Token::create_test_token(SOURCE, 1, TokenType::Source),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident1.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token(
-                "file:///ejemplo/path/a/fichero/fichero.csv",
-                1,
-                TokenType::FilePath,
-            ),
+            file_path1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = SourceASTNode {
-            identifier: "ident".to_string(),
-            source_definition: "file:///ejemplo/path/a/fichero/fichero.csv".to_string(),
-        };
+        let expected = SourceASTNode::new(ident1, file_path1);
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
         // Se añaden más SOURCE
+        let ident2 = Token::create_test_token("ident2", 2, TokenType::Ident);
+        let file_path2 = Token::create_test_token("file:///otroejemplo/path/a/fichero/otrofichero.csv", 2, TokenType::FilePath);
+
         let eof_node = tokens_vector.pop();
         tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
-        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(ident2.clone());
         tokens_vector.push(Token::create_test_token(
             LEFT_ANGLE_BRACKET,
             2,
             TokenType::LeftAngleBracket,
         ));
-        tokens_vector.push(Token::create_test_token(
-            "file:///otroejemplo/path/a/fichero/otrofichero.csv",
-            2,
-            TokenType::FilePath,
-        ));
+        tokens_vector.push(file_path2.clone());
         tokens_vector.push(Token::create_test_token(
             RIGHT_ANGLE_BRACKET,
             2,
@@ -2837,10 +2658,7 @@ mod sintax_tests {
         ));
         tokens_vector.push(eof_node.unwrap());
 
-        let expected2 = SourceASTNode {
-            identifier: "ident2".to_string(),
-            source_definition: "file:///otroejemplo/path/a/fichero/otrofichero.csv".to_string(),
-        };
+        let expected2 = SourceASTNode::new(ident2, file_path2);
 
         let expected_vector = vec![expected, expected2];
         let actual = source_parser().parse(tokens_vector);
@@ -2851,36 +2669,35 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_source_sintax_with_path() {
+        let ident1 = Token::create_test_token("ident", 1, TokenType::Ident);
+        let path1 = Token::create_test_token("ejemplo/fichero.csv", 1, TokenType::Path);
+
         let mut tokens_vector = vec![
             Token::create_test_token(SOURCE, 1, TokenType::Source),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident1.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("ejemplo/fichero.csv", 1, TokenType::Path),
+            path1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = SourceASTNode {
-            identifier: "ident".to_string(),
-            source_definition: "ejemplo/fichero.csv".to_string(),
-        };
+        let expected = SourceASTNode::new(ident1, path1);
         let actual = source_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
         // Se añaden más SOURCE
+        let ident2 = Token::create_test_token("ident2", 2, TokenType::Ident);
+        let path2 = Token::create_test_token("C:\\ejemplo\\path\\a\\fichero\\fichero.csv", 2, TokenType::Path);
+
         let eof_node = tokens_vector.pop();
         tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
-        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(ident2.clone());
         tokens_vector.push(Token::create_test_token(
             LEFT_ANGLE_BRACKET,
             2,
             TokenType::LeftAngleBracket,
         ));
-        tokens_vector.push(Token::create_test_token(
-            "C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
-            2,
-            TokenType::Path,
-        ));
+        tokens_vector.push(path2.clone());
         tokens_vector.push(Token::create_test_token(
             RIGHT_ANGLE_BRACKET,
             2,
@@ -2888,10 +2705,7 @@ mod sintax_tests {
         ));
         tokens_vector.push(eof_node.unwrap());
 
-        let expected2 = SourceASTNode {
-            identifier: "ident2".to_string(),
-            source_definition: "C:\\ejemplo\\path\\a\\fichero\\fichero.csv".to_string(),
-        };
+        let expected2 = SourceASTNode::new(ident2, path2);
 
         let expected_vector = vec![expected, expected2];
         let actual = source_parser().parse(tokens_vector);
@@ -3015,38 +2829,37 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_query_sintax() {
+        let ident1 = Token::create_test_token("ident", 1, TokenType::Ident);
+        let sql_query1 = Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery);
+
         let mut tokens_vector = vec![
             Token::create_test_token(QUERY, 1, TokenType::Query),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident1.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
             Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            sql_query1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = QueryASTNode {
-            identifier: "ident".to_string(),
-            sql_query: "SELECT * FROM example;".to_string(),
-        };
+        let expected =QueryASTNode::new(ident1, sql_query1);
         let actual = query_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
 
         // Se añaden más QUERY
+        let ident2 = Token::create_test_token("ident2", 2, TokenType::Ident);
+        let sql_query2 = Token::create_test_token("SELECT * FROM example WHERE id = '1' LIMIT 100;", 2, TokenType::SqlQuery);
+
         let eof_node = tokens_vector.pop();
         tokens_vector.push(Token::create_test_token(QUERY, 2, TokenType::Query));
-        tokens_vector.push(Token::create_test_token("ident2", 2, TokenType::Ident));
+        tokens_vector.push(ident2.clone());
         tokens_vector.push(Token::create_test_token(
             LEFT_ANGLE_BRACKET,
             2,
             TokenType::LeftAngleBracket,
         ));
         tokens_vector.push(Token::create_test_token(SQL_TYPE, 2, TokenType::SqlType));
-        tokens_vector.push(Token::create_test_token(
-            "SELECT * FROM example;",
-            2,
-            TokenType::SqlQuery,
-        ));
+        tokens_vector.push(sql_query2.clone());
         tokens_vector.push(Token::create_test_token(
             RIGHT_ANGLE_BRACKET,
             2,
@@ -3054,10 +2867,7 @@ mod sintax_tests {
         ));
         tokens_vector.push(eof_node.unwrap());
 
-        let expected2 = QueryASTNode {
-            identifier: "ident2".to_string(),
-            sql_query: "SELECT * FROM example;".to_string(),
-        };
+        let expected2 =QueryASTNode::new(ident2, sql_query2);
 
         let expected_vector = vec![expected, expected2];
         let actual = query_parser().parse(tokens_vector);
@@ -3207,19 +3017,19 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_field_sintax() {
+        let field = Token::create_test_token("field", 1, TokenType::Ident);
+        let access_field = Token::create_test_token("@field", 1, TokenType::KeyIdentifier);
+
         let tokens_vector = vec![
             Token::create_test_token(FIELD, 1, TokenType::Field),
-            Token::create_test_token("field", 1, TokenType::Ident),
+            field.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            access_field.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = FieldASTNode {
-            field_identifier: "field".to_string(),
-            access_field_identifier: "@field".to_string(),
-        };
+        let expected = FieldASTNode::new(field, access_field);
         let actual = field_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
     }
@@ -3342,32 +3152,31 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_iterator_sintax_with_sql_query() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let sql_query = Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery);
+        let field_ident = Token::create_test_token("field", 2, TokenType::Ident);
+        let field_access = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
             Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            sql_query.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
             Token::create_test_token(FIELD, 2, TokenType::Field),
-            Token::create_test_token("field", 2, TokenType::Ident),
+            field_ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            field_access.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
-        let expected = IteratorASTNode {
-            identifier: "ident".to_string(),
-            iterator_access: "SELECT * FROM example;".to_string(),
-            fields: vec![FieldASTNode {
-                field_identifier: "field".to_string(),
-                access_field_identifier: "@field".to_string(),
-            }],
-            query: None,
-        };
+        let fields = vec![FieldASTNode::new(field_ident, field_access)];
+        let expected = IteratorASTNode::new(ident, sql_query, fields);
+
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
     }
@@ -3378,43 +3187,38 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_iterator_sintax_with_more_than_one_field() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let sql_query = Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery);
+        let field_ident1 = Token::create_test_token("field", 2, TokenType::Ident);
+        let field_access1 = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+        let field_ident2 = Token::create_test_token("field2", 3, TokenType::Ident);
+        let field_access2 = Token::create_test_token("field", 3, TokenType::KeyIdentifier);
+
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
             Token::create_test_token(SQL_TYPE, 1, TokenType::SqlType),
-            Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery),
+            sql_query.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
             Token::create_test_token(FIELD, 2, TokenType::Field),
-            Token::create_test_token("field", 2, TokenType::Ident),
+            field_ident1.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            field_access1.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(FIELD, 3, TokenType::Field),
-            Token::create_test_token("field2", 3, TokenType::Ident),
+            field_ident1.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 3, TokenType::LeftAngleBracket),
-            Token::create_test_token("field", 3, TokenType::Ident),
+            field_access2.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 3, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 4, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 4, TokenType::EOF),
         ];
 
-        let expected = IteratorASTNode {
-            identifier: "ident".to_string(),
-            iterator_access: "SELECT * FROM example;".to_string(),
-            fields: vec![
-                FieldASTNode {
-                    field_identifier: "field".to_string(),
-                    access_field_identifier: "@field".to_string(),
-                },
-                FieldASTNode {
-                    field_identifier: "field2".to_string(),
-                    access_field_identifier: "field".to_string(),
-                },
-            ],
-            query: None,
-        };
+        let fields = vec![FieldASTNode::new(field_ident1, field_access1), FieldASTNode::new(field_ident2, field_access2)];
+
+        let expected = IteratorASTNode::new(ident, sql_query, fields);
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
     }
@@ -3424,31 +3228,29 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_iterator_sintax_with_ident() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let access_ident = Token::create_test_token("inline_query", 2, TokenType::Ident);
+        let field_ident = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+        let field_access = Token::create_test_token("field", 3, TokenType::KeyIdentifier);
+
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("inline_query", 1, TokenType::Ident),
+            access_ident.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
             Token::create_test_token(FIELD, 2, TokenType::Field),
-            Token::create_test_token("field", 2, TokenType::Ident),
+            field_ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            field_access.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
-        let expected = IteratorASTNode {
-            identifier: "ident".to_string(),
-            iterator_access: "inline_query".to_string(),
-            fields: vec![FieldASTNode {
-                field_identifier: "field".to_string(),
-                access_field_identifier: "@field".to_string(),
-            }],
-            query: None,
-        };
+        let fields = vec![FieldASTNode::new(field_ident, field_access)];
+        let expected = IteratorASTNode::new(ident, access_ident, fields);
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
     }
@@ -3458,31 +3260,29 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_iterator_sintax_with_csv_per_row() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let csvperrow = Token::create_test_token(CSV_PER_ROW, 1, TokenType::CsvPerRow);
+        let field_ident = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+        let field_access = Token::create_test_token("field", 3, TokenType::KeyIdentifier);
+
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token(CSV_PER_ROW, 1, TokenType::CsvPerRow),
+            csvperrow.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
             Token::create_test_token(FIELD, 2, TokenType::Field),
-            Token::create_test_token("field", 2, TokenType::Ident),
+            field_ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            field_access.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
-        let expected = IteratorASTNode {
-            identifier: "ident".to_string(),
-            iterator_access: "csvperrow".to_string(),
-            fields: vec![FieldASTNode {
-                field_identifier: "field".to_string(),
-                access_field_identifier: "@field".to_string(),
-            }],
-            query: None,
-        };
+        let fields = vec![FieldASTNode::new(field_ident, field_access)];
+        let expected = IteratorASTNode::new(ident, csvperrow, fields);
         let actual = iterator_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
     }
@@ -3760,21 +3560,17 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_access_sintax_with_iterator_access() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let iterator = Token::create_test_token("iterator", 1, TokenType::Ident);
+
         let tokens_vector = vec![
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator", 1, TokenType::Ident),
+            iterator.clone(),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = AccessASTNode {
-            identifier: "ident".to_string(),
-            first_access: "iterator".to_string(),
-            second_access: None,
-            source_or_expression: None,
-            iterator: None,
-            field: None,
-        };
+        let expected = AccessASTNode::new(ident, iterator, None);
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
@@ -3783,23 +3579,20 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_access_sintax_with_field_access() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let iterator = Token::create_test_token("iterator", 1, TokenType::Ident);
+        let field = Token::create_test_token("field", 1, TokenType::Ident);
+
         let tokens_vector = vec![
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator", 1, TokenType::Ident),
+            iterator.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field", 1, TokenType::Ident),
+            field.clone(),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = AccessASTNode {
-            identifier: "ident".to_string(),
-            first_access: "iterator".to_string(),
-            second_access: Some("field".to_string()),
-            source_or_expression: None,
-            iterator: None,
-            field: None,
-        };
+        let expected = AccessASTNode::new(ident, iterator, Some(field));
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
@@ -3865,23 +3658,19 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn access_sintax_withouth_dot_between_iterator_and_field() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let iterator = Token::create_test_token("iterator", 1, TokenType::Ident);
+
         let tokens_vector = vec![
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator", 1, TokenType::Ident),
+            iterator.clone(),
             Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
         // No dará error en este parser pero si en el siguiente que se ejecute al estar un ident suelto
-        let expected = AccessASTNode {
-            identifier: "ident".to_string(),
-            first_access: "iterator".to_string(),
-            second_access: None,
-            source_or_expression: None,
-            iterator: None,
-            field: None,
-        };
+        let expected = AccessASTNode::new(ident, iterator, None);
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
@@ -3890,6 +3679,9 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn access_sintax_withouth_field_identifier() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let iterator = Token::create_test_token("iterator", 1, TokenType::Ident);
+
         let tokens_vector = vec![
             Token::create_test_token("ident", 1, TokenType::Ident),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
@@ -3899,14 +3691,7 @@ mod sintax_tests {
         ];
 
         // No dará error en este parser pero si en el siguiente que se ejecute al estar un '.' suelto
-        let expected = AccessASTNode {
-            identifier: "ident".to_string(),
-            first_access: "iterator".to_string(),
-            second_access: None,
-            source_or_expression: None,
-            iterator: None,
-            field: None,
-        };
+        let expected = AccessASTNode::new(ident, iterator, None);
         let actual = access_parser(LEFT_ANGLE_BRACKET).parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap());
     }
@@ -3916,29 +3701,23 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_basic_expression_sintax() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let iterator = Token::create_test_token("iterator", 1, TokenType::Ident);
+        let access_ident = Token::create_test_token("id", 1, TokenType::Ident);
+
         let tokens_vector = vec![
             Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id", 1, TokenType::Ident),
+            iterator.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator", 1, TokenType::Ident),
+            access_ident.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = ExpressionASTNode {
-            identifier: "ident".to_string(),
-            expression_type: ExpressionType::BASIC,
-            accesses: vec![AccessASTNode {
-                identifier: "id".to_string(),
-                first_access: "iterator".to_string(),
-                second_access: None,
-                source_or_expression: None,
-                iterator: None,
-                field: None,
-            }],
-        };
+        let accesses = vec![AccessASTNode::new(access_ident, iterator, None)];
+        let expected = ExpressionASTNode::new(ident, ExpressionType::BASIC, accesses);
 
         let actual = expression_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -3949,43 +3728,30 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_union_expression_sintax() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let iterator1 = Token::create_test_token("iterator1", 1, TokenType::Ident);
+        let access_ident1 = Token::create_test_token("id1", 1, TokenType::Ident);
+        let iterator2 = Token::create_test_token("iterator2", 1, TokenType::Ident);
+        let access_ident2 = Token::create_test_token("id2", 1, TokenType::Ident);
+
         let tokens_vector = vec![
             Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
+            iterator1.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            access_ident1.clone(),
             Token::create_test_token(UNION, 1, TokenType::Union),
-            Token::create_test_token("id2", 1, TokenType::Ident),
+            iterator2.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            access_ident2.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = ExpressionASTNode {
-            identifier: "ident".to_string(),
-            expression_type: ExpressionType::UNION,
-            accesses: vec![
-                AccessASTNode {
-                    identifier: "id1".to_string(),
-                    first_access: "iterator1".to_string(),
-                    second_access: None,
-                    source_or_expression: None,
-                    iterator: None,
-                    field: None,
-                },
-                AccessASTNode {
-                    identifier: "id2".to_string(),
-                    first_access: "iterator2".to_string(),
-                    second_access: None,
-                    source_or_expression: None,
-                    iterator: None,
-                    field: None,
-                },
-            ],
-        };
+        let accesses = vec![AccessASTNode::new(iterator1, access_ident1, None), 
+            AccessASTNode::new(iterator2, access_ident2, None)];
+        let expected = ExpressionASTNode::new(ident, ExpressionType::UNION, accesses);
 
         let actual = expression_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -3996,71 +3762,50 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_join_expression_sintax() {
+        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
+        let iterator1 = Token::create_test_token("iterator1", 1, TokenType::Ident);
+        let access_ident1 = Token::create_test_token("id1", 1, TokenType::Ident);
+        let iterator2 = Token::create_test_token("iterator2", 1, TokenType::Ident);
+        let access_ident2 = Token::create_test_token("id2", 1, TokenType::Ident);
+        let iterator3 = Token::create_test_token("iterator3", 1, TokenType::Ident);
+        let field3 = Token::create_test_token("field3", 1, TokenType::Ident);
+        let access_ident3 = Token::create_test_token("id3", 1, TokenType::Ident);
+        let iterator4 = Token::create_test_token("iterator4", 1, TokenType::Ident);
+        let access_ident4 = Token::create_test_token("id4", 1, TokenType::Ident);
+        let field4 = Token::create_test_token("field4", 1, TokenType::Ident);
+
         let tokens_vector = vec![
             Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
+            iterator1.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
+            access_ident1.clone(),
             Token::create_test_token(JOIN, 1, TokenType::Join),
-            Token::create_test_token("id2", 1, TokenType::Ident),
+            iterator2.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator2", 1, TokenType::Ident),
+            access_ident2.clone(),
             Token::create_test_token(ON, 1, TokenType::On),
-            Token::create_test_token("id3", 1, TokenType::Ident),
+            iterator3.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator3", 1, TokenType::Ident),
+            access_ident3.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field3", 1, TokenType::Ident),
+            field3.clone(),
             Token::create_test_token(EQUAL, 1, TokenType::Equal),
-            Token::create_test_token("id4", 1, TokenType::Ident),
+            iterator4.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator4", 1, TokenType::Ident),
+            access_ident4.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field4", 1, TokenType::Ident),
+            field4.clone(),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = ExpressionASTNode {
-            identifier: "ident".to_string(),
-            expression_type: ExpressionType::JOIN,
-            accesses: vec![
-                AccessASTNode {
-                    identifier: "id1".to_string(),
-                    first_access: "iterator1".to_string(),
-                    second_access: None,
-                    source_or_expression: None,
-                    iterator: None,
-                    field: None,
-                },
-                AccessASTNode {
-                    identifier: "id2".to_string(),
-                    first_access: "iterator2".to_string(),
-                    second_access: None,
-                    source_or_expression: None,
-                    iterator: None,
-                    field: None,
-                },
-                AccessASTNode {
-                    identifier: "id3".to_string(),
-                    first_access: "iterator3".to_string(),
-                    second_access: Some("field3".to_string()),
-                    source_or_expression: None,
-                    iterator: None,
-                    field: None,
-                },
-                AccessASTNode {
-                    identifier: "id4".to_string(),
-                    first_access: "iterator4".to_string(),
-                    second_access: Some("field4".to_string()),
-                    source_or_expression: None,
-                    iterator: None,
-                    field: None,
-                },
-            ],
-        };
+        let accesses = vec![AccessASTNode::new(iterator1, access_ident1, None), 
+            AccessASTNode::new(iterator2, access_ident2, None),
+            AccessASTNode::new(iterator3, access_ident3, Some(field3)),
+            AccessASTNode::new(iterator4, access_ident4, Some(field4))];
+        let expected = ExpressionASTNode::new(ident, ExpressionType::UNION, accesses);
 
         let actual = expression_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -4468,34 +4213,26 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_shape_tuple_sintax_with_ident_prefix() {
+        let prefix_ident = Token::create_test_token("example", 1, TokenType::Ident);
+        let ident = Token::create_test_token("name", 1, TokenType::Ident);
+        let access_ident = Token::create_test_token("films", 1, TokenType::Ident);
+        let first_access = Token::create_test_token("name", 1, TokenType::Ident);
+
         let tokens_vector = vec![
-            Token::create_test_token("example", 1, TokenType::Ident),
+            prefix_ident.clone(),
             Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token("name", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
-            Token::create_test_token("films", 1, TokenType::Ident),
+            access_ident.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("name", 1, TokenType::Ident),
+            first_access.clone(),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = ShapeTupleASTNode {
-            prefix_ident: "example".to_string(),
-            identifier: "name".to_string(),
-            object_prefix_ident: None,
-            prefix: None,
-            object_prefix: None,
-            object: IdentOrAccess::Access(AccessASTNode {
-                identifier: "films".to_string(),
-                first_access: "name".to_string(),
-                second_access: None,
-                source_or_expression: None,
-                iterator: None,
-                field: None,
-            }),
-        };
+        let object = IdentOrAccess::Access(AccessASTNode::new(access_ident, first_access, None));
+        let expected = ShapeTupleASTNode::new(Some(prefix_ident), ident, None, object);
 
         let actual = shape_tuple_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -4506,36 +4243,29 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_shape_tuple_sintax_with_field_prefix() {
+        let prefix_ident = Token::create_test_token("example", 1, TokenType::Ident);
+        let ident = Token::create_test_token("name", 1, TokenType::Ident);
+        let object_ident = Token::create_test_token("example", 1, TokenType::Ident);
+        let access_ident = Token::create_test_token("films", 1, TokenType::Ident);
+        let first_access = Token::create_test_token("name", 1, TokenType::Ident);
+
         let tokens_vector = vec![
-            Token::create_test_token("example", 1, TokenType::Ident),
+            prefix_ident.clone(),
             Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token("name", 1, TokenType::Ident),
-            Token::create_test_token("example", 1, TokenType::Ident),
+            ident.clone(),
+            object_ident.clone(),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
-            Token::create_test_token("films", 1, TokenType::Ident),
+            access_ident.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("name", 1, TokenType::Ident),
+            first_access.clone(),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
-        let expected = ShapeTupleASTNode {
-            prefix_ident: "example".to_string(),
-            identifier: "name".to_string(),
-            object_prefix_ident: Some("example".to_string()),
-            prefix: None,
-            object_prefix: None,
-            object: IdentOrAccess::Access(AccessASTNode {
-                identifier: "films".to_string(),
-                first_access: "name".to_string(),
-                second_access: None,
-                source_or_expression: None,
-                iterator: None,
-                field: None,
-            }),
-        };
+        let object = IdentOrAccess::Access(AccessASTNode::new(access_ident, first_access, None));
+        let expected = ShapeTupleASTNode::new(Some(prefix_ident), ident, Some(object_ident), object);
 
         let actual = shape_tuple_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);
@@ -4664,52 +4394,37 @@ mod sintax_tests {
     #[doc(hidden)]
     #[test]
     fn valid_shape_sintax_with_ident_prefix() {
+        let ident = Token::create_test_token("Films", 1, TokenType::Ident);
+        let access_ident = Token::create_test_token("films", 1, TokenType::Ident);
+        let first_access = Token::create_test_token("id", 1, TokenType::Ident);
+        let tuple_ident = Token::create_test_token("example", 1, TokenType::Ident);
+        let tuple_access = Token::create_test_token("name", 1, TokenType::Ident);
+        let tuple_object = Token::create_test_token("films_name", 1, TokenType::Ident);
+
         let tokens_vector = vec![
-            Token::create_test_token("example", 1, TokenType::Ident),
             Token::create_test_token(COLON, 1, TokenType::Colon),
-            Token::create_test_token("Films", 1, TokenType::Ident),
-            Token::create_test_token("example", 1, TokenType::Ident),
+            ident.clone(),
             Token::create_test_token(COLON, 1, TokenType::Colon),
             Token::create_test_token(LEFT_BRACKET, 1, TokenType::LeftBracket),
-            Token::create_test_token("films", 1, TokenType::Ident),
+            access_ident.clone(),
             Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("id", 1, TokenType::Ident),
+            first_access.clone(),
             Token::create_test_token(RIGHT_BRACKET, 1, TokenType::RightBracket),
             Token::create_test_token(OPENING_CURLY_BRACE, 1, TokenType::OpeningCurlyBrace),
-            Token::create_test_token("example", 1, TokenType::Ident),
+            tuple_ident.clone(),
             Token::create_test_token(COLON, 2, TokenType::Colon),
-            Token::create_test_token("name", 2, TokenType::Ident),
+            tuple_access.clone(),
             Token::create_test_token(LEFT_BRACKET, 2, TokenType::LeftBracket),
-            Token::create_test_token("films_name", 2, TokenType::Ident),
+            tuple_object.clone(),
             Token::create_test_token(RIGHT_BRACKET, 2, TokenType::RightBracket),
             Token::create_test_token(SEMICOLON, 2, TokenType::SemiColon),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
 
-        let expected = ShapeASTNode {
-            prefix_ident: "example".to_string(),
-            identifier: "Films".to_string(),
-            field_prefix_ident: "example".to_string(),
-            prefix: None,
-            field_prefix: None,
-            field_identifier: IdentOrAccess::Access(AccessASTNode {
-                identifier: "films".to_string(),
-                first_access: "id".to_string(),
-                second_access: None,
-                source_or_expression: None,
-                iterator: None,
-                field: None,
-            }),
-            tuples: vec![ShapeTupleASTNode {
-                prefix_ident: "example".to_string(),
-                identifier: "name".to_string(),
-                object_prefix_ident: None,
-                object: IdentOrAccess::Ident("films_name".to_string()),
-                prefix: None,
-                object_prefix: None,
-            }],
-        };
+        let field_identifier = IdentOrAccess::Access(AccessASTNode::new(access_ident, first_access, None));
+        let tuples = vec![ShapeTupleASTNode::new(Some(tuple_ident), tuple_access, None, IdentOrAccess::Ident(tuple_object))];
+        let expected = ShapeASTNode::new(None, ident, None, field_identifier, tuples);
 
         let actual = shape_parser().parse(tokens_vector.clone());
         assert_eq!(expected, actual.unwrap()[0]);

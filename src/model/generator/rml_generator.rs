@@ -8,18 +8,18 @@ use std::io::prelude::*;
 use crate::model::generator::generator_visitor::Generator;
 use crate::model::visitor::Visitor;
 
-use super::super::ast::FileASTNode;
+use super::super::ast::AST;
 
 const RML_FILE_NAME: &str = "generated.rml";
 const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";
 
 /// Genera el fichero RML
 ///
-/// Recorre el AST a partir de su nodo raíz para ir extrayendo la información e ir escribiéndola en el fichero RML en el formato adecuado
+/// Recorre el AST para ir extrayendo la información e ir escribiéndola en el fichero RML en el formato adecuado
 ///
 /// # Parámetros
-/// * `node` - El nodo raíz del AST
-pub fn rml_generator(node: FileASTNode) {
+/// * `ast` - El AST
+pub fn rml_generator(ast: AST) {
     let mut generator = Generator;
     let mut rml_file = fs::File::create(RML_FILE_NAME).unwrap();
 
@@ -51,5 +51,5 @@ pub fn rml_generator(node: FileASTNode) {
     .expect(ERR_MESSAGE);
 
     // Contenido del fichero Shexml
-    writeln!(rml_file, "{}", generator.visit_file(node)).expect(ERR_MESSAGE);
+    writeln!(rml_file, "{}", generator.visit_ast(ast)).expect(ERR_MESSAGE);
 }

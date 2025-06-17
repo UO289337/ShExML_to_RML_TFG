@@ -37,23 +37,20 @@ mod integration_lexer_syntax_analyzers_tests {
 
         assert!(semantic_result.is_empty());
         assert!(sintax_result.as_ref().is_ok_and(|file| !file
-            .prefixes
-            .as_deref()
-            .unwrap()
-            .is_empty()
-            && !file.sources.is_empty()
-            && file.queries.is_some()
-            && !file.iterators.is_empty()
-            && !file.expressions.is_empty()
-            && !file.shapes.is_empty()));
+            .get_prefixes().is_empty()
+            && !file.get_sources().is_empty()
+            && file.get_queries().is_some()
+            && !file.get_iterators().is_empty()
+            && !file.get_expressions().is_empty()
+            && !file.get_shapes().is_empty()));
 
         let _ = sintax_result.as_ref().map(|file| {
-            assert_eq!(file.prefixes.as_ref().unwrap().len(), 2);
-            assert_eq!(file.sources.len(), 1);
-            assert_eq!(file.queries.as_ref().unwrap().len(), 1);
-            assert_eq!(file.iterators.len(), 1);
-            assert_eq!(file.expressions.len(), 1);
-            assert_eq!(file.shapes.len(), 1);
+            assert_eq!(file.get_prefixes().len(), 2);
+            assert_eq!(file.get_sources().len(), 1);
+            assert_eq!(file.get_queries().as_ref().unwrap().len(), 1);
+            assert_eq!(file.get_iterators().len(), 1);
+            assert_eq!(file.get_expressions().len(), 1);
+            assert_eq!(file.get_shapes().len(), 1);
         });
     }
 
@@ -111,8 +108,8 @@ mod integration_lexer_syntax_analyzers_tests {
         assert!(sintax_result.as_ref().is_err());
 
         let _ = sintax_result.as_ref().map(|file| {
-            assert_eq!(file.prefixes.as_deref().unwrap().len(), 0);
-            assert_eq!(file.sources.len(), 0);
+            assert_eq!(file.get_prefixes().len(), 0);
+            assert_eq!(file.get_sources().len(), 0);
         });
     }
 

@@ -1,4 +1,4 @@
-PREFIX example: <http://example.com/>
+PREFIX : <http://example.com/>
 PREFIX dbr: <http://dbpedia.org/resource/>
 SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
 ITERATOR films_csv <csvperrow> {
@@ -9,9 +9,9 @@ ITERATOR films_csv <csvperrow> {
   FIELD director <director>
 }
 EXPRESSION films <films_csv_file.films_csv>
-example:Films example:[films.id] {
-  example:name [films.name] ;
-  example:year [films.year] ;
-  example:country dbr:[films.country] ;
-  example:director dbr:[films.director] ;
+:Films :[films.id] {
+  :name [films.name] ;
+  :year [films.year] ;
+  :country dbr:[films.country] ;
+  :director dbr:[films.director] ;
 }

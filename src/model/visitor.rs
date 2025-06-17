@@ -4,7 +4,7 @@ use crate::model::ast::*;
 
 /// Trait general del visitor para visitar cada uno de los nodos del AST
 pub trait Visitor<T> {
-    fn visit_file(&mut self, file_node: FileASTNode) -> T;
+    fn visit_ast(&mut self, ast: AST) -> T;
     fn visit_prefix(&mut self, prefix_node: PrefixASTNode) -> T;
     fn visit_source(&mut self, source_node: SourceASTNode) -> T;
     fn visit_query(&mut self, query_node: QueryASTNode) -> T;

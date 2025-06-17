@@ -25,36 +25,36 @@ static QUERIES_SYMBOL_TABLE: Lazy<Mutex<HashMap<String, QueryASTNode>>> = Lazy::
 // No se utiliza &str porque no se podria devolver el valor al tener la propiedad
 impl Visitor<()> for Identification {
 
-    fn visit_file(&mut self, file_node: FileASTNode) {
+    fn visit_ast(&mut self, ast: AST) {
         // Los Option se obtienen como una referencia (as_ref) y el resto con clone
-        if let Some(prefixes) = file_node.prefixes.as_ref() {
-            prefixes.into_iter().for_each(|prefix| {
-                PREFIXES_SYMBOL_TABLE.lock().unwrap().insert(prefix.identifier.clone(), prefix.clone());
+        ast.get_prefixes().into_iter().for_each(|prefix| {
+            if let Some(ident) = prefix.get_identifier() {
+                PREFIXES_SYMBOL_TABLE.lock().unwrap().insert(ident.get_lexeme(), prefix.clone());
                 self.visit_prefix(prefix.clone());  // Se puede hacer aquí la visita a los Prefix porque no hace nada
-            });
-        }
+            }
+        });
 
-        file_node.sources.clone().into_iter().for_each(|source| {
-            SOURCES_SYMBOL_TABLE.lock().unwrap().insert(source.identifier.clone(), source.clone());
+        ast.get_sources().clone().into_iter().for_each(|source| {
+            SOURCES_SYMBOL_TABLE.lock().unwrap().insert(source.get_identifier().get_lexeme(), source.clone());
             self.visit_source(source);  // Se puede hacer aquí la visita a los Source porque no hace nada
         });
 
-        if let Some(queries) = file_node.queries.as_ref() {
+        if let Some(queries) = ast.get_queries().as_ref() {
             queries.into_iter().for_each(|query| {
-                QUERIES_SYMBOL_TABLE.lock().unwrap().insert(query.identifier.clone(), query.clone());
+                QUERIES_SYMBOL_TABLE.lock().unwrap().insert(query.get_identifier().get_lexeme(), query.clone());
                 self.visit_query(query.clone());    // Se puede hacer aquí la visita a los Query porque no hace nada
             });
         }
 
-        file_node.expressions.clone().into_iter().for_each(|expression| {
+        ast.get_expressions().clone().into_iter().for_each(|expression| {
             self.visit_expression(expression);
         });
 
-        file_node.iterators.clone().into_iter().for_each(|iterator| {
+        ast.get_iterators().clone().into_iter().for_each(|iterator| {
             self.visit_iterator(iterator);
         });
 
-        file_node.shapes.clone().into_iter().for_each(|shape| {
+        ast.get_shapes().clone().into_iter().for_each(|shape| {
             self.visit_shape(shape);
         });
     }

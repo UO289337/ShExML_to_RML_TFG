@@ -7,7 +7,7 @@
 use chumsky::error::SimpleReason;
 
 use crate::model;
-use crate::model::ast::FileASTNode;
+use crate::model::ast::AST;
 use crate::model::compiler_error::CompilerError;
 use crate::model::lexer::token::Token;
 use crate::view;
@@ -45,7 +45,7 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 ///
 /// # Parámetros
 /// * `node` - El nodo raíz del AST resultado del analizador sintáctico
-fn run_semantic_analyzer(node: FileASTNode) {
+fn run_semantic_analyzer(node: AST) {
     let semantic_errors = model::semantic::semantic_analyzer::semantic_analysis(&node);
 
     if semantic_errors.is_empty() {
