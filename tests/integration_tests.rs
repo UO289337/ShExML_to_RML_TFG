@@ -31,7 +31,7 @@ mod integration_lexer_syntax_analyzers_tests {
                 example:director dbr:[films.director] ;
             }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
-        let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
+        let sintax_result = model::syntax::syntax_analyzer::parser(lexer_result.unwrap());
         let semantic_result =
             model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 
@@ -103,7 +103,7 @@ mod integration_lexer_syntax_analyzers_tests {
                 example:director dbr:[films.director] ;
             }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
-        let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
+        let sintax_result = model::syntax::syntax_analyzer::parser(lexer_result.unwrap());
 
         assert!(sintax_result.as_ref().is_err());
 
@@ -136,7 +136,7 @@ mod integration_lexer_syntax_analyzers_tests {
                 example:director dbr:[films.director] ;
             }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
-        let sintax_result = model::sintax::sintax_analyzer::parser(lexer_result.unwrap());
+        let sintax_result = model::syntax::syntax_analyzer::parser(lexer_result.unwrap());
         let semantic_result =
             model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 

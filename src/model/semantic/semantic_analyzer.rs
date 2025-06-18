@@ -5,7 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::model::{ast::*, compiler_error::CompilerError};
+use crate::model::{ast::*, ast::nodes::*, compiler_error::CompilerError};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -64,7 +64,7 @@ fn get_prefix_identifiers(prefixes: &Vec<PrefixASTNode>) -> Vec<String> {
     let mut identifiers = Vec::new();
     for prefix in prefixes {
         if let Some(p) = prefix.get_identifier() {
-            identifiers.push(p.get_lexeme());
+            identifiers.push(p);
         }
     }
     identifiers
@@ -80,7 +80,7 @@ fn get_prefix_identifiers(prefixes: &Vec<PrefixASTNode>) -> Vec<String> {
 fn get_source_identifiers(sources: &Vec<SourceASTNode>) -> Vec<String> {
     let mut identifiers = Vec::new();
     for source in sources {
-        identifiers.push(source.get_identifier().get_lexeme());
+        identifiers.push(source.get_identifier());
     }
     identifiers
 }
@@ -95,7 +95,7 @@ fn get_source_identifiers(sources: &Vec<SourceASTNode>) -> Vec<String> {
 fn get_queries_identifiers(queries: &Vec<QueryASTNode>) -> Vec<String> {
     let mut identifiers = Vec::new();
     for query in queries {
-        identifiers.push(query.get_identifier().get_lexeme());
+        identifiers.push(query.get_identifier());
     }
     identifiers
 }

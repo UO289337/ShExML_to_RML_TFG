@@ -31,7 +31,7 @@ pub fn run_lexer_analyzer() {
 /// # Parámetros
 /// * `tokens` - El vector de tokens resultado del analizador léxico
 fn run_sintax_analyzer(tokens: Vec<Token>) {
-    match model::sintax::sintax_analyzer::parser(tokens) {
+    match model::syntax::syntax_analyzer::parser(tokens) {
         Ok(node) => {
             run_semantic_analyzer(node);
         }
