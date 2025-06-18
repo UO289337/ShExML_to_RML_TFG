@@ -109,10 +109,6 @@ fn get_queries_identifiers(queries: &Vec<QueryASTNode>) -> Vec<String> {
 #[cfg(test)]
 mod lexer_tests {
 
-    use crate::test_utils::TestUtilities;
-
-    use super::*;
-
     /*
     /// Comprueba que se detectan identificadores duplicados de PREFIX
     #[doc(hidden)]
