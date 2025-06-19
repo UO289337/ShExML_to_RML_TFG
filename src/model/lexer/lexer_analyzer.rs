@@ -490,34 +490,6 @@ fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(jdbc_url, TokenType::JdbcUrl))
 }
 
-/// Encuentra un token FilePath en la entrada
-///
-/// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de file
-///
-/// # Parámetros
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token FilePath
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let file_path = take_while(1.., |c: char| c != '>').parse_next(input)?;
-    let re_file_path = Regex::new(r"^file://[/\\][^ \n\r\t]+\.\w+$").unwrap();
-
-    if !re_file_path.is_match(file_path) {
-        let error = &ContextError::new().add_context(
-            &"Formato incorrecto",
-            &file_path.checkpoint(),
-            StrContext::Label("Ruta file incorrecto"),
-        );
-        return Err(ErrMode::Backtrack(error.clone()));
-    }
-
-    Ok(Token::new(file_path, TokenType::FilePath))
-}
-
 /// Encuentra un token Path en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de una ruta relativa o absoluta
@@ -535,9 +507,9 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let re_path = Regex::new(
         r"(?ix)                    
             ^(
-                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas
+                file://[a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas
                 |
-                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas
+                file://(\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas
             )$
             ",
     )
@@ -719,15 +691,7 @@ fn match_alternatives(
             csv_per_row,
         )),
         // Elementos variables; no tienen un valor fijo
-        alt((
-            sql_query,
-            file_path,
-            path,
-            jdbc_url,
-            uri,
-            key_identifier,
-            identifier,
-        )),
+        alt((sql_query, path, jdbc_url, uri, key_identifier, identifier)),
     ))
     .parse_next(input)
     {
@@ -1328,33 +1292,12 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token FilePath de un fichero CSV usando una ruta con file
-    #[doc(hidden)]
-    #[test]
-    fn valid_file_path() {
-        let expected = Token::create_test_token(
-            "file:///ejemplo/path/a/fichero/fichero.csv",
-            0,
-            TokenType::FilePath,
-        );
-        let actual = file_path(&mut "file:///ejemplo/path/a/fichero/fichero.csv");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token FilePath aquellas cadenas que tengan un path incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn file_path_with_invalid_path() {
-        let actual = file_path(&mut "file//");
-        check_error(actual);
-    }
-
     /// Comprueba que se detecta el token Path de un fichero CSV usando una ruta relativa
     #[doc(hidden)]
     #[test]
     fn valid_relative_path() {
-        let expected = Token::create_test_token("ejemplo/fichero.csv", 0, TokenType::Path);
-        let actual = path(&mut "ejemplo/fichero.csv");
+        let expected = Token::create_test_token("file://ejemplo/fichero.csv", 0, TokenType::Path);
+        let actual = path(&mut "file://ejemplo/fichero.csv");
         check_ok(expected, actual);
     }
 
@@ -1363,11 +1306,11 @@ mod lexer_tests {
     #[test]
     fn valid_absolute_path() {
         let expected = Token::create_test_token(
-            "C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
+            "file://C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
             0,
             TokenType::Path,
         );
-        let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
+        let actual = path(&mut "file://C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_ok(expected, actual);
     }
 
@@ -1375,7 +1318,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn path_with_invalid_absolute_path() {
-        let actual = path(&mut "C://..");
+        let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_error(actual);
     }
 

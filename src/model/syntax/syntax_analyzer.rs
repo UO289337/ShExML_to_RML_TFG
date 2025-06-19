@@ -192,31 +192,17 @@ fn single_source_parser() -> Map<
             >,
             Or<
                 Or<
-                    Or<
-                        Map<
-                            MapErr<
-                                Map<
-                                    Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                                    impl Fn(Token) -> Token,
-                                    Token,
-                                >,
-                                impl Fn(Simple<Token>) -> Simple<Token>,
+                    Map<
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
                             >,
-                            impl Fn(Token) -> SourceDefinition,
-                            Token,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
                         >,
-                        Map<
-                            MapErr<
-                                Map<
-                                    Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                                    impl Fn(Token) -> Token,
-                                    Token,
-                                >,
-                                impl Fn(Simple<Token>) -> Simple<Token>,
-                            >,
-                            impl Fn(Token) -> SourceDefinition,
-                            Token,
-                        >,
+                        impl Fn(Token) -> SourceDefinition,
+                        Token,
                     >,
                     Map<
                         MapErr<
@@ -271,31 +257,13 @@ fn single_source_parser() -> Map<
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn source_definition_parser() -> Or<
     Or<
-        Or<
-            Map<
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-                impl Fn(Token) -> SourceDefinition,
-                Token,
+        Map<
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
             >,
-            Map<
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-                impl Fn(Token) -> SourceDefinition,
-                Token,
-            >,
+            impl Fn(Token) -> SourceDefinition,
+            Token,
         >,
         Map<
             MapErr<
@@ -317,7 +285,6 @@ fn source_definition_parser() -> Or<
 > {
     uri_parser()
         .map(|uri| SourceDefinition::URI(uri.get_lexeme()))
-        .or(file_path_parser().map(|file_path| SourceDefinition::FilePath(file_path.get_lexeme())))
         .or(path_parser().map(|path| SourceDefinition::Path(path.get_lexeme())))
         .or(jdbc_url_parser().map(|jdbc_url| SourceDefinition::JdbcURL(jdbc_url.get_lexeme())))
 }
@@ -1456,23 +1423,6 @@ fn jdbc_url_parser() -> MapErr<
     )
 }
 
-/// Parsea el token FilePath en los tokens
-///
-/// # Retorna
-/// Un token de tipo FilePath si el token actual es de dicho tipo
-///
-/// # Errores
-/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo FilePath
-fn file_path_parser() -> MapErr<
-    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-    impl Fn(Simple<Token>) -> Simple<Token>,
-> {
-    general_parser(
-        TokenType::FilePath,
-        format!("Se esperaba una ruta con file entre '<' y '>' en la línea"),
-    )
-}
-
 /// Parsea el token Path en los tokens
 ///
 /// # Retorna
@@ -2058,31 +2008,6 @@ mod sintax_parsers_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se parsean los tokens FilePath
-    #[doc(hidden)]
-    #[test]
-    fn parse_valid_file_path() {
-        let expected_token = Token::create_test_token(
-            "file:///ejemplo/path/a/fichero/fichero.csv",
-            1,
-            TokenType::FilePath,
-        );
-        let actual = file_path_parser().parse(vec![expected_token.clone()]);
-        check_ok(expected_token, actual);
-    }
-
-    /// Comprueba que no se parsean como tokens FilePath aquellos que lo son
-    #[doc(hidden)]
-    #[test]
-    fn not_parse_invalid_file_path() {
-        let actual = jdbc_url_parser().parse(vec![Token::create_test_token(
-            "https://ejemplo.com",
-            1,
-            TokenType::Uri,
-        )]);
-        check_error(actual);
-    }
-
     /// Comprueba que se parsean los tokens Path
     #[doc(hidden)]
     #[test]
@@ -2097,9 +2022,9 @@ mod sintax_parsers_tests {
     #[test]
     fn not_parse_invalid_path() {
         let actual = path_parser().parse(vec![Token::create_test_token(
-            "file:///ejemplo/path/a/fichero/fichero.csv",
+            "ejemplo",
             1,
-            TokenType::FilePath,
+            TokenType::Ident,
         )]);
         check_error(actual);
     }
@@ -2826,75 +2751,12 @@ mod sintax_tests {
         assert_eq!(expected_vector, actual.unwrap());
     }
 
-    /// Comprueba que el parser de Source parsea la secuencia de tokens: Source Ident LeftAngleBracket FilePath RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn valid_source_sintax_with_file_path() {
-        let ident1 = Token::create_test_token("ident", 1, TokenType::Ident);
-        let file_path1 = Token::create_test_token(
-            "file:///ejemplo/path/a/fichero/fichero.csv",
-            1,
-            TokenType::FilePath,
-        );
-
-        let mut tokens_vector = vec![
-            Token::create_test_token(SOURCE, 1, TokenType::Source),
-            ident1.clone(),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            file_path1.clone(),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        let expected = SourceASTNode::new(
-            ident1.clone(),
-            SourceDefinition::FilePath(file_path1.get_lexeme()),
-            Position::new(ident1.get_num_line()),
-        );
-        let actual = source_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap()[0]);
-
-        // Se añaden más SOURCE
-        let ident2 = Token::create_test_token("ident2", 2, TokenType::Ident);
-        let file_path2 = Token::create_test_token(
-            "file:///otroejemplo/path/a/fichero/otrofichero.csv",
-            2,
-            TokenType::FilePath,
-        );
-
-        let eof_node = tokens_vector.pop();
-        tokens_vector.push(Token::create_test_token(SOURCE, 2, TokenType::Source));
-        tokens_vector.push(ident2.clone());
-        tokens_vector.push(Token::create_test_token(
-            LEFT_ANGLE_BRACKET,
-            2,
-            TokenType::LeftAngleBracket,
-        ));
-        tokens_vector.push(file_path2.clone());
-        tokens_vector.push(Token::create_test_token(
-            RIGHT_ANGLE_BRACKET,
-            2,
-            TokenType::RightAngleBracket,
-        ));
-        tokens_vector.push(eof_node.unwrap());
-
-        let expected2 = SourceASTNode::new(
-            ident2.clone(),
-            SourceDefinition::FilePath(file_path2.get_lexeme()),
-            Position::new(ident2.get_num_line()),
-        );
-
-        let expected_vector = vec![expected, expected2];
-        let actual = source_parser().parse(tokens_vector);
-        assert_eq!(expected_vector, actual.unwrap());
-    }
-
     /// Comprueba que el parser de Source parsea la secuencia de tokens: Source Ident LeftAngleBracket Path RightAngleBracket
     #[doc(hidden)]
     #[test]
     fn valid_source_sintax_with_path() {
         let ident1 = Token::create_test_token("ident", 1, TokenType::Ident);
-        let path1 = Token::create_test_token("ejemplo/fichero.csv", 1, TokenType::Path);
+        let path1 = Token::create_test_token("file://ejemplo/fichero.csv", 1, TokenType::Path);
 
         let mut tokens_vector = vec![
             Token::create_test_token(SOURCE, 1, TokenType::Source),
@@ -2916,7 +2778,7 @@ mod sintax_tests {
         // Se añaden más SOURCE
         let ident2 = Token::create_test_token("ident2", 2, TokenType::Ident);
         let path2 = Token::create_test_token(
-            "C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
+            "file://C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
             2,
             TokenType::Path,
         );

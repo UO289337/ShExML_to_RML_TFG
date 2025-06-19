@@ -20,7 +20,6 @@ pub enum TokenType {
     KeyIdentifier,
     Uri,
     JdbcUrl,
-    FilePath,
     Path,
     SqlQuery,
     Colon,

@@ -11,7 +11,6 @@ use nodes::*;
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum SourceDefinition {
     URI(String),
-    FilePath(String),
     Path(String),
     JdbcURL(String),
 }

@@ -331,7 +331,7 @@ impl TestUtilities {
 
         vec![IteratorASTNode::new(
             ident.clone(),
-            IteratorAccess::SqlQuery(inline_query.get_lexeme()),
+            IteratorAccess::Ident(inline_query.get_lexeme()),
             fields,
             Position::new(ident.get_num_line()),
         )]
