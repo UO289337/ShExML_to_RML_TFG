@@ -1,4 +1,4 @@
-use crate::model::{ast::*, ast::nodes::*, visitor::Visitor};
+use crate::model::{ast::nodes::*, ast::*, visitor::Visitor};
 
 /// Struct para poder realizar las visitas del visitor sobre él
 pub struct Generator;
@@ -34,13 +34,13 @@ impl Visitor<String> for Generator {
     fn visit_prefix(&mut self, prefix_node: PrefixASTNode) -> String {
         let mut prefix_generation = String::new();
         let prefix;
-        
+
         if let Some(p) = prefix_node.get_identifier() {
             prefix = p;
         } else {
             prefix = String::new();
         }
-        
+
         prefix_generation.push_str(&format!("{}:     ", prefix.as_str()));
         prefix_generation.push_str(format!("<{}>", prefix_node.get_uri()).as_str());
         prefix_generation
@@ -49,31 +49,31 @@ impl Visitor<String> for Generator {
     fn visit_source(&mut self, _source_node: SourceASTNode) -> String {
         todo!()
     }
-    
+
     fn visit_query(&mut self, _query_node: QueryASTNode) -> String {
         todo!()
     }
-    
+
     fn visit_iterator(&mut self, _iterator_node: IteratorASTNode) -> String {
         todo!()
     }
-    
+
     fn visit_field(&mut self, _field_node: FieldASTNode) -> String {
         todo!()
     }
-    
+
     fn visit_expression(&mut self, _expression_node: ExpressionASTNode) -> String {
         todo!()
     }
-    
+
     fn visit_shape(&mut self, _shape_node: ShapeASTNode) -> String {
         todo!()
     }
-    
+
     fn visit_shape_tuple(&mut self, _shape_tuple_node: ShapeTupleASTNode) -> String {
         todo!()
     }
-    
+
     fn visit_access(&mut self, _access_node: AccessASTNode) -> String {
         todo!()
     }

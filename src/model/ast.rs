@@ -1,12 +1,12 @@
 //! Estructura del AST (Abstract Syntax Tree) del compilador
-//! 
+//!
 //! En los nodos del AST no se utilizan referencias dado que los struct son dueños de los datos
 
-use crate::model::{lexer::token::{Token, TokenType}};
+use crate::model::lexer::token::{Token, TokenType};
 use nodes::*;
 
 /// Tipos de SourceDefinition
-/// 
+///
 /// Enumerador que contiene todos los tipos de SourceDefiniton que hay: Uri, FilePath, Path, JDBC
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 pub enum SourceDefinition {
@@ -24,6 +24,22 @@ pub enum ExpressionType {
     BASIC,
     UNION,
     JOIN,
+}
+
+impl ExpressionType {
+    /// Obtiene el tipo de una expresión a partir de un String
+    ///
+    /// A partir de un String y de su tipo, obtiene el tipo que debe ser la expresión
+    ///
+    /// # Retorna
+    /// El tipo de la expresión
+    pub fn from(token: Token) -> ExpressionType {
+        match token.get_token_type() {
+            TokenType::Union => ExpressionType::UNION,
+            TokenType::Join => ExpressionType::JOIN,
+            _ => ExpressionType::BASIC,
+        }
+    }
 }
 
 /// Ident o Access
@@ -44,24 +60,18 @@ pub enum SourceOrExpression {
     Expression(ExpressionASTNode),
 }
 
-impl ExpressionType {
-    /// Obtiene el tipo de una expresión a partir de un String
-    ///
-    /// A partir de un String y de su tipo, obtiene el tipo que debe ser la expresión
-    ///
-    /// # Retorna
-    /// El tipo de la expresión
-    pub fn from(token: Token) -> ExpressionType {
-        match token.get_token_type() {
-            TokenType::Union => ExpressionType::UNION,
-            TokenType::Join => ExpressionType::JOIN,
-            _ => ExpressionType::BASIC,
-        }
-    }
+/// Acceso del iterador
+///
+/// Enumerador que contiene la cadena de acceso del iterador, que puede ser un identificador, una consulta SQL o un csvperrow
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum IteratorAccess {
+    Ident(String),
+    SqlQuery(String),
+    CsvPerRow(String),
 }
 
 /// La posición de un nodo
-/// 
+///
 /// Contiene el número de línea de la entrada donde se encuentra el nodo
 // Se ha utilizado un struct y no el campo directamente en los struct para poder añadir posteriormente más indicadores de posición como la columna
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -71,10 +81,10 @@ pub struct Position {
 
 impl Position {
     /// Crea una posición con el número de línea
-    /// 
+    ///
     /// # Argumentos
     /// * `num_line` - El número de línea
-    /// 
+    ///
     /// # Retorna
     /// Una posición
     pub fn new(num_line: u16) -> Self {
@@ -82,7 +92,7 @@ impl Position {
     }
 
     /// Devuelve el número de línea de la posición
-    /// 
+    ///
     /// # Argumentos
     /// * `self` - La propia posición
     ///
@@ -93,46 +103,56 @@ impl Position {
     }
 }
 
-pub trait ManagePosition {
-    fn get_position(&self) -> Position;
-}
-
-
 pub mod nodes {
-    use super::ManagePosition;
     use super::*;
+
+    /// Trait para el manejo de la posición de los nodos
+    pub trait ManagePosition {
+        fn get_position(&self) -> Position;
+    }
+
+    /// Trait para la fase de identificación
+    pub trait Identifiable {
+        fn get_identifier(&self) -> String;
+    }
+
+    pub trait ManagePrefix {
+        fn set_prefix(&mut self, prefix: Option<PrefixASTNode>);
+    }
 
     /// Nodo de tipo Prefix del AST
     ///
     /// Se corresponde con los Prefix de ShEXMl; contiene un identificador y una URI
-    #[derive(Debug, PartialEq, Clone)]
+    #[derive(Debug, PartialEq, Clone, Eq, Hash)]
     pub struct PrefixASTNode {
-        identifier: Option<String>,    // El prefijo por defecto (:) no lleva identificador
+        identifier: Option<String>, // El prefijo por defecto (:) no lleva identificador
         uri: String,
         position: Position,
     }
 
     impl PrefixASTNode {
         /// Crea un nodo Prefix del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `identifier` - El identificador del nodo Prefix
         /// * `uri` - La URI del nodo Prefix
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Prefix del AST
-        pub fn new(identifier: Option<Token>,
-        uri: Token,
-        position: Position) -> Self {
+        pub fn new(identifier: Option<Token>, uri: Token, position: Position) -> Self {
             let ident = get_lexeme_of_option(identifier);
-            PrefixASTNode { identifier: ident, uri: uri.get_lexeme(), position }
+            PrefixASTNode {
+                identifier: ident,
+                uri: uri.get_lexeme(),
+                position,
+            }
         }
 
         /// Devuelve el Option con el String del identificador del Prefix
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Prefix
-        /// 
+        ///
         /// # Retorna
         /// Un Option con el String del identificador del Prefix
         pub fn get_identifier(&self) -> Option<String> {
@@ -140,10 +160,10 @@ pub mod nodes {
         }
 
         /// Devuelve el String de la URI del Prefix
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Prefix
-        /// 
+        ///
         /// # Retorna
         /// El String de la URI del Prefix
         pub fn get_uri(&self) -> String {
@@ -169,35 +189,30 @@ pub mod nodes {
 
     impl SourceASTNode {
         /// Crea un nodo Source del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `identifier` - El identificador del nodo Source
         /// * `source_definition` - La definición del nodo Source
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Source del AST
-        pub fn new(identifier: Token,
-        source_definition: SourceDefinition,
-        position: Position) -> Self {
-            SourceASTNode { identifier: identifier.get_lexeme(), source_definition, position }
-        }
-
-        /// Devuelve el String del identificador del Source
-        /// 
-        /// # Argumentos
-        /// * `self` - El propio nodo Source
-        /// 
-        /// # Retorna
-        /// El String del identificador del Source
-        pub fn get_identifier(&self) -> String {
-            self.identifier.clone()
+        pub fn new(
+            identifier: Token,
+            source_definition: SourceDefinition,
+            position: Position,
+        ) -> Self {
+            SourceASTNode {
+                identifier: identifier.get_lexeme(),
+                source_definition,
+                position,
+            }
         }
 
         /// Devuelve el String de la definición del Source
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Source
-        /// 
+        ///
         /// # Retorna
         /// El String de la definición del Source
         pub fn get_source_definition(&self) -> SourceDefinition {
@@ -211,10 +226,23 @@ pub mod nodes {
         }
     }
 
+    impl Identifiable for SourceASTNode {
+        /// Devuelve el String del identificador del Source
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Source
+        ///
+        /// # Retorna
+        /// El String del identificador del Source
+        fn get_identifier(&self) -> String {
+            self.identifier.clone()
+        }
+    }
+
     /// Nodo de tipo Query del AST
     ///
     /// Se corresponde con los Query de SheXMl; contiene un identificador y una consulta SQL
-    #[derive(Debug, PartialEq,Clone, Eq, Hash)]
+    #[derive(Debug, PartialEq, Clone, Eq, Hash)]
     pub struct QueryASTNode {
         identifier: String,
         sql_query: String,
@@ -223,35 +251,26 @@ pub mod nodes {
 
     impl QueryASTNode {
         /// Crea un nodo Query del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `identifier` - El identificador del nodo Query
         /// * `sql_query` - La consulta SQL del nodo Query
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Query del AST
-        pub fn new(identifier: Token,
-        sql_query: Token,
-        position: Position) -> Self {
-            QueryASTNode { identifier: identifier.get_lexeme(), sql_query: sql_query.get_lexeme(), position }
-        }
-
-        /// Devuelve el String del identificador de la Query
-        /// 
-        /// # Argumentos
-        /// * `self` - El propio nodo Query
-        /// 
-        /// # Retorna
-        /// El String del identificador de la Query
-        pub fn get_identifier(&self) -> String {
-            self.identifier.clone()
+        pub fn new(identifier: Token, sql_query: Token, position: Position) -> Self {
+            QueryASTNode {
+                identifier: identifier.get_lexeme(),
+                sql_query: sql_query.get_lexeme(),
+                position,
+            }
         }
 
         /// Devuelve el String de la definición de la Query
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Query
-        /// 
+        ///
         /// # Retorna
         /// El String de la consulta SQL de la Query
         pub fn get_sql_query(&self) -> String {
@@ -265,13 +284,26 @@ pub mod nodes {
         }
     }
 
+    impl Identifiable for QueryASTNode {
+        /// Devuelve el String del identificador del Source
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Source
+        ///
+        /// # Retorna
+        /// El String del identificador del Source
+        fn get_identifier(&self) -> String {
+            self.identifier.clone()
+        }
+    }
+
     /// Nodo de tipo Iterator del AST
     ///
     /// Se corresponde con los Iterator de SheXMl; contiene un identificador, como se accede (identificador, csvperrow o consulta SQL) y un vector de fields
     #[derive(Debug, PartialEq, Clone, Eq, Hash)]
     pub struct IteratorASTNode {
         identifier: String,
-        iterator_access: String,
+        iterator_access: IteratorAccess,
         fields: Vec<FieldASTNode>,
         position: Position,
 
@@ -281,48 +313,45 @@ pub mod nodes {
 
     impl IteratorASTNode {
         /// Crea un nodo Iterator del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `identifier` - El identificador del nodo Iterator
         /// * `iterator_access` - El acceso al Iterator
         /// * `fields` - El vector con los campos del Iterator
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Iterator del AST
-        pub fn new(identifier: Token,
-        iterator_access: Token,
-        fields: Vec<FieldASTNode>,
-        position: Position) -> Self {
-            IteratorASTNode { identifier: identifier.get_lexeme(), iterator_access: iterator_access.get_lexeme(), fields, query: None, position }
+        pub fn new(
+            identifier: Token,
+            iterator_access: IteratorAccess,
+            fields: Vec<FieldASTNode>,
+            position: Position,
+        ) -> Self {
+            IteratorASTNode {
+                identifier: identifier.get_lexeme(),
+                iterator_access,
+                fields,
+                query: None,
+                position,
+            }
         }
 
-        /// Devuelve el String del identificador del Iterator
-        /// 
+        /// Devuelve el acceso al Iterator
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Iterator
-        /// 
+        ///
         /// # Retorna
-        /// El String del identificador del Iterator
-        pub fn get_identifier(&self) -> String {
-            self.identifier.clone()
-        }
-
-        /// Devuelve el String del acceso al Iterator
-        /// 
-        /// # Argumentos
-        /// * `self` - El propio nodo Iterator
-        /// 
-        /// # Retorna
-        /// El String del acceso al Iterator
-        pub fn get_iterator_access(&self) -> String {
+        /// El acceso al Iterator
+        pub fn get_iterator_access(&self) -> IteratorAccess {
             self.iterator_access.clone()
         }
 
         /// Devuelve el vector de nodos Field del Iterator
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Iterator
-        /// 
+        ///
         /// # Retorna
         /// El vector de nodos Field del Iterator
         pub fn get_fields(&self) -> Vec<FieldASTNode> {
@@ -330,20 +359,42 @@ pub mod nodes {
         }
 
         /// Devuelve el Option de la consulta SQL del Iterator
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Iterator
-        /// 
+        ///
         /// # Retorna
         /// El Option con la consulta SQL del Iterator
         pub fn get_query(&self) -> Option<QueryASTNode> {
             self.query.clone()
+        }
+
+        /// Asocia un nodo Query con el Iterator
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Iterator
+        /// * `query` - El Option que contiene el nodo Query del AST que se quiere asociar al iterador
+        pub fn set_query(&mut self, query: Option<QueryASTNode>) {
+            self.query = query.clone();
         }
     }
 
     impl ManagePosition for IteratorASTNode {
         fn get_position(&self) -> Position {
             self.position.clone()
+        }
+    }
+
+    impl Identifiable for IteratorASTNode {
+        /// Devuelve el String del identificador del Source
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Source
+        ///
+        /// # Retorna
+        /// El String del identificador del Source
+        fn get_identifier(&self) -> String {
+            self.identifier.clone()
         }
     }
 
@@ -359,39 +410,43 @@ pub mod nodes {
 
     impl FieldASTNode {
         /// Crea un nodo Field del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `identifier` - El identificador del nodo Field
         /// * `access_field_identifier` - El identificador del acceso al campo del nodo Fied
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Field del AST
-        pub fn new(identifier: Token,
-        access_field_identifier: Token,
-        position: Position) -> Self {
-            FieldASTNode { identifier: identifier.get_lexeme(), access_field_identifier: access_field_identifier.get_lexeme(), position }
-        }
-
-        /// Devuelve el String del identificador del Field
-        /// 
-        /// # Argumentos
-        /// * `self` - El propio nodo Field
-        /// 
-        /// # Retorna
-        /// El String con el identificador del Field
-        pub fn get_identifier(&self) -> String {
-            self.identifier.clone()
+        pub fn new(identifier: Token, access_field_identifier: Token, position: Position) -> Self {
+            FieldASTNode {
+                identifier: identifier.get_lexeme(),
+                access_field_identifier: access_field_identifier.get_lexeme(),
+                position,
+            }
         }
 
         /// Devuelve el String del identificador del acceso del Field
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Field
-        /// 
+        ///
         /// # Retorna
         /// El String con el identificador del acceso del Field
         pub fn get_access_field_identifier(&self) -> String {
             self.access_field_identifier.clone()
+        }
+    }
+
+    impl Identifiable for FieldASTNode {
+        /// Devuelve el String del identificador del Field
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Field
+        ///
+        /// # Retorna
+        /// El String con el identificador del Field
+        fn get_identifier(&self) -> String {
+            self.identifier.clone()
         }
     }
 
@@ -414,26 +469,33 @@ pub mod nodes {
 
     impl ExpressionASTNode {
         /// Crea un nodo Expression del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `identifier` - El identificador del nodo Expression
         /// * `expression_type` - El tipo de la Expression
         /// * `accesses` - El vector con los accesos realizados en la Expression
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Expression del AST
-        pub fn new(identifier: Token,
-        expression_type: ExpressionType,
-        accesses: Vec<AccessASTNode>,
-        position: Position) -> Self {
-            ExpressionASTNode { identifier: identifier.get_lexeme(), expression_type, accesses, position }
+        pub fn new(
+            identifier: Token,
+            expression_type: ExpressionType,
+            accesses: Vec<AccessASTNode>,
+            position: Position,
+        ) -> Self {
+            ExpressionASTNode {
+                identifier: identifier.get_lexeme(),
+                expression_type,
+                accesses,
+                position,
+            }
         }
-        
+
         /// Devuelve el String del identificador de la Expression
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Expression
-        /// 
+        ///
         /// # Retorna
         /// El String con el identificador de la Expression
         pub fn get_identifier(&self) -> String {
@@ -441,10 +503,10 @@ pub mod nodes {
         }
 
         /// Devuelve el tipo de la Expression
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Expression
-        /// 
+        ///
         /// # Retorna
         /// El tipo de la Expression
         pub fn get_expression_type(&self) -> ExpressionType {
@@ -452,10 +514,10 @@ pub mod nodes {
         }
 
         /// Devuelve el vector con los accesos que se realizan en la Expression
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Expression
-        /// 
+        ///
         /// # Retorna
         /// El vector con los accesos que se realizan en la Expression
         pub fn get_accesses(&self) -> Vec<AccessASTNode> {
@@ -487,27 +549,37 @@ pub mod nodes {
 
     impl AccessASTNode {
         /// Crea un nodo Access del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `identifier` - El identificador del nodo Access
         /// * `first_access` - El primer acceso del nodo Access
         /// * `second_access` - El segundo acceso del nodo Access
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Access del AST
-        pub fn new(identifier: Token,
-        first_access: Token,
-        second_access: Option<Token>,
-        position: Position) -> Self {
+        pub fn new(
+            identifier: Token,
+            first_access: Token,
+            second_access: Option<Token>,
+            position: Position,
+        ) -> Self {
             let access = get_lexeme_of_option(second_access);
-            AccessASTNode { identifier: identifier.get_lexeme(), first_access: first_access.get_lexeme(), second_access: access, source_or_expression: None, iterator: None, field: None, position }
+            AccessASTNode {
+                identifier: identifier.get_lexeme(),
+                first_access: first_access.get_lexeme(),
+                second_access: access,
+                source_or_expression: None,
+                iterator: None,
+                field: None,
+                position,
+            }
         }
 
         /// Devuelve el String del identificador del acceso
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Access
-        /// 
+        ///
         /// # Retorna
         /// El String del identificador del acceso
         pub fn get_identifier(&self) -> String {
@@ -515,10 +587,10 @@ pub mod nodes {
         }
 
         /// Devuelve el String del primer acceso del acceso
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Access
-        /// 
+        ///
         /// # Retorna
         /// El String del primer acceso del acceso
         pub fn get_first_access(&self) -> String {
@@ -526,10 +598,10 @@ pub mod nodes {
         }
 
         /// Devuelve el Option del String del segundo acceso del acceso
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Access
-        /// 
+        ///
         /// # Retorna
         /// El Option del String del  segundo acceso del acceso
         pub fn get_second_access(&self) -> Option<String> {
@@ -537,10 +609,10 @@ pub mod nodes {
         }
 
         /// Devuelve el nodo Source o Expression del acceso
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Access
-        /// 
+        ///
         /// # Retorna
         /// El nodo Source o Expression del acceso
         pub fn get_souce_or_expression(&self) -> Option<SourceOrExpression> {
@@ -548,10 +620,10 @@ pub mod nodes {
         }
 
         /// Devuelve el nodo del Iterator accedido en el acceso
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Access
-        /// 
+        ///
         /// # Retorna
         /// El nodo del Iterator accedido en el acceso
         pub fn get_iterator(&self) -> Option<IteratorASTNode> {
@@ -559,17 +631,47 @@ pub mod nodes {
         }
 
         /// Devuelve el Option del nodo del Field accedido en el acceso
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Access
-        /// 
+        ///
         /// # Retorna
         /// El Option del nodo del Field accedido en el acceso
         pub fn get_field(&self) -> Option<FieldASTNode> {
             self.field.clone()
         }
+
+        /// Asocia un nodo Source o un nodo Expressio con el acceso
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Access
+        /// * `query` - El Option que contiene el el SourceOrExpression
+        pub fn set_source_or_expression(
+            &mut self,
+            source_or_expression: Option<SourceOrExpression>,
+        ) {
+            self.source_or_expression = source_or_expression;
+        }
+
+        /// Asocia un nodo Iterator con la tupla de acceso
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Access
+        /// * `query` - El Option que contiene el nodo Iterator del AST que se quiere asociar con el Access
+        pub fn set_iterator(&mut self, iterator: Option<IteratorASTNode>) {
+            self.iterator = iterator;
+        }
+
+        /// Asocia un nodo Field con la tupla de acceso
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Access
+        /// * `query` - El Option que contiene el nodo Field del AST que se quiere asociar con el Access
+        pub fn set_field(&mut self, field: Option<FieldASTNode>) {
+            self.field = field;
+        }
     }
-    
+
     impl ManagePosition for AccessASTNode {
         fn get_position(&self) -> Position {
             self.position.clone()
@@ -580,7 +682,7 @@ pub mod nodes {
     ///
     /// Se corresponde con las Shape de ShExML; contiene el identificador de los Prefix de la Shape y del campo de acceso a esta, el identificador de
     /// la propia Shape y del campo de acceso, las tuplas de la Shape y los nodos Prefix asociados con el nodo
-    #[derive(Debug, PartialEq, Clone)]
+    #[derive(Debug, PartialEq, Clone, Eq, Hash)]
     pub struct ShapeASTNode {
         prefix_ident: Option<String>,
         identifier: String,
@@ -596,7 +698,7 @@ pub mod nodes {
 
     impl ShapeASTNode {
         /// Crea un nodo Shape del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `prefix_ident` - El identificador del prefix del nodo Shape
         /// * `identifier` - El identificador del nodo Shape
@@ -605,25 +707,36 @@ pub mod nodes {
         /// * `tuples` - El vector con las tuplas de la Shape
         /// * `prefix` - El Option con el nodo Prefix asociado con la Shape
         /// * `field_prefix` - El Option con el nodo Prefix asociado con el campo de la Shape
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Shape del AST
-        pub fn new(prefix_ident: Option<Token>,
-        identifier: Token,
-        field_prefix_ident: Option<Token>,
-        field_identifier: IdentOrAccess,
-        tuples: Vec<ShapeTupleASTNode>,
-        position: Position) -> Self {
+        pub fn new(
+            prefix_ident: Option<Token>,
+            identifier: Token,
+            field_prefix_ident: Option<Token>,
+            field_identifier: IdentOrAccess,
+            tuples: Vec<ShapeTupleASTNode>,
+            position: Position,
+        ) -> Self {
             let prefix = get_lexeme_of_option(prefix_ident);
             let field_prefix = get_lexeme_of_option(field_prefix_ident);
-            ShapeASTNode { prefix_ident: prefix, identifier: identifier.get_lexeme(), field_prefix_ident: field_prefix, field_identifier, tuples, prefix: None, field_prefix: None, position }
+            ShapeASTNode {
+                prefix_ident: prefix,
+                identifier: identifier.get_lexeme(),
+                field_prefix_ident: field_prefix,
+                field_identifier,
+                tuples,
+                prefix: None,
+                field_prefix: None,
+                position,
+            }
         }
 
         /// Devuelve el Option del String del identificador del Prefix de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El Option del String del identificador del Prefix de la Shape
         pub fn get_prefix_ident(&self) -> Option<String> {
@@ -631,10 +744,10 @@ pub mod nodes {
         }
 
         /// Devuelve el String del identificador de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El String del identificador de la Shape
         pub fn get_identifier(&self) -> String {
@@ -642,10 +755,10 @@ pub mod nodes {
         }
 
         /// Devuelve el Option del String del identificador del Prefix del campo de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El Option del String del identificador del Prefix del campo de la Shape
         pub fn get_field_prefix_ident(&self) -> Option<String> {
@@ -653,10 +766,10 @@ pub mod nodes {
         }
 
         /// Devuelve el identificador o acceso del campo de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El identificador o acceso del campo de la Shape
         pub fn get_field_identifier(&self) -> IdentOrAccess {
@@ -664,21 +777,21 @@ pub mod nodes {
         }
 
         /// Devuelve las tuplas de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El vector con las tuplas de la Shape
-        pub fn get_tuples(&self) -> Vec<ShapeTupleASTNode>{
+        pub fn get_tuples(&self) -> Vec<ShapeTupleASTNode> {
             self.tuples.clone()
         }
 
         /// Devuelve el nodo Prefix asociado con la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El nodo Prefix asociado con la Shape
         pub fn get_prefix(&self) -> Option<PrefixASTNode> {
@@ -686,10 +799,10 @@ pub mod nodes {
         }
 
         /// Devuelve el nodo Prefix del campo de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El nodo Prefix del campo de la Shape
         pub fn get_field_prefix(&self) -> Option<PrefixASTNode> {
@@ -703,11 +816,22 @@ pub mod nodes {
         }
     }
 
+    impl ManagePrefix for ShapeASTNode {
+        /// Asocia un nodo Prefix con la Shape
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Shape
+        /// * `query` - El Option que contiene el nodo Prefix del AST que se quiere asociar a la Shape
+        fn set_prefix(&mut self, prefix: Option<PrefixASTNode>) {
+            self.prefix = prefix;
+        }
+    }
+
     /// Nodo de tipo ShapeTuples del AST
     ///
     /// Se corresponde con las tuplas de los Shape de ShExML; contiene el identificador de los Prefix de la tupla y del objeto de esta, el identificador de la
     /// propia tupla y del objeto y los nodos Prefix asociados con la tupla y el objeto
-    #[derive(Debug, PartialEq, Clone)]
+    #[derive(Debug, PartialEq, Clone, Eq, Hash)]
     pub struct ShapeTupleASTNode {
         prefix_ident: Option<String>,
         identifier: String,
@@ -722,7 +846,7 @@ pub mod nodes {
 
     impl ShapeTupleASTNode {
         /// Crea un nodo ShapeTuple del AST
-        /// 
+        ///
         /// # Argumentos
         /// * `prefix_ident` - El identificador del nodo ShapeTuple
         /// * `identifier` - El identificador de la tupla
@@ -730,24 +854,34 @@ pub mod nodes {
         /// * `object` - El identificador o acceso del objeto de la Shape
         /// * `prefix` - El Option con el nodo Prefix asociado con la tupla de la Shape
         /// * `object_prefix` - El Option con el nodo Prefix asociado con el objeto de la Shape
-        /// 
+        ///
         /// # Retorna
         /// Un nodo Access del AST
-        pub fn new(prefix_ident: Option<Token>,
-        identifier: Token,
-        object_prefix_ident: Option<Token>,
-        object: IdentOrAccess,
-        position: Position) -> Self {
+        pub fn new(
+            prefix_ident: Option<Token>,
+            identifier: Token,
+            object_prefix_ident: Option<Token>,
+            object: IdentOrAccess,
+            position: Position,
+        ) -> Self {
             let prefix = get_lexeme_of_option(prefix_ident);
             let object_prefix = get_lexeme_of_option(object_prefix_ident);
-            ShapeTupleASTNode { prefix_ident: prefix, identifier: identifier.get_lexeme(), object_prefix_ident: object_prefix, object, prefix: None, object_prefix: None, position }
+            ShapeTupleASTNode {
+                prefix_ident: prefix,
+                identifier: identifier.get_lexeme(),
+                object_prefix_ident: object_prefix,
+                object,
+                prefix: None,
+                object_prefix: None,
+                position,
+            }
         }
 
         /// Devuelve el Option del String del identificador del Prefix de la tupla de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo ShapeTuple
-        /// 
+        ///
         /// # Retorna
         /// El Option del String del identificador del Prefix de la tupla de la Shape
         pub fn get_prefix_ident(&self) -> Option<String> {
@@ -755,10 +889,10 @@ pub mod nodes {
         }
 
         /// Devuelve el String del identificador de la tupla de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo ShapeTuple
-        /// 
+        ///
         /// # Retorna
         /// El String del identificador de la tupla de la Shape
         pub fn get_identifier(&self) -> String {
@@ -766,10 +900,10 @@ pub mod nodes {
         }
 
         /// Devuelve el Option del String del identificador del Prefix del objeto de la tupla de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo ShapeTuple
-        /// 
+        ///
         /// # Retorna
         /// El Option del String del identificador del Prefix del objeto de la tupla de la Shape
         pub fn get_object_prefix_ident(&self) -> Option<String> {
@@ -777,10 +911,10 @@ pub mod nodes {
         }
 
         /// Devuelve el identificador o acceso del objeto de la tupla de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo ShapeTuple
-        /// 
+        ///
         /// # Retorna
         /// El identificador o acceso del objeto de la tupla de la Shape
         pub fn get_object(&self) -> IdentOrAccess {
@@ -788,10 +922,10 @@ pub mod nodes {
         }
 
         /// Devuelve el Option del nodo Prefix asociado con la tupla de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo ShapeTuple
-        /// 
+        ///
         /// # Retorna
         /// El Option del nodo Prefix asociado con la tupla de la Shape
         pub fn get_prefix(&self) -> Option<PrefixASTNode> {
@@ -799,10 +933,10 @@ pub mod nodes {
         }
 
         /// Devuelve el Option del nodo Prefix asociado con el objeto de la tupla de la Shape
-        /// 
+        ///
         /// # Argumentos
         /// * `self` - El propio nodo ShapeTuple
-        /// 
+        ///
         /// # Retorna
         /// El Option del nodo Prefix asociado con el objeto de la tupla de la Shape
         pub fn get_object_prefix(&self) -> Option<PrefixASTNode> {
@@ -816,11 +950,22 @@ pub mod nodes {
         }
     }
 
+    impl ManagePrefix for ShapeTupleASTNode {
+        /// Asocia un nodo Prefix con la tupla de Shape
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo ShapeTuple
+        /// * `query` - El Option que contiene el nodo Prefix del AST que se quiere asociar a la tupla de Shape
+        fn set_prefix(&mut self, prefix: Option<PrefixASTNode>) {
+            self.prefix = prefix;
+        }
+    }
+
     /// Obtiene el lexema de un Token dentro de un Option
-    /// 
+    ///
     /// # Argumentos
     /// * `option` - El Option que contiene el token
-    /// 
+    ///
     /// # Retorna
     /// El Option que contiene el lexema
     fn get_lexeme_of_option(option: Option<Token>) -> Option<String> {
@@ -847,7 +992,7 @@ pub struct AST {
 
 impl AST {
     /// Crea un nuevo AST
-    /// 
+    ///
     /// # Argumentos
     /// * `prefixes` - El vector con los nodos Prefix del AST
     /// * `sources` - El vector con los nodos Source del AST
@@ -855,23 +1000,32 @@ impl AST {
     /// * `iterators` - Un vector con los nodos Iterator del AST
     /// * `expressions` - Un vector con los nodos Expression del AST
     /// * `shapes` - Un vector con los nodos Shape del AST
-    /// 
+    ///
     /// # Retorna
     /// Un AST creado con todos sus componentes
-    pub fn new(prefixes: Vec<PrefixASTNode>,
-    sources: Vec<SourceASTNode>,
-    queries: Option<Vec<QueryASTNode>>,
-    iterators: Vec<IteratorASTNode>,
-    expressions: Vec<ExpressionASTNode>,
-    shapes: Vec<ShapeASTNode>) -> Self {
-        AST { prefixes, sources, queries, iterators, expressions, shapes }
+    pub fn new(
+        prefixes: Vec<PrefixASTNode>,
+        sources: Vec<SourceASTNode>,
+        queries: Option<Vec<QueryASTNode>>,
+        iterators: Vec<IteratorASTNode>,
+        expressions: Vec<ExpressionASTNode>,
+        shapes: Vec<ShapeASTNode>,
+    ) -> Self {
+        AST {
+            prefixes,
+            sources,
+            queries,
+            iterators,
+            expressions,
+            shapes,
+        }
     }
 
     /// Devuelve el vector de nodos Prefix del AST
-    /// 
+    ///
     /// # Argumentos
     /// * `self` - El propio AST
-    /// 
+    ///
     /// # Retorna
     /// El vector de nodos Prefix del AST
     pub fn get_prefixes(&self) -> Vec<PrefixASTNode> {
@@ -879,10 +1033,10 @@ impl AST {
     }
 
     /// Devuelve el vector de nodos Source del AST
-    /// 
+    ///
     /// # Argumentos
     /// * `self` - El propio AST
-    /// 
+    ///
     /// # Retorna
     /// El vector de nodos Source del AST
     pub fn get_sources(&self) -> Vec<SourceASTNode> {
@@ -890,10 +1044,10 @@ impl AST {
     }
 
     /// Devuelve el vector de nodos Query del AST
-    /// 
+    ///
     /// # Argumentos
     /// * `self` - El propio AST
-    /// 
+    ///
     /// # Retorna
     /// El vector de nodos Query del AST
     pub fn get_queries(&self) -> Option<Vec<QueryASTNode>> {
@@ -901,10 +1055,10 @@ impl AST {
     }
 
     /// Devuelve el vector de nodos Iterator del AST
-    /// 
+    ///
     /// # Argumentos
     /// * `self` - El propio AST
-    /// 
+    ///
     /// # Retorna
     /// El vector de nodos Iterator del AST
     pub fn get_iterators(&self) -> Vec<IteratorASTNode> {
@@ -912,10 +1066,10 @@ impl AST {
     }
 
     /// Devuelve el vector de nodos Expression del AST
-    /// 
+    ///
     /// # Argumentos
     /// * `self` - El propio AST
-    /// 
+    ///
     /// # Retorna
     /// El vector de nodos Expression del AST
     pub fn get_expressions(&self) -> Vec<ExpressionASTNode> {
@@ -923,10 +1077,10 @@ impl AST {
     }
 
     /// Devuelve el vector de nodos Shape del AST
-    /// 
+    ///
     /// # Argumentos
     /// * `self` - El propio AST
-    /// 
+    ///
     /// # Retorna
     /// El vector de nodos Shape del AST
     pub fn get_shapes(&self) -> Vec<ShapeASTNode> {

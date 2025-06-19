@@ -36,13 +36,14 @@ mod integration_lexer_syntax_analyzers_tests {
             model::semantic::semantic_analyzer::semantic_analysis(sintax_result.as_ref().unwrap());
 
         assert!(semantic_result.is_empty());
-        assert!(sintax_result.as_ref().is_ok_and(|file| !file
-            .get_prefixes().is_empty()
-            && !file.get_sources().is_empty()
-            && file.get_queries().is_some()
-            && !file.get_iterators().is_empty()
-            && !file.get_expressions().is_empty()
-            && !file.get_shapes().is_empty()));
+        assert!(sintax_result
+            .as_ref()
+            .is_ok_and(|file| !file.get_prefixes().is_empty()
+                && !file.get_sources().is_empty()
+                && file.get_queries().is_some()
+                && !file.get_iterators().is_empty()
+                && !file.get_expressions().is_empty()
+                && !file.get_shapes().is_empty()));
 
         let _ = sintax_result.as_ref().map(|file| {
             assert_eq!(file.get_prefixes().len(), 2);

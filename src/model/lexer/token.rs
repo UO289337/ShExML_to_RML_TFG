@@ -93,7 +93,7 @@ impl Token {
     ///
     /// # Parámetros
     /// * `self` - El propio token
-    /// 
+    ///
     /// # Retorna
     /// El lexema del token
     pub fn get_lexeme(&self) -> String {
@@ -104,7 +104,7 @@ impl Token {
     ///
     /// # Parámetros
     /// * `self` - El propio token
-    /// 
+    ///
     /// # Retorna
     /// El tipo del token
     pub fn get_token_type(&self) -> TokenType {
@@ -115,7 +115,7 @@ impl Token {
     ///
     /// # Parámetros
     /// * `self` - El propio token
-    /// 
+    ///
     /// # Retorna
     /// El número de línea de la entrada donde se encuentra el token
     pub fn get_num_line(&self) -> u16 {

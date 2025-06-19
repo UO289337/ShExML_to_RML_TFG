@@ -5,7 +5,7 @@
 
 use std::collections::HashSet;
 
-use crate::model::{ast::*, ast::nodes::*, compiler_error::CompilerError};
+use crate::model::{ast::nodes::*, ast::*, compiler_error::CompilerError};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -36,7 +36,9 @@ fn check_duplicate_identifiers(node: &AST) -> Vec<CompilerError> {
     identifiers.extend(get_source_identifiers(&node.get_sources()));
 
     if node.get_queries().is_some() {
-        identifiers.extend(get_queries_identifiers(node.get_queries().as_ref().unwrap()));
+        identifiers.extend(get_queries_identifiers(
+            node.get_queries().as_ref().unwrap(),
+        ));
     }
 
     let mut non_duplicates = HashSet::new();

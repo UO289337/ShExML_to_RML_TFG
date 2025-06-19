@@ -1,4 +1,4 @@
 //! Módulos del modelo del analizador semántico
 
-pub mod semantic_analyzer;
 mod identification_visitor;
+pub mod semantic_analyzer;

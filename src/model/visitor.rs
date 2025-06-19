@@ -1,6 +1,6 @@
 //! Visitor del AST
 
-use crate::model::{ast::*, ast::nodes::*};
+use crate::model::{ast::nodes::*, ast::*};
 
 /// Trait general del visitor para visitar cada uno de los nodos del AST
 pub trait Visitor<T> {

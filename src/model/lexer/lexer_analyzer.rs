@@ -112,10 +112,7 @@ fn access_dot(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(LEFT_ANGLE_BRACKET).parse_next(input)?;
-    Ok(Token::new(
-        LEFT_ANGLE_BRACKET,
-        TokenType::LeftAngleBracket,
-    ))
+    Ok(Token::new(LEFT_ANGLE_BRACKET, TokenType::LeftAngleBracket))
 }
 
 /// Encuentra el token RightAngleBracket en la entrada
@@ -209,10 +206,7 @@ fn left_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn right_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(RIGHT_BRACKET).parse_next(input)?;
-    Ok(Token::new(
-        RIGHT_BRACKET,
-        TokenType::RightBracket,
-    ))
+    Ok(Token::new(RIGHT_BRACKET, TokenType::RightBracket))
 }
 
 /// Encuentra el token Source en la entrada
@@ -596,10 +590,7 @@ fn sql_query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         .unwrap_or(query_definition)
         .trim_start();
 
-    Ok(Token::new(
-        query_definition,
-        TokenType::SqlQuery,
-    ))
+    Ok(Token::new(query_definition, TokenType::SqlQuery))
 }
 
 /// Realiza el análisis léxico de la entrada
