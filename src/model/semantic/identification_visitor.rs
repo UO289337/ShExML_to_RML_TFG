@@ -38,18 +38,25 @@ static SYMBOL_TABLE: Lazy<Mutex<HashMap<String, ASTNodeSymbolTable>>> = Lazy::ne
     Mutex::new(map)
 });
 
+pub fn reset_state() {
+    // Se limpia la tabla de símbolos al finalizar, sobre todo de cara a los tests
+    SYMBOL_TABLE.lock().unwrap().clear();
+}
+
 // No se utiliza &str porque no se podria devolver el valor al tener la propiedad
 impl Visitor<Vec<Option<CompilerError>>> for Identification {
     fn visit_ast(&mut self, ast: &mut AST) -> Vec<Option<CompilerError>> {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
 
         ast.get_mut_prefixes().iter_mut().for_each(|prefix| {
-            self.visit_prefix(prefix);
+            if previous_checking(&mut error_vec, prefix) {
+                error_vec.extend(self.visit_prefix(prefix));
+            }
         });
 
         ast.get_mut_sources().iter_mut().for_each(|source| {
             if previous_checking(&mut error_vec, source) {
-                self.visit_source(source);
+                error_vec.extend(self.visit_source(source));
             }
         });
 
@@ -57,7 +64,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         if queries.is_some() {
             queries.as_mut().unwrap().iter_mut().for_each(|query| {
                 if previous_checking(&mut error_vec, query) {
-                    self.visit_query(query);
+                    error_vec.extend(self.visit_query(query));
                 }
             });
         }
@@ -66,27 +73,29 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             .iter_mut()
             .for_each(|iterator| {
                 if previous_checking(&mut error_vec, iterator) {
-                    self.visit_iterator(iterator);
+                    error_vec.extend(self.visit_iterator(iterator));
                 }
             });
 
         ast.get_mut_expressions()
             .iter_mut()
             .for_each(|expression| {
-                self.visit_expression(expression);
+                error_vec.extend(self.visit_expression(expression));
             });
 
         ast.get_mut_shapes().iter_mut().for_each(|shape| {
-            self.visit_shape(shape);
+            error_vec.extend(self.visit_shape(shape));
         });
 
+        // No es objetivo buscar si hay identificadores libres sin utilizar, en este caso no es un problema
+        reset_state();
         error_vec
     }
 
     fn visit_prefix(&mut self, prefix_node: &mut PrefixASTNode) -> Vec<Option<CompilerError>> {
         let mut table = SYMBOL_TABLE.lock().unwrap();
-        if let Some(ident) = prefix_node.get_identifier() {
-            table.insert(ident, ASTNodeSymbolTable::Prefix(prefix_node.clone()));
+        if prefix_node.get_identifier() != String::new() {
+            table.insert(prefix_node.get_identifier(), ASTNodeSymbolTable::Prefix(prefix_node.clone()));
         } else {
             // Para el prefijo por defecto (:)
             table.insert(String::new(), ASTNodeSymbolTable::Prefix(prefix_node.clone()));
@@ -112,6 +121,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
 
     fn visit_iterator(&mut self, iterator_node: &mut IteratorASTNode) -> Vec<Option<CompilerError>> {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
+        let num_line = iterator_node.get_position().get_num_line();
 
         // Utilizamos un ámbito acotado para la tabla, para que se pueda liberar antes
         {
@@ -120,12 +130,12 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             match iterator_node.get_iterator_access() {
                 IteratorAccess::Ident(ident) => {
                     if !table.contains_key(&ident) {
-                        error_vec.push(Some(CompilerError::new(format!("No se encuentra el identificador de la Query del acceso del iterador: {ident}"))));
+                        error_vec.push(Some(CompilerError::new(format!("No se encuentra el identificador de la Query del acceso del iterador: {ident}, en la línea {num_line}"))));
                     } else {
                         if let Some(ASTNodeSymbolTable::Query(query)) = table.get(&ident) {
                             iterator_node.set_query(Some(query.clone()));
                         } else {
-                            error_vec.push(Some(CompilerError::new(format!("Se esperaba que el identificador {ident} se correspondiera con una consulta SQL"))));
+                            error_vec.push(Some(CompilerError::new(format!("Se esperaba que el identificador {ident} se correspondiera con una consulta SQL en la línea {num_line}"))));
                         }
                     }
                 }
@@ -144,7 +154,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             .iter_mut()
             .for_each(|field| {
                 if previous_checking(&mut error_vec, field) {
-                    self.visit_field(field);
+                    error_vec.extend(self.visit_field(field));
                 }
             });
 
@@ -168,14 +178,16 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             ASTNodeSymbolTable::Expression(expression_node.clone()),
         );
 
+        let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
+
         expression_node
             .get_mut_accesses()
             .iter_mut()
             .for_each(|access| {
-                self.visit_access(access);
+                error_vec.extend(self.visit_access(access));
             });
 
-        vec![None]
+        error_vec
     }
 
     fn visit_shape(&mut self, shape_node: &mut ShapeASTNode) -> Vec<Option<CompilerError>> {
@@ -195,7 +207,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         );
 
         shape_node.get_mut_tuples().iter_mut().for_each(|tuple| {
-            self.visit_shape_tuple(tuple);
+            error_vec.extend(self.visit_shape_tuple(tuple));
         });
 
         error_vec
@@ -228,7 +240,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         }
 
         if object_access.is_some() {
-            self.visit_access(&mut object_access.unwrap());
+            error_vec.extend(self.visit_access(&mut object_access.unwrap()));
         }
 
         error_vec
@@ -236,6 +248,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
 
     fn visit_access(&mut self, access_node: &mut AccessASTNode) -> Vec<Option<CompilerError>> {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
+        let num_line = access_node.get_position().get_num_line();
 
         // Utilizamos un ámbito acotado para la tabla, para que se pueda liberar antes
         {
@@ -250,7 +263,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             } else if let Some(ASTNodeSymbolTable::Expression(expression)) = table.get(&ident) {
                 access_node.set_source_or_expression(Some(SourceOrExpression::Expression(expression.clone())));
             } else {
-                error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró {ident}"))));
+                error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró {ident} en la línea {num_line}"))));
             }
 
             if let Some(ASTNodeSymbolTable::Iterator(iterator)) = table.get(&first_access) {
@@ -258,14 +271,14 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             } else if let Some(ASTNodeSymbolTable::Field(field)) = table.get(&first_access) {
                 access_node.set_field(Some(field.clone()));
             } else {
-                error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Iterator o Field después del primer '.', pero se encontró {ident}"))));
+                error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Iterator o Field después del primer '.', pero se encontró {first_access} en la línea {num_line}"))));
             }
 
             if second_access.is_some() {
-                if let Some(ASTNodeSymbolTable::Field(field)) = table.get(&second_access.unwrap()) {
+                if let Some(ASTNodeSymbolTable::Field(field)) = table.get(&second_access.clone().unwrap()) {
                     access_node.set_field(Some(field.clone()));
                 } else {
-                    error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Field después del segundo '.', pero se encontró {ident}"))));
+                    error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Field después del segundo '.', pero se encontró {} en la línea {num_line}", second_access.unwrap()))));
                 }
             }
         }
@@ -280,9 +293,10 @@ fn asociate_prefix_to_shape<T>(
     error_vec: &mut Vec<Option<CompilerError>>,
     object_prefix: bool,
 ) where
-    T: ManagePrefix,
+    T: ManagePrefix + ManagePosition,
 {
     let table = SYMBOL_TABLE.lock().unwrap();
+    let num_line = node.get_position().get_num_line();
 
     if prefix.is_some() {
         let ident = prefix.unwrap();
@@ -290,16 +304,16 @@ fn asociate_prefix_to_shape<T>(
             asociate_prefix(node, object_prefix, prefix);
         } else {
             error_vec.push(Some(CompilerError::new(format!(
-                "Se esperaba que el identificador {ident} se correspondiera con un Prefix"
+                "Se esperaba que el identificador {ident} se correspondiera con un Prefix en la línea {num_line}"
             ))));
         }
     } else {
         // Se comprueba el prefijo por defecto (:)
         if let Some(ASTNodeSymbolTable::Prefix(prefix)) = table.get(&String::new()) {
             asociate_prefix(node, object_prefix, prefix);
-        } else {
+        } else if !object_prefix {
             error_vec.push(Some(CompilerError::new(format!(
-                "Se esperaba que existiera el identificador por defecto ':'"
+                "Se esperaba que existiera el identificador por defecto ':' en la línea {num_line}"
             ))));
         }
     }
@@ -346,7 +360,7 @@ fn create_error_message(
 ) -> Option<CompilerError> {
     Some(CompilerError::new(format!(
         "Identificador duplicado: {ident} en las líneas {} y {}",
-        position.get_num_line(),
-        duplicate_pos.get_num_line()
+        duplicate_pos.get_num_line(),
+        position.get_num_line()
     )))
 }

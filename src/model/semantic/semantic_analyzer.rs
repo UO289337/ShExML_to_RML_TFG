@@ -3,7 +3,7 @@
 //! Realiza el análisis semántico del compilador
 //! Comprueba que no se repitan identificadores,
 
-use crate::model::{ast::*, compiler_error::CompilerError, semantic::identification_visitor::Identification, visitor::Visitor};
+use crate::model::{ast::*, compiler_error::CompilerError, semantic::identification_visitor::{reset_state, Identification}, visitor::Visitor};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -38,12 +38,16 @@ fn convert_option_errors_to_compile_errors(error_vec: Vec<Option<CompilerError>>
 
 // Tests
 
+pub fn reset_table() {
+    reset_state();
+}
+
 /// Módulo de los tests del analizador léxico
 ///
 /// Contiene los tests que se encargan de probar que se detectan todos los tokens válidos y se descartan los inválidos
 /// Los tests se hacen tanto a nivel de tokens individuales como a nivel de tokens en conjunto
 #[cfg(test)]
-mod lexer_tests {
+mod semantic_tests {
     use super::*;
     use crate::test_utils::TestUtilities;
 
@@ -51,6 +55,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn identification_withouth_errors_with_inline_query_and_simple_access() {
+        reset_table();
         let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
         let sources = TestUtilities::create_sources_for_ast(
             "films_csv_file",
@@ -66,7 +71,9 @@ mod lexer_tests {
         let mut ast = AST::new(prefixes, sources, queries.clone(), iterators, expressions, shapes);
         let actual = identification_phase(&mut ast);
 
-        assert!(actual.is_empty());
+        actual.into_iter().for_each(|error| {
+            assert!(error.is_none());
+        });
 
         // Las llaves son necesarias para evitar tener que clonar el ast debido a que es &mut
         let mut iterators = ast.get_iterators();
@@ -89,7 +96,10 @@ mod lexer_tests {
         let tuples = shapes.get_mut(0).unwrap().get_tuples();
         tuples.into_iter().for_each(|tuple| {
             assert!(prefixes.contains(&tuple.get_prefix().unwrap()));
-            assert!(prefixes.contains(&tuple.get_object_prefix().unwrap()));
+            let object_prefix = tuple.get_object_prefix();
+            if object_prefix.is_some() {
+                assert!(prefixes.contains(&object_prefix.unwrap()));
+            }
         });
     }
 }

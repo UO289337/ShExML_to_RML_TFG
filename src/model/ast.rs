@@ -148,17 +148,6 @@ pub mod nodes {
             }
         }
 
-        /// Devuelve el Option con el String del identificador del Prefix
-        ///
-        /// # Argumentos
-        /// * `self` - El propio nodo Prefix
-        ///
-        /// # Retorna
-        /// Un Option con el String del identificador del Prefix
-        pub fn get_identifier(&self) -> Option<String> {
-            self.identifier.clone()
-        }
-
         /// Devuelve el String de la URI del Prefix
         ///
         /// # Argumentos
@@ -168,6 +157,22 @@ pub mod nodes {
         /// El String de la URI del Prefix
         pub fn get_uri(&self) -> String {
             self.uri.clone()
+        }
+    }
+
+    impl Identifiable for PrefixASTNode {
+        /// Devuelve el String del identificador del Prefix
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Prefix
+        ///
+        /// # Retorna
+        /// El String del identificador del Prefix
+        fn get_identifier(&self) -> String {
+            if self.identifier.is_some() {
+                return self.identifier.as_ref().unwrap().to_string()
+            }
+            String::new()
         }
     }
 

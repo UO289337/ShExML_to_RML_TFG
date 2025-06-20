@@ -35,8 +35,8 @@ impl Visitor<String> for Generator {
         let mut prefix_generation = String::new();
         let prefix;
 
-        if let Some(p) = prefix_node.get_identifier() {
-            prefix = p;
+        if prefix_node.get_identifier() != String::new() {
+            prefix = prefix_node.get_identifier();
         } else {
             prefix = String::new();
         }

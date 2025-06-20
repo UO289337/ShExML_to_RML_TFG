@@ -6,12 +6,15 @@ use shexml_to_rml_tfg::model;
 #[cfg(test)]
 mod integration_lexer_syntax_analyzers_tests {
 
+    use shexml_to_rml_tfg::model::semantic::semantic_analyzer::reset_table;
+
     use super::*;
 
     /// Comprueba que la integración entre el analizador léxico, el analizador sintáctico y el semántico se realiza correctamente
     #[doc(hidden)]
     #[test]
     fn integration_with_valid_input() {
+        reset_table();
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE films_csv_ast <https://shexml.herminiogarcia.com/asts/films.csv>
@@ -60,6 +63,7 @@ mod integration_lexer_syntax_analyzers_tests {
     #[doc(hidden)]
     #[test]
     fn integration_with_lexer_fail() {
+        reset_table();
         let mut input = "PREFIX 123example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE films_csv_ast <https://shexml.herminiogarcia.com/asts/films.csv>
@@ -86,6 +90,7 @@ mod integration_lexer_syntax_analyzers_tests {
     #[doc(hidden)]
     #[test]
     fn integration_with_syntax_fail() {
+        reset_table();
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE <https://shexml.herminiogarcia.com/asts/films.csv>
@@ -119,10 +124,11 @@ mod integration_lexer_syntax_analyzers_tests {
     #[doc(hidden)]
     #[test]
     fn integration_with_semantic_fail() {
+        reset_table();
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX example: <http://dbpedia.org/resource/>
-            SOURCE example <https://shexml.herminiogarcia.com/asts/films.csv>
-            QUERY example <sql: SELECT * FROM example;>
+            SOURCE films_csv <https://shexml.herminiogarcia.com/asts/films.csv>
+            QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
                 FIELD id <@id>
                 FIELD name <name>
@@ -142,6 +148,14 @@ mod integration_lexer_syntax_analyzers_tests {
         let semantic_result =
             model::semantic::semantic_analyzer::semantic_analysis(&mut sintax_result.unwrap());
 
-        assert_eq!(semantic_result.len(), 3);
+        /*
+        semantic_result.into_iter().for_each(|error| {
+            println!("{}", error.get_message());
+        });
+        */
+
+        // Salen muchos errores porque se coge el primer identificador detectado, por lo que films_csv es un Source y no el Iterator y,
+        // por tanto, tampoco se cogen sus campos
+        assert_eq!(semantic_result.len(), 10);
     }
 }
