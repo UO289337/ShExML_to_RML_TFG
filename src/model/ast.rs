@@ -117,6 +117,7 @@ pub mod nodes {
 
     pub trait ManagePrefix {
         fn set_prefix(&mut self, prefix: Option<PrefixASTNode>);
+        fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>);
     }
 
     /// Nodo de tipo Prefix del AST
@@ -357,6 +358,17 @@ pub mod nodes {
             self.fields.clone()
         }
 
+        /// Devuelve el vector de nodos Field mutable del Iterator
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Iterator
+        ///
+        /// # Retorna
+        /// El vector de nodos Field mutable del Iterator
+        pub fn get_mut_fields(&mut self) -> &mut Vec<FieldASTNode> {
+            &mut self.fields
+        }
+
         /// Devuelve el Option de la consulta SQL del Iterator
         ///
         /// # Argumentos
@@ -366,6 +378,17 @@ pub mod nodes {
         /// El Option con la consulta SQL del Iterator
         pub fn get_query(&self) -> Option<QueryASTNode> {
             self.query.clone()
+        }
+
+        /// Devuelve el Option mutable de la consulta SQL table del Iterator
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Iterator
+        ///
+        /// # Retorna
+        /// El Option mutable con la consulta SQL del Iterator
+        pub fn get_mut_query(&mut self) -> &mut Option<QueryASTNode> {
+            &mut self.query
         }
 
         /// Asocia un nodo Query con el Iterator
@@ -521,6 +544,17 @@ pub mod nodes {
         /// El vector con los accesos que se realizan en la Expression
         pub fn get_accesses(&self) -> Vec<AccessASTNode> {
             self.accesses.clone()
+        }
+
+        /// Devuelve el vector mutable con los accesos que se realizan en la Expression
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Expression
+        ///
+        /// # Retorna
+        /// El vector mutable con los accesos que se realizan en la Expression
+        pub fn get_mut_accesses(&mut self) -> &mut Vec<AccessASTNode> {
+            &mut self.accesses
         }
     }
 
@@ -775,7 +809,7 @@ pub mod nodes {
             self.field_identifier.clone()
         }
 
-        /// Devuelve las tuplas de la Shape
+        /// Devuelve las tuplas mutables de la Shape
         ///
         /// # Argumentos
         /// * `self` - El propio nodo Shape
@@ -784,6 +818,17 @@ pub mod nodes {
         /// El vector con las tuplas de la Shape
         pub fn get_tuples(&self) -> Vec<ShapeTupleASTNode> {
             self.tuples.clone()
+        }
+
+        /// Devuelve las tuplas de la Shape en un vector mutable
+        ///
+        /// # Argumentos
+        /// * `self` - El propio nodo Shape
+        ///
+        /// # Retorna
+        /// El vector mutable con las tuplas de la Shape
+        pub fn get_mut_tuples(&mut self) -> &mut Vec<ShapeTupleASTNode> {
+            &mut self.tuples
         }
 
         /// Devuelve el nodo Prefix asociado con la Shape
@@ -823,6 +868,10 @@ pub mod nodes {
         /// * `query` - El Option que contiene el nodo Prefix del AST que se quiere asociar a la Shape
         fn set_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.prefix = prefix;
+        }
+        
+        fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>) {
+            self.field_prefix = prefix;
         }
     }
 
@@ -958,6 +1007,10 @@ pub mod nodes {
         fn set_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.prefix = prefix;
         }
+        
+        fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>) {
+            self.object_prefix = prefix;
+        }
     }
 
     /// Obtiene el lexema de un Token dentro de un Option
@@ -979,7 +1032,7 @@ pub mod nodes {
 /// El AST
 ///
 /// Representa el AST; contiene los prefijos, sources, consultas, iteradores, expresiones y Shapes.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct AST {
     prefixes: Vec<PrefixASTNode>,
     sources: Vec<SourceASTNode>,
@@ -1031,6 +1084,28 @@ impl AST {
         self.prefixes.clone()
     }
 
+    /// Devuelve el vector mutable de nodos Prefix del AST
+    ///
+    /// # Argumentos
+    /// * `self` - El propio AST
+    ///
+    /// # Retorna
+    /// El vector mutable de nodos Prefix del AST
+    pub fn get_mut_prefixes(&self) -> Vec<PrefixASTNode> {
+        self.prefixes.clone()
+    }
+
+    /// Devuelve el vector de nodos mutable Source del AST
+    ///
+    /// # Argumentos
+    /// * `self` - El propio AST
+    ///
+    /// # Retorna
+    /// El vector de nodos mutable Source del AST
+    pub fn get_sources(&self) -> Vec<SourceASTNode> {
+        self.sources.clone()
+    }
+
     /// Devuelve el vector de nodos Source del AST
     ///
     /// # Argumentos
@@ -1038,8 +1113,8 @@ impl AST {
     ///
     /// # Retorna
     /// El vector de nodos Source del AST
-    pub fn get_sources(&self) -> Vec<SourceASTNode> {
-        self.sources.clone()
+    pub fn get_mut_sources(&mut self) -> &mut Vec<SourceASTNode> {
+        &mut self.sources
     }
 
     /// Devuelve el vector de nodos Query del AST
@@ -1053,6 +1128,17 @@ impl AST {
         self.queries.clone()
     }
 
+    /// Devuelve el vector mutable de nodos Query del AST
+    ///
+    /// # Argumentos
+    /// * `self` - El propio AST
+    ///
+    /// # Retorna
+    /// El vector mutable de nodos Query del AST
+    pub fn get_mut_queries(&mut self) -> &mut Option<Vec<QueryASTNode>> {
+        &mut self.queries
+    }
+
     /// Devuelve el vector de nodos Iterator del AST
     ///
     /// # Argumentos
@@ -1062,6 +1148,17 @@ impl AST {
     /// El vector de nodos Iterator del AST
     pub fn get_iterators(&self) -> Vec<IteratorASTNode> {
         self.iterators.clone()
+    }
+
+    /// Devuelve el vector mutable de nodos Iterator del AST
+    ///
+    /// # Argumentos
+    /// * `self` - El propio AST
+    ///
+    /// # Retorna
+    /// El vector mutable de nodos Iterator del AST
+    pub fn get_mut_iterators(&mut self) -> &mut Vec<IteratorASTNode> {
+        &mut self.iterators
     }
 
     /// Devuelve el vector de nodos Expression del AST
@@ -1075,6 +1172,17 @@ impl AST {
         self.expressions.clone()
     }
 
+    /// Devuelve el vector mutable de nodos Expression del AST
+    ///
+    /// # Argumentos
+    /// * `self` - El propio AST
+    ///
+    /// # Retorna
+    /// El vector mutable de nodos Expression del AST
+    pub fn get_mut_expressions(&mut self) -> &mut Vec<ExpressionASTNode> {
+        &mut self.expressions
+    }
+
     /// Devuelve el vector de nodos Shape del AST
     ///
     /// # Argumentos
@@ -1084,5 +1192,16 @@ impl AST {
     /// El vector de nodos Shape del AST
     pub fn get_shapes(&self) -> Vec<ShapeASTNode> {
         self.shapes.clone()
+    }
+
+    /// Devuelve el vector mutable de nodos Shape del AST
+    ///
+    /// # Argumentos
+    /// * `self` - El propio AST
+    ///
+    /// # Retorna
+    /// El vector mutable de nodos Shape del AST
+    pub fn get_mut_shapes(&mut self) -> &mut Vec<ShapeASTNode> {
+        &mut self.shapes
     }
 }

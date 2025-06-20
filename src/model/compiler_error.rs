@@ -2,6 +2,12 @@
 
 use std::fmt;
 
+#[derive(Debug, Clone, PartialEq)]
+pub enum TypeOfError {
+    Error,
+    Warning,
+}
+
 /// Estructura del CompilerError
 ///
 /// Unicamente contiene el mensaje de error
@@ -27,5 +33,9 @@ impl CompilerError {
     /// A si mismo
     pub fn new(message: String) -> Self {
         CompilerError { message }
+    }
+
+    pub fn get_message(&self) -> String {
+        self.message.clone()
     }
 }

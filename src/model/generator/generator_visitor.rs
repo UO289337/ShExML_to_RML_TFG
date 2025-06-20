@@ -13,10 +13,10 @@ impl Visitor<String> for Generator {
     ///
     /// # Retorna
     /// Una cadena con el contenido del fichero RML
-    fn visit_ast(&mut self, ast: AST) -> String {
+    fn visit_ast(&mut self, ast: &mut AST) -> String {
         let mut file_generation = String::new();
-        for prefix in ast.get_prefixes() {
-            file_generation.push_str(&format!("@prefix {} .\n", self.visit_prefix(prefix)));
+        for mut prefix in ast.get_prefixes() {
+            file_generation.push_str(&format!("@prefix {} .\n", self.visit_prefix(&mut prefix)));
         }
         file_generation
 
@@ -31,7 +31,7 @@ impl Visitor<String> for Generator {
     ///
     /// # Retorna
     /// Una cadena con el formato RML equivalente del prefix de ShExML
-    fn visit_prefix(&mut self, prefix_node: PrefixASTNode) -> String {
+    fn visit_prefix(&mut self, prefix_node: &mut PrefixASTNode) -> String {
         let mut prefix_generation = String::new();
         let prefix;
 
@@ -46,35 +46,35 @@ impl Visitor<String> for Generator {
         prefix_generation
     }
 
-    fn visit_source(&mut self, _source_node: SourceASTNode) -> String {
+    fn visit_source(&mut self, _source_node: &mut SourceASTNode) -> String {
         todo!()
     }
 
-    fn visit_query(&mut self, _query_node: QueryASTNode) -> String {
+    fn visit_query(&mut self, _query_node: &mut QueryASTNode) -> String {
         todo!()
     }
 
-    fn visit_iterator(&mut self, _iterator_node: IteratorASTNode) -> String {
+    fn visit_iterator(&mut self, _iterator_node: &mut IteratorASTNode) -> String {
         todo!()
     }
 
-    fn visit_field(&mut self, _field_node: FieldASTNode) -> String {
+    fn visit_field(&mut self, _field_node: &mut FieldASTNode) -> String {
         todo!()
     }
 
-    fn visit_expression(&mut self, _expression_node: ExpressionASTNode) -> String {
+    fn visit_expression(&mut self, _expression_node: &mut ExpressionASTNode) -> String {
         todo!()
     }
 
-    fn visit_shape(&mut self, _shape_node: ShapeASTNode) -> String {
+    fn visit_shape(&mut self, _shape_node: &mut ShapeASTNode) -> String {
         todo!()
     }
 
-    fn visit_shape_tuple(&mut self, _shape_tuple_node: ShapeTupleASTNode) -> String {
+    fn visit_shape_tuple(&mut self, _shape_tuple_node: &mut ShapeTupleASTNode) -> String {
         todo!()
     }
 
-    fn visit_access(&mut self, _access_node: AccessASTNode) -> String {
+    fn visit_access(&mut self, _access_node: &mut AccessASTNode) -> String {
         todo!()
     }
 }

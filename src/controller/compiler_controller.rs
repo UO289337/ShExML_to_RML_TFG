@@ -32,8 +32,8 @@ pub fn run_lexer_analyzer() {
 /// * `tokens` - El vector de tokens resultado del analizador léxico
 fn run_sintax_analyzer(tokens: Vec<Token>) {
     match model::syntax::syntax_analyzer::parser(tokens) {
-        Ok(node) => {
-            run_semantic_analyzer(node);
+        Ok(mut ast) => {
+            run_semantic_analyzer(&mut ast);
         }
         Err(e) => {
             show_sintax_errors(e);
@@ -45,11 +45,11 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 ///
 /// # Parámetros
 /// * `node` - El nodo raíz del AST resultado del analizador sintáctico
-fn run_semantic_analyzer(node: AST) {
-    let semantic_errors = model::semantic::semantic_analyzer::semantic_analysis(&node);
+fn run_semantic_analyzer(ast: &mut AST) {
+    let semantic_errors = model::semantic::semantic_analyzer::semantic_analysis(ast);
 
     if semantic_errors.is_empty() {
-        model::generator::rml_generator::rml_generator(node);
+        model::generator::rml_generator::rml_generator(ast.clone());
         view::main_view::show_correct_generation()
     } else {
         show_errors(semantic_errors);
@@ -61,9 +61,9 @@ fn run_semantic_analyzer(node: AST) {
 /// # Parámetros
 /// * `errors` - Un vector de CompilerError que contiene los errores encontrados
 fn show_errors(errors: Vec<CompilerError>) {
-    for error in errors {
-        eprintln!("{}", error);
-    }
+    errors.into_iter().for_each(|error| {
+        println!("Error: {}", error.get_message());
+    });
 }
 
 /// Muestra los errores sintácticos encontrados al realizar el análisis sintáctico
