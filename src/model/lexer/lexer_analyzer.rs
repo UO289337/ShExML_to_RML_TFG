@@ -503,13 +503,17 @@ fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let path = take_while(1.., |c: char| c != '>').parse_next(input)?;
+    let mut path = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_path = Regex::new(
         r"(?ix)                    
             ^(
                 file://[a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas
                 |
                 file://(\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas
+                |
+                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas sin file://
+                |
+                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas sin file://
             )$
             ",
     )
@@ -522,6 +526,10 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
             StrContext::Label("Ruta absoluta o relativa incorrecta"),
         );
         return Err(ErrMode::Backtrack(error.clone()));
+    }
+
+    if path.starts_with("file://") {
+        path = path.strip_prefix("file://").unwrap_or(path);
     }
 
     Ok(Token::new(path, TokenType::Path))
@@ -1296,8 +1304,8 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn valid_relative_path() {
-        let expected = Token::create_test_token("file://ejemplo/fichero.csv", 0, TokenType::Path);
-        let actual = path(&mut "file://ejemplo/fichero.csv");
+        let expected = Token::create_test_token("files/fichero.csv", 0, TokenType::Path);
+        let actual = path(&mut "files/fichero.csv");
         check_ok(expected, actual);
     }
 
@@ -1306,7 +1314,7 @@ mod lexer_tests {
     #[test]
     fn valid_absolute_path() {
         let expected = Token::create_test_token(
-            "file://C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
+            "C:\\ejemplo\\path\\a\\fichero\\fichero.csv",
             0,
             TokenType::Path,
         );
@@ -1318,7 +1326,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn path_with_invalid_absolute_path() {
-        let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
+        let actual = path(&mut "C:ejemplo\\path\\a\\fichero\\fichero.csv");
         check_error(actual);
     }
 
@@ -1326,7 +1334,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn path_with_invalid_relative_path() {
-        let actual = path(&mut "ejemplo.csv");
+        let actual = path(&mut "file:ejemplo.csv");
         check_error(actual);
     }
 
