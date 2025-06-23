@@ -1,7 +1,7 @@
 //! Módulo del analizador semántico
 //!
 //! Realiza el análisis semántico del compilador
-//! Comprueba que no se repitan identificadores,
+//! El análisis semántico se divide en 2 fases: la fase de identificación y la de chequeo de tipos (type checking)
 
 use crate::model::{ast::*, compiler_error::CompilerError, semantic::identification_visitor::{reset_state, Identification}, visitor::Visitor};
 
@@ -21,11 +21,25 @@ pub fn semantic_analysis(ast: &mut AST) -> Vec<CompilerError> {
     convert_option_errors_to_compile_errors(error_vec)
 }
 
+/// Realiza la llamada al Visitor de la fase de identificación
+/// 
+/// # Parámetros
+/// * `ast` - El AST que se va a visitar
+/// 
+/// # Retorna
+/// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de identificación
 fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
     let mut identification = Identification;
     identification.visit_ast(ast)
 }
 
+/// Convierte un vector con Options con errores en un vector con únicamente los errores
+/// 
+/// # Parámetros
+/// * `error_vec` - El vector con los Options que contiene los posibles errores
+/// 
+/// # Retorna
+/// Un vector únicamente con los errores
 fn convert_option_errors_to_compile_errors(error_vec: Vec<Option<CompilerError>>) -> Vec<CompilerError> {
     let mut errors: Vec<CompilerError> = Vec::new();
     error_vec.into_iter().for_each(|error| {
@@ -38,6 +52,7 @@ fn convert_option_errors_to_compile_errors(error_vec: Vec<Option<CompilerError>>
 
 // Tests
 
+/// Resetea (limpia) la tabla de símbolos de la fase de identificación
 pub fn reset_table() {
     reset_state();
 }

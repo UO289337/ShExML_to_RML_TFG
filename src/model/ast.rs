@@ -115,6 +115,7 @@ pub mod nodes {
         fn get_identifier(&self) -> String;
     }
 
+    /// Trait para el manejo de prefijos
     pub trait ManagePrefix {
         fn set_prefix(&mut self, prefix: Option<PrefixASTNode>);
         fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>);
@@ -177,6 +178,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for PrefixASTNode {
+        /// Devuelve la posición del nodo Prefix
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Prefix del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Prefix con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -226,6 +234,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for SourceASTNode {
+        /// Devuelve la posición del nodo Source
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Source del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Source con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -284,6 +299,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for QueryASTNode {
+        /// Devuelve la posición del nodo Query
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Query del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Query con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -407,6 +429,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for IteratorASTNode {
+        /// Devuelve la posición del nodo Iterator
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Iterator del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Iterator con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -478,6 +507,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for FieldASTNode {
+        /// Devuelve la posición del nodo Field
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Field del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Field con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -564,6 +600,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for ExpressionASTNode {
+        /// Devuelve la posición del nodo Expression
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Expression del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Expression con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -711,6 +754,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for AccessASTNode {
+        /// Devuelve la posición del nodo Access
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Access del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Access con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -860,6 +910,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for ShapeASTNode {
+        /// Devuelve la posición del nodo Shape
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Shape del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo Shape con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -875,6 +932,11 @@ pub mod nodes {
             self.prefix = prefix;
         }
         
+        /// Asocia un nodo Prefix con el campo de la Shape
+        /// 
+        /// # Argumentos
+        /// * `self` - El propio nodo Shape
+        /// * `prefix` - Un Option con el nodo Prefix del AST que se quiere asociar al campo de la Shape
         fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.field_prefix = prefix;
         }
@@ -998,6 +1060,13 @@ pub mod nodes {
     }
 
     impl ManagePosition for ShapeTupleASTNode {
+        /// Devuelve la posición del nodo ShapeTuple
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo ShapeTuple del AST
+        /// 
+        /// # Retorna
+        /// La posición del nodo ShapeTuple con respecto a la entrada
         fn get_position(&self) -> Position {
             self.position.clone()
         }
@@ -1013,6 +1082,11 @@ pub mod nodes {
             self.prefix = prefix;
         }
         
+        /// Asocia un nodo Prefix con el objeto de la tupla de la Shape
+        /// 
+        /// # Argumentos
+        /// * `self` - El propio nodo ShapeTuple
+        /// * `prefix` - El Option con el nodo Prefix del AST que se quiere asociar al objeto de la tupla de la Shape
         fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.object_prefix = prefix;
         }

@@ -3,6 +3,8 @@
 use crate::model::{ast::nodes::*, ast::*};
 
 /// Trait general del visitor para visitar cada uno de los nodos del AST
+/// Se utiliza &mut con el fin de poder modificar el AST, si así se desea, a medida que se vayan visitando sus nodos
+/// Se utiliza el parámetro generalizable T para permitir un mayor uso del Visitor
 pub trait Visitor<T> {
     fn visit_ast(&mut self, ast: &mut AST) -> T;
     fn visit_prefix(&mut self, prefix_node: &mut PrefixASTNode) -> T;
