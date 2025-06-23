@@ -1,6 +1,7 @@
 use std::{collections::HashMap, sync::Mutex};
 
 use once_cell::sync::Lazy;
+use std::thread_local;
 
 use crate::model::{ast::{nodes::*, *}, compiler_error::CompilerError, visitor::*};
 
@@ -33,14 +34,18 @@ impl ManagePosition for ASTNodeSymbolTable {
 /// Struct para poder realizar las visitas del visitor de la fase de Identificación sobre él
 pub struct Identification;
 
-static SYMBOL_TABLE: Lazy<Mutex<HashMap<String, ASTNodeSymbolTable>>> = Lazy::new(|| {
-    let map = HashMap::new();
-    Mutex::new(map)
-});
+thread_local! {
+    static SYMBOL_TABLE: Lazy<Mutex<HashMap<String, ASTNodeSymbolTable>>> = Lazy::new(|| {
+        let map = HashMap::new();
+        Mutex::new(map)
+    });
+}
 
 pub fn reset_state() {
     // Se limpia la tabla de símbolos al finalizar, sobre todo de cara a los tests
-    SYMBOL_TABLE.lock().unwrap().clear();
+    SYMBOL_TABLE.with(|table| {
+        table.lock().unwrap().clear();
+    });
 }
 
 // No se utiliza &str porque no se podria devolver el valor al tener la propiedad
@@ -93,29 +98,36 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
     }
 
     fn visit_prefix(&mut self, prefix_node: &mut PrefixASTNode) -> Vec<Option<CompilerError>> {
-        let mut table = SYMBOL_TABLE.lock().unwrap();
-        if prefix_node.get_identifier() != String::new() {
-            table.insert(prefix_node.get_identifier(), ASTNodeSymbolTable::Prefix(prefix_node.clone()));
-        } else {
-            // Para el prefijo por defecto (:)
-            table.insert(String::new(), ASTNodeSymbolTable::Prefix(prefix_node.clone()));
-        }
+        SYMBOL_TABLE.with(|t| {
+            let mut table = t.lock().unwrap();
+
+            if prefix_node.get_identifier() != String::new() {
+                table.insert(prefix_node.get_identifier(), ASTNodeSymbolTable::Prefix(prefix_node.clone()));
+            } else {
+                // Para el prefijo por defecto (:)
+                table.insert(String::new(), ASTNodeSymbolTable::Prefix(prefix_node.clone()));
+            }
+        });
         vec![None]
     }
 
     fn visit_source(&mut self, source_node: &mut SourceASTNode) -> Vec<Option<CompilerError>> {
-        SYMBOL_TABLE.lock().unwrap().insert(
-            source_node.get_identifier(),
-            ASTNodeSymbolTable::Source(source_node.clone()),
-        );
+        SYMBOL_TABLE.with(|table| {
+            table.lock().unwrap().insert(
+                source_node.get_identifier(),
+                ASTNodeSymbolTable::Source(source_node.clone()),
+            );
+        });
         vec![None]
     }
 
     fn visit_query(&mut self, query_node: &mut QueryASTNode) -> Vec<Option<CompilerError>> {
-        SYMBOL_TABLE.lock().unwrap().insert(
-            query_node.get_identifier(),
-            ASTNodeSymbolTable::Query(query_node.clone()),
-        );
+        SYMBOL_TABLE.with(|table| {
+            table.lock().unwrap().insert(
+                query_node.get_identifier(),
+                ASTNodeSymbolTable::Query(query_node.clone()),
+            );
+        });
         vec![None]
     }
 
@@ -123,9 +135,8 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
         let num_line = iterator_node.get_position().get_num_line();
 
-        // Utilizamos un ámbito acotado para la tabla, para que se pueda liberar antes
-        {
-            let mut table = SYMBOL_TABLE.lock().unwrap();
+        SYMBOL_TABLE.with(|t| {
+            let mut table = t.lock().unwrap();
 
             match iterator_node.get_iterator_access() {
                 IteratorAccess::Ident(ident) => {
@@ -147,7 +158,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                 iterator_node.get_identifier(),
                 ASTNodeSymbolTable::Iterator(iterator_node.clone()),
             );
-        }
+        });
 
         iterator_node
             .get_mut_fields()
@@ -162,10 +173,12 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
     }
 
     fn visit_field(&mut self, field_node: &mut FieldASTNode) -> Vec<Option<CompilerError>> {
-        SYMBOL_TABLE.lock().unwrap().insert(
-            field_node.get_identifier(),
-            ASTNodeSymbolTable::Field(field_node.clone()),
-        );
+        SYMBOL_TABLE.with(|table| {
+            table.lock().unwrap().insert(
+                field_node.get_identifier(),
+                ASTNodeSymbolTable::Field(field_node.clone()),
+            );
+        });
         vec![None]
     }
 
@@ -173,10 +186,12 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         &mut self,
         expression_node: &mut ExpressionASTNode,
     ) -> Vec<Option<CompilerError>> {
-        SYMBOL_TABLE.lock().unwrap().insert(
-            expression_node.clone().get_identifier(),
-            ASTNodeSymbolTable::Expression(expression_node.clone()),
-        );
+        SYMBOL_TABLE.with(|table| {
+            table.lock().unwrap().insert(
+                expression_node.get_identifier(),
+                ASTNodeSymbolTable::Expression(expression_node.clone()),
+            );
+        });
 
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
 
@@ -250,9 +265,8 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
         let num_line = access_node.get_position().get_num_line();
 
-        // Utilizamos un ámbito acotado para la tabla, para que se pueda liberar antes
-        {
-            let table = SYMBOL_TABLE.lock().unwrap();
+        SYMBOL_TABLE.with(|t| {
+            let table = t.lock().unwrap();
 
             let ident = access_node.get_identifier();
             let first_access = access_node.get_first_access();
@@ -281,7 +295,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                     error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Field después del segundo '.', pero se encontró {} en la línea {num_line}", second_access.unwrap()))));
                 }
             }
-        }
+        });
 
         error_vec
     }
@@ -295,28 +309,30 @@ fn asociate_prefix_to_shape<T>(
 ) where
     T: ManagePrefix + ManagePosition,
 {
-    let table = SYMBOL_TABLE.lock().unwrap();
-    let num_line = node.get_position().get_num_line();
+    SYMBOL_TABLE.with(|t|{
+        let table = t.lock().unwrap();
+        let num_line = node.get_position().get_num_line();
 
-    if prefix.is_some() {
-        let ident = prefix.unwrap();
-        if let Some(ASTNodeSymbolTable::Prefix(prefix)) = table.get(&ident) {
-            asociate_prefix(node, object_prefix, prefix);
+        if prefix.is_some() {
+            let ident = prefix.unwrap();
+            if let Some(ASTNodeSymbolTable::Prefix(prefix)) = table.get(&ident) {
+                asociate_prefix(node, object_prefix, prefix);
+            } else {
+                error_vec.push(Some(CompilerError::new(format!(
+                    "Se esperaba que el identificador {ident} se correspondiera con un Prefix en la línea {num_line}"
+                ))));
+            }
         } else {
-            error_vec.push(Some(CompilerError::new(format!(
-                "Se esperaba que el identificador {ident} se correspondiera con un Prefix en la línea {num_line}"
-            ))));
+            // Se comprueba el prefijo por defecto (:)
+            if let Some(ASTNodeSymbolTable::Prefix(prefix)) = table.get(&String::new()) {
+                asociate_prefix(node, object_prefix, prefix);
+            } else if !object_prefix {
+                error_vec.push(Some(CompilerError::new(format!(
+                    "Se esperaba que existiera el identificador por defecto ':' en la línea {num_line}"
+                ))));
+            }
         }
-    } else {
-        // Se comprueba el prefijo por defecto (:)
-        if let Some(ASTNodeSymbolTable::Prefix(prefix)) = table.get(&String::new()) {
-            asociate_prefix(node, object_prefix, prefix);
-        } else if !object_prefix {
-            error_vec.push(Some(CompilerError::new(format!(
-                "Se esperaba que existiera el identificador por defecto ':' en la línea {num_line}"
-            ))));
-        }
-    }
+    });
 }
 
 fn asociate_prefix<T>(node: &mut T, object_prefix: bool, prefix: &PrefixASTNode) where
@@ -343,14 +359,14 @@ where
 }
 
 fn check_duplicate_identifier(ident: String, position: Position) -> Option<CompilerError> {
-    let symbol_table = SYMBOL_TABLE.lock().unwrap();
-
-    if symbol_table.contains_key(&ident) {
-        let duplicate: &ASTNodeSymbolTable = symbol_table.get(&ident).unwrap();
-        return create_error_message(ident, position, duplicate.get_position());
-    }
-
-    None
+    SYMBOL_TABLE.with(|t| {
+        let table = t.lock().unwrap();
+        if table.contains_key(&ident) {
+            let duplicate: &ASTNodeSymbolTable = table.get(&ident).unwrap();
+            return create_error_message(ident, position, duplicate.get_position());
+        }
+        None
+    })
 }
 
 fn create_error_message(

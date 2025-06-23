@@ -57,6 +57,7 @@ mod integration_lexer_syntax_analyzers_tests {
             assert_eq!(ast.get_expressions().len(), 1);
             assert_eq!(ast.get_shapes().len(), 1);
         });
+        reset_table();
     }
 
     /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis léxico
@@ -84,6 +85,7 @@ mod integration_lexer_syntax_analyzers_tests {
             }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         assert!(lexer_result.is_err());
+        reset_table();
     }
 
     /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis sintáctico
@@ -118,6 +120,7 @@ mod integration_lexer_syntax_analyzers_tests {
             assert_eq!(ast.get_prefixes().len(), 0);
             assert_eq!(ast.get_sources().len(), 0);
         });
+        reset_table();
     }
 
     /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis semántico
@@ -157,5 +160,6 @@ mod integration_lexer_syntax_analyzers_tests {
         // Salen muchos errores porque se coge el primer identificador detectado, por lo que films_csv es un Source y no el Iterator y,
         // por tanto, tampoco se cogen sus campos
         assert_eq!(semantic_result.len(), 10);
+        reset_table();
     }
 }
