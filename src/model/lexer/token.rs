@@ -20,7 +20,6 @@ pub enum TokenType {
     KeyIdentifier,
     Uri,
     JdbcUrl,
-    FilePath,
     Path,
     SqlQuery,
     Colon,
@@ -67,9 +66,9 @@ pub const EOF: &str = " ";
 /// * num_line - El número de línea del fichero de entrada en el que se encuentra el token
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Token {
-    pub lexeme: String,
-    pub token_type: TokenType,
-    pub num_line: u16,
+    lexeme: String,
+    token_type: TokenType,
+    num_line: u16,
 }
 
 impl Token {
@@ -81,12 +80,45 @@ impl Token {
     /// # Parámetros
     /// * `lexeme` - El lexema del token
     /// * `token_type` - EL tipo del token
-    pub fn new(lexeme: String, token_type: TokenType) -> Self {
+    pub fn new(lexeme: &str, token_type: TokenType) -> Self {
         Token {
-            lexeme,
+            lexeme: lexeme.to_string(),
             token_type,
             num_line: 0,
         }
+    }
+
+    /// Devuelve el valor del lexema del token
+    ///
+    /// # Parámetros
+    /// * `self` - El propio token
+    ///
+    /// # Retorna
+    /// El lexema del token
+    pub fn get_lexeme(&self) -> String {
+        self.lexeme.clone()
+    }
+
+    /// Devuelve el tipo del token
+    ///
+    /// # Parámetros
+    /// * `self` - El propio token
+    ///
+    /// # Retorna
+    /// El tipo del token
+    pub fn get_token_type(&self) -> TokenType {
+        self.token_type.clone()
+    }
+
+    /// Devuelve el número de línea de la entrada donde se encuentra el token
+    ///
+    /// # Parámetros
+    /// * `self` - El propio token
+    ///
+    /// # Retorna
+    /// El número de línea de la entrada donde se encuentra el token
+    pub fn get_num_line(&self) -> u16 {
+        self.num_line.clone()
     }
 
     /// Modifica el valor del número de línea en el que se encuentra el token en el fichero de entrada
@@ -122,7 +154,7 @@ impl Token {
     /// * `num_line` - El número de línea en el que se encuentra el token
     /// * `token_type` - El tipo del token
     pub fn create_test_token(lexeme: &str, num_line: u16, token_type: TokenType) -> Token {
-        let mut token = Token::new(lexeme.to_string(), token_type);
+        let mut token = Token::new(lexeme, token_type);
         token.set_num_line(num_line);
         token
     }

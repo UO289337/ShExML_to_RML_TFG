@@ -1,11 +1,9 @@
 //! Módulo del analizador semántico
 //!
 //! Realiza el análisis semántico del compilador
-//! Comprueba que no se repitan identificadores,
+//! El análisis semántico se divide en 2 fases: la fase de identificación y la de chequeo de tipos (type checking)
 
-use std::collections::HashSet;
-
-use crate::model::{ast::*, compiler_error::CompilerError};
+use crate::model::{ast::*, compiler_error::CompilerError, semantic::identification_visitor::{reset_state, Identification}, visitor::Visitor};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -16,529 +14,515 @@ use crate::model::{ast::*, compiler_error::CompilerError};
 ///
 /// # Retorna
 /// El vector con los errores semánticos encontrados durante el análisis; puede estar vacío si no se encontró ninguno
-pub fn semantic_analysis(node: &FileASTNode) -> Vec<CompilerError> {
+pub fn semantic_analysis(ast: &mut AST) -> Vec<CompilerError> {
     // todo!("COMPROBAR LOS TIPOS DE FICHERO QUE SEAN CORRECTOS, LO MISMO CON LAS URLS JDBC");
-    check_duplicate_identifiers(node)
+    let error_vec = identification_phase(ast);
+
+    convert_option_errors_to_compile_errors(error_vec)
 }
 
-/// Comprueba que no haya identificadores duplicados
-///
+/// Realiza la llamada al Visitor de la fase de identificación
+/// 
 /// # Parámetros
-/// * `node` - La referencia al nodo raíz del AST
-///
+/// * `ast` - El AST que se va a visitar
+/// 
 /// # Retorna
-/// El vector con los errores semánticos relacionados de identificadores duplicados
-fn check_duplicate_identifiers(node: &FileASTNode) -> Vec<CompilerError> {
-    let mut identifiers = Vec::new();
-    let mut duplicate_idents_errors = Vec::new();
+/// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de identificación
+fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
+    let mut identification = Identification;
+    identification.visit_ast(ast)
+}
 
-    identifiers.extend(get_prefix_identifiers(&node.prefixes));
-    identifiers.extend(get_source_identifiers(&node.sources));
-
-    if node.queries.is_some() {
-        identifiers.extend(get_queries_identifiers(node.queries.as_ref().unwrap()));
-    }
-
-    let mut non_duplicates = HashSet::new();
-
-    for identifier in identifiers {
-        if !non_duplicates.insert(identifier.clone()) {
-            duplicate_idents_errors.push(CompilerError::new(format!(
-                "Identificador duplicado: {}",
-                identifier
-            )));
+/// Convierte un vector con Options con errores en un vector con únicamente los errores
+/// 
+/// # Parámetros
+/// * `error_vec` - El vector con los Options que contiene los posibles errores
+/// 
+/// # Retorna
+/// Un vector únicamente con los errores
+fn convert_option_errors_to_compile_errors(error_vec: Vec<Option<CompilerError>>) -> Vec<CompilerError> {
+    let mut errors: Vec<CompilerError> = Vec::new();
+    error_vec.into_iter().for_each(|error| {
+        if error.is_some() {
+            errors.push(error.unwrap());
         }
-    }
-
-    duplicate_idents_errors
-}
-
-/// Obtiene los identificadores de los PREFIX
-///
-/// # Parámetros
-/// * `prefixes` - La referencia al vector de nodos Prefix del AST
-///
-/// # Retorna
-/// El vector con los identificadores de los PREFIX
-fn get_prefix_identifiers(prefixes: &Option<Vec<PrefixASTNode>>) -> Vec<String> {
-    let mut identifiers = Vec::new();
-    for prefix in prefixes.as_deref().unwrap() {
-        identifiers.push(prefix.identifier.clone());
-    }
-    identifiers
-}
-
-/// Obtiene los identificadores de los SOURCE
-///
-/// # Parámetros
-/// * `sources` - La referencia al vector de nodos Source del AST
-///
-/// # Retorna
-/// El vector con los identificadores de los SOURCE
-fn get_source_identifiers(sources: &Vec<SourceASTNode>) -> Vec<String> {
-    let mut identifiers = Vec::new();
-    for source in sources {
-        identifiers.push(source.identifier.clone());
-    }
-    identifiers
-}
-
-/// Obtiene los identificadores de los QUERY
-///
-/// # Parámetros
-/// * `queries` - La referencia al vector de nodos Query del AST
-///
-/// # Retorna
-/// El vector con los identificadores de los QUERY
-fn get_queries_identifiers(queries: &Vec<QueryASTNode>) -> Vec<String> {
-    let mut identifiers = Vec::new();
-    for query in queries {
-        identifiers.push(query.identifier.clone());
-    }
-    identifiers
+    });
+    errors
 }
 
 // Tests
+
+/// Resetea (limpia) la tabla de símbolos de la fase de identificación
+pub fn reset_table() {
+    reset_state();
+}
 
 /// Módulo de los tests del analizador léxico
 ///
 /// Contiene los tests que se encargan de probar que se detectan todos los tokens válidos y se descartan los inválidos
 /// Los tests se hacen tanto a nivel de tokens individuales como a nivel de tokens en conjunto
 #[cfg(test)]
-mod lexer_tests {
-
-    use crate::test_utils::TestUtilities;
-
+mod identification_tests {
     use super::*;
+    use crate::{model::{ast::nodes::*, lexer::token::{Token, TokenType, CSV_PER_ROW}}, test_utils::TestUtilities};
 
-    /// Comprueba que se detectan identificadores duplicados de PREFIX
+    /// Comprueba que se pasa la fase de identificación con un identificador de Query en el Iterator y con accesos simples
     #[doc(hidden)]
     #[test]
-    fn detect_duplicate_prefix_identifiers() {
-        let input = FileASTNode {
-            prefixes: Some(vec![
-                PrefixASTNode {
-                    identifier: "example".to_string(),
-                    uri: "https://example.com/".to_string(),
-                },
-                PrefixASTNode {
-                    identifier: "example".to_string(),
-                    uri: "http://notexample.es/".to_string(),
-                },
-            ]),
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
-            queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
-            iterators: vec![IteratorASTNode {
-                identifier: "film_csv".to_string(),
-                iterator_access: "query_sql".to_string(),
-                fields: vec![
-                    FieldASTNode {
-                        field_identifier: "id".to_string(),
-                        access_field_identifier: "@id".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "name".to_string(),
-                        access_field_identifier: "name".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "year".to_string(),
-                        access_field_identifier: "year".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "country".to_string(),
-                        access_field_identifier: "country".to_string(),
-                    },
-                ],
-            }],
-            expressions: TestUtilities::create_default_expressions_for_file_node(),
-            shapes: vec![ShapeASTNode {
-                prefix: "example".to_string(),
-                identifier: "Films".to_string(),
-                field_prefix: "example".to_string(),
-                field_identifier: IdentOrAccess::Access(AccessASTNode {
-                    identifier: "films".to_string(),
-                    iterator_accessed: "id".to_string(),
-                    field_accessed: None,
-                }),
-                tuples: vec![
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "name".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "name".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "year".to_string(),
-                        object_prefix: Some("example".to_string()),
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "year".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "country".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "country".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "director".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "director".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                ],
-            }],
-        };
-
-        let actual = check_duplicate_identifiers(&input);
-        assert_eq!(actual.len(), 1);
-        assert_eq!(
-            actual[0],
-            CompilerError::new("Identificador duplicado: example".to_string())
+    fn identification_withouth_errors_with_inline_query_and_simple_access() {
+        reset_table();
+        let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        let sources = TestUtilities::create_sources_for_ast(
+            "films_csv_file",
+            "https://shexml.herminiogarcia.com/files/films.csv",
+            2,
         );
+        let mut queries =
+            TestUtilities::create_queries_for_ast("inline_query", "SELECT * FROM example;", 3);
+        let iterators = TestUtilities::create_default_iterators_for_ast(4);
+        let expressions = TestUtilities::create_default_expressions_for_ast(10);
+        let shapes = TestUtilities::create_default_shapes_for_ast(11);
+
+        let mut ast = AST::new(prefixes, sources, queries.clone(), iterators, expressions, shapes);
+        let actual = identification_phase(&mut ast);
+
+        actual.into_iter().for_each(|error| {
+            assert!(error.is_none());
+        });
+
+        // Las llaves son necesarias para evitar tener que clonar el ast debido a que es &mut
+        let mut iterators = ast.get_iterators();
+        let iterator = iterators.get_mut(0).unwrap();
+        assert_eq!(iterator.get_query().clone().unwrap(), queries.as_mut().unwrap().get(0).unwrap().clone());
+
+        // Comprueba que los accesos de la Expression están asociados al Source y al Iterator
+        let mut expressions = ast.get_expressions();
+        let accesses = expressions.get_mut(0).unwrap().get_accesses();
+        let first_access = accesses.get(0).unwrap();
+        let sources = ast.get_sources();
+        let source = sources.get(0).unwrap();
+        assert_eq!(first_access.get_souce_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
+        assert_eq!(first_access.get_iterator().unwrap(), iterator.clone());
+
+        // Comprueba que los accesos de las tuplas de la Shape están asociados a la Expression y a Fields
+        // También comprueba los prefijos
+        let prefixes = ast.get_prefixes();
+        let mut shapes = ast.get_shapes();
+        let shape = shapes.get_mut(0).unwrap();
+        let tuples = shape.get_tuples();
+        tuples.into_iter().for_each(|tuple| {
+            assert!(prefixes.contains(&tuple.get_prefix().unwrap()));
+            let object_prefix = tuple.get_object_prefix();
+            if object_prefix.is_some() {
+                assert!(prefixes.contains(&object_prefix.unwrap()));
+            }
+        });
+        reset_table();
     }
 
-    /// Comprueba que se detectan identificadores duplicados de SOURCE
+    /// Comprueba que se pasa la fase de identificación con varios prefijos y accesos a campos
     #[doc(hidden)]
     #[test]
-    fn detect_duplicate_source_identifiers() {
-        let input = FileASTNode {
-            prefixes: Some(vec![PrefixASTNode {
-                identifier: "example".to_string(),
-                uri: "https://example.com/".to_string(),
-            }]),
-            sources: vec![
-                SourceASTNode {
-                    identifier: "films_csv_file".to_string(),
-                    source_definition: "https://shexml.herminiogarcia.com/files/films.csv"
-                        .to_string(),
-                },
-                SourceASTNode {
-                    identifier: "films_csv_file".to_string(),
-                    source_definition: "https://another.csv".to_string(),
-                },
-            ],
-            queries: Some(vec![QueryASTNode {
-                identifier: "query_sql".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
-            iterators: vec![IteratorASTNode {
-                identifier: "film_csv".to_string(),
-                iterator_access: "query_sql".to_string(),
-                fields: vec![
-                    FieldASTNode {
-                        field_identifier: "id".to_string(),
-                        access_field_identifier: "@id".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "name".to_string(),
-                        access_field_identifier: "name".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "year".to_string(),
-                        access_field_identifier: "year".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "country".to_string(),
-                        access_field_identifier: "country".to_string(),
-                    },
-                ],
-            }],
-            expressions: TestUtilities::create_default_expressions_for_file_node(),
-            shapes: vec![ShapeASTNode {
-                prefix: "example".to_string(),
-                identifier: "Films".to_string(),
-                field_prefix: "example".to_string(),
-                field_identifier: IdentOrAccess::Access(AccessASTNode {
-                    identifier: "films".to_string(),
-                    iterator_accessed: "id".to_string(),
-                    field_accessed: None,
-                }),
-                tuples: vec![
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "name".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "name".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "year".to_string(),
-                        object_prefix: Some("example".to_string()),
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "year".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "country".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "country".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "director".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "director".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                ],
-            }],
-        };
-
-        let actual = check_duplicate_identifiers(&input);
-        assert_eq!(actual.len(), 1);
-        assert_eq!(
-            actual[0],
-            CompilerError::new("Identificador duplicado: films_csv_file".to_string())
+    fn identification_withouth_errors_with_various_prefix_and_access_to_fields() {
+        reset_table();
+        let mut prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        prefixes.extend(TestUtilities::create_prefixes_for_ast("dbr", "http://dbpedia.org/resource/", 2));
+        prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
+        let sources = TestUtilities::create_sources_for_ast(
+            "films_csv_file",
+            "https://shexml.herminiogarcia.com/files/films.csv",
+            4,
         );
+        let fields = vec![
+            FieldASTNode::new(
+                Token::create_test_token("id", 6, TokenType::Ident),
+                Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+                Position::new(6),
+            ),
+            FieldASTNode::new(
+                Token::create_test_token("name", 7, TokenType::Ident),
+                Token::create_test_token("name", 7, TokenType::Ident),
+                Position::new(7),
+            ),
+            FieldASTNode::new(
+                Token::create_test_token("year", 8, TokenType::Ident),
+                Token::create_test_token("year", 8, TokenType::Ident),
+                Position::new(8),
+            )
+        ];
+        let ident = Token::create_test_token("films_csv", 5, TokenType::Ident);
+        let csvperrow = Token::create_test_token(CSV_PER_ROW, 5, TokenType::CsvPerRow);
+
+        let iterators = vec![IteratorASTNode::new(
+            ident.clone(),
+            IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
+            fields,
+            Position::new(ident.get_num_line()),
+        )];
+        
+        let identifier = Token::create_test_token("films_csv_file", 9, TokenType::Ident);
+        let first_access = Token::create_test_token("films_csv", 9, TokenType::Ident);
+        let second_access = Token::create_test_token("name", 9, TokenType::Ident);
+        let accesses = vec![AccessASTNode::new(
+            identifier.clone(),
+            first_access,
+            Some(second_access),
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let identifier = Token::create_test_token("films", 9, TokenType::Ident);
+
+        let expressions = vec![ExpressionASTNode::new(
+            identifier.clone(),
+            ExpressionType::BASIC,
+            accesses,
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let prefix_ident = Token::create_test_token("", 10, TokenType::Ident);
+        let identifier = Token::create_test_token("Films", 10, TokenType::Ident);
+        let field_prefix_ident = Token::create_test_token("dbr", 10, TokenType::Ident);
+        let access = AccessASTNode::new(
+            Token::create_test_token("films", 10, TokenType::Ident),
+            Token::create_test_token("id", 10, TokenType::Ident),
+            None,
+            Position::new(10),
+        );
+        let tuples = vec![
+            ShapeTupleASTNode::new(
+                Some(Token::create_test_token(
+                    "example",
+                    11,
+                    TokenType::Ident,
+                )),
+                Token::create_test_token("name", 11, TokenType::Ident),
+                Some(Token::create_test_token("example", 11, TokenType::Ident)),
+                IdentOrAccess::Access(AccessASTNode::new(
+                    Token::create_test_token("films", 11, TokenType::Ident),
+                    Token::create_test_token("name", 11, TokenType::Ident),
+                    None,
+                    Position::new(11),
+                )),
+                Position::new(11),
+            ),
+            ShapeTupleASTNode::new(
+                Some(Token::create_test_token(
+                    "example",
+                    12,
+                    TokenType::Ident,
+                )),
+                Token::create_test_token("year", 12, TokenType::Ident),
+                Some(Token::create_test_token("dbr", 12, TokenType::Ident)),
+                IdentOrAccess::Access(AccessASTNode::new(
+                    Token::create_test_token("films", 12, TokenType::Ident),
+                    Token::create_test_token("year", 12, TokenType::Ident),
+                    None,
+                    Position::new(12),
+                )),
+                Position::new(12),
+            )];
+
+        let shapes = vec![ShapeASTNode::new(
+            Some(prefix_ident),
+            identifier.clone(),
+            Some(field_prefix_ident),
+            IdentOrAccess::Access(access),
+            tuples,
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let mut ast = AST::new(prefixes, sources, None, iterators, expressions, shapes);
+        let actual = identification_phase(&mut ast);
+
+        actual.into_iter().for_each(|error| {
+            assert!(error.is_none());
+        });
+
+        // Las llaves son necesarias para evitar tener que clonar el ast debido a que es &mut
+        let mut iterators = ast.get_iterators();
+        let iterator = iterators.get_mut(0).unwrap();
+        assert!(iterator.get_query().is_none());
+
+        // Comprueba que los accesos de la Expression están asociados al Source, al Iterator y a los Field
+        let mut expressions = ast.get_expressions();
+        let accesses = expressions.get_mut(0).unwrap().get_accesses();
+        let first_access = accesses.get(0).unwrap();
+        let sources = ast.get_sources();
+        let source = sources.get(0).unwrap();
+        assert_eq!(first_access.get_souce_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
+        assert_eq!(first_access.get_iterator().unwrap(), iterator.clone());
+        assert!(iterator.clone().get_fields().contains(&first_access.get_field().unwrap()));
+
+        // Comprueba que los accesos de las tuplas de la Shape están asociados a la Expression y a Fields
+        // También comprueba los prefijos
+        let prefixes = ast.get_prefixes();
+        let mut shapes = ast.get_shapes();
+        let shape = shapes.get_mut(0).unwrap();
+        let tuples = shape.get_tuples();
+        tuples.into_iter().for_each(|tuple| {
+            assert!(prefixes.contains(&tuple.get_prefix().unwrap()));
+            let object_prefix = tuple.get_object_prefix();
+            assert!(prefixes.contains(&object_prefix.unwrap()));
+        });
+        reset_table();
     }
 
-    /// Comprueba que se detectan identificadores duplicados de QUERY
+    /// Comprueba que no se pasa la fase de identificación si se utilizan identificadores desconocidos
     #[doc(hidden)]
     #[test]
-    fn detect_duplicate_query_identifiers() {
-        let input = FileASTNode {
-            prefixes: Some(vec![PrefixASTNode {
-                identifier: "example".to_string(),
-                uri: "https://example.com/".to_string(),
-            }]),
-            sources: vec![SourceASTNode {
-                identifier: "films_csv_file".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
-            queries: Some(vec![
-                QueryASTNode {
-                    identifier: "query_sql".to_string(),
-                    sql_query: "SELECT * FROM example;".to_string(),
-                },
-                QueryASTNode {
-                    identifier: "query_sql".to_string(),
-                    sql_query: "SELECT name FROM anothertable;".to_string(),
-                },
-            ]),
-            iterators: vec![IteratorASTNode {
-                identifier: "film_csv".to_string(),
-                iterator_access: "query_sql".to_string(),
-                fields: vec![
-                    FieldASTNode {
-                        field_identifier: "id".to_string(),
-                        access_field_identifier: "@id".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "name".to_string(),
-                        access_field_identifier: "name".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "year".to_string(),
-                        access_field_identifier: "year".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "country".to_string(),
-                        access_field_identifier: "country".to_string(),
-                    },
-                ],
-            }],
-            expressions: TestUtilities::create_default_expressions_for_file_node(),
-            shapes: vec![ShapeASTNode {
-                prefix: "example".to_string(),
-                identifier: "Films".to_string(),
-                field_prefix: "example".to_string(),
-                field_identifier: IdentOrAccess::Access(AccessASTNode {
-                    identifier: "films".to_string(),
-                    iterator_accessed: "id".to_string(),
-                    field_accessed: None,
-                }),
-                tuples: vec![
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "name".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "name".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "year".to_string(),
-                        object_prefix: Some("example".to_string()),
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "year".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "country".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "country".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "director".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "director".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                ],
-            }],
-        };
-
-        let actual = check_duplicate_identifiers(&input);
-        assert_eq!(actual.len(), 1);
-        assert_eq!(
-            actual[0],
-            CompilerError::new("Identificador duplicado: query_sql".to_string())
+    fn identification_with_unknown_identifiers() {
+        reset_table();
+        let mut prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        prefixes.extend(TestUtilities::create_prefixes_for_ast("dbr", "http://dbpedia.org/resource/", 2));
+        prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
+        let sources = TestUtilities::create_sources_for_ast(
+            "films_csv_file",
+            "https://shexml.herminiogarcia.com/files/films.csv",
+            4,
         );
+        let fields = vec![
+            FieldASTNode::new(
+                Token::create_test_token("id", 6, TokenType::Ident),
+                Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+                Position::new(6),
+            ),
+            FieldASTNode::new(
+                Token::create_test_token("name", 7, TokenType::Ident),
+                Token::create_test_token("name", 7, TokenType::Ident),
+                Position::new(7),
+            ),
+            FieldASTNode::new(
+                Token::create_test_token("year", 8, TokenType::Ident),
+                Token::create_test_token("year", 8, TokenType::Ident),
+                Position::new(8),
+            )
+        ];
+        let ident = Token::create_test_token("films_csv", 5, TokenType::Ident);
+        let iterator_access = Token::create_test_token("CSV_PER_ROW", 5, TokenType::Ident);
+
+        let iterators = vec![IteratorASTNode::new(
+            ident.clone(),
+            IteratorAccess::Ident(iterator_access.get_lexeme()),
+            fields,
+            Position::new(ident.get_num_line()),
+        )];
+        
+        let identifier = Token::create_test_token("films_csv_file", 9, TokenType::Ident);
+        let first_access = Token::create_test_token("films", 9, TokenType::Ident);
+        let second_access = Token::create_test_token("director", 9, TokenType::Ident);
+        let accesses = vec![AccessASTNode::new(
+            identifier.clone(),
+            first_access,
+            Some(second_access),
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let identifier = Token::create_test_token("films", 9, TokenType::Ident);
+
+        let expressions = vec![ExpressionASTNode::new(
+            identifier.clone(),
+            ExpressionType::BASIC,
+            accesses,
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let prefix_ident = Token::create_test_token("", 10, TokenType::Ident);
+        let identifier = Token::create_test_token("Films", 10, TokenType::Ident);
+        let field_prefix_ident = Token::create_test_token("noexiste", 10, TokenType::Ident);
+        let access = AccessASTNode::new(
+            Token::create_test_token("films", 10, TokenType::Ident),
+            Token::create_test_token("id", 10, TokenType::Ident),
+            None,
+            Position::new(10),
+        );
+        let tuples = vec![
+            ShapeTupleASTNode::new(
+                Some(Token::create_test_token(
+                    "example",
+                    11,
+                    TokenType::Ident,
+                )),
+                Token::create_test_token("name", 11, TokenType::Ident),
+                Some(Token::create_test_token("example", 11, TokenType::Ident)),
+                IdentOrAccess::Access(AccessASTNode::new(
+                    Token::create_test_token("ejemplo", 11, TokenType::Ident),
+                    Token::create_test_token("name", 11, TokenType::Ident),
+                    None,
+                    Position::new(11),
+                )),
+                Position::new(11),
+            ),
+            ShapeTupleASTNode::new(
+                Some(Token::create_test_token(
+                    "example",
+                    12,
+                    TokenType::Ident,
+                )),
+                Token::create_test_token("year", 12, TokenType::Ident),
+                Some(Token::create_test_token("dbr", 12, TokenType::Ident)),
+                IdentOrAccess::Access(AccessASTNode::new(
+                    Token::create_test_token("films", 12, TokenType::Ident),
+                    Token::create_test_token("year", 12, TokenType::Ident),
+                    None,
+                    Position::new(12),
+                )),
+                Position::new(12),
+            )];
+
+        let shapes = vec![ShapeASTNode::new(
+            Some(prefix_ident),
+            identifier.clone(),
+            Some(field_prefix_ident),
+            IdentOrAccess::Access(access),
+            tuples,
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let mut ast = AST::new(prefixes, sources, None, iterators, expressions, shapes);
+        let actual = identification_phase(&mut ast);
+
+        let mut cont_errors = 0;
+        let expected_errors = vec!["No se encuentra el identificador de la Query del acceso del iterador: CSV_PER_ROW, en la línea 5",
+            "Se esperaba el identificador de un Iterator o Field después del primer '.', pero se encontró films en la línea 9",
+            "Se esperaba el identificador de un Field después del segundo '.', pero se encontró director en la línea 9",
+            "Se esperaba que el identificador noexiste se correspondiera con un Prefix en la línea 10",
+            "Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró ejemplo en la línea 11"];
+        actual.into_iter().for_each(|error| {
+            if error.is_some() {
+                assert!(expected_errors.contains(&error.unwrap().get_message().as_str()));
+                cont_errors += 1;
+            }
+        });
+        assert_eq!(cont_errors, 5);
+        reset_table();
     }
 
-    /// Comprueba que se detectan identificadores duplicados entre PREFIX, SOURCE Y QUERY
+    /// Comprueba que no se pasa la fase de identificación si se utilizan identificadores de otros elementos
     #[doc(hidden)]
     #[test]
-    fn detect_duplicate_identifiers_between_structures() {
-        let input = FileASTNode {
-            prefixes: Some(vec![PrefixASTNode {
-                identifier: "duplicate".to_string(),
-                uri: "https://example.com/".to_string(),
-            }]),
-            sources: vec![SourceASTNode {
-                identifier: "duplicate".to_string(),
-                source_definition: "https://shexml.herminiogarcia.com/files/films.csv".to_string(),
-            }],
-            queries: Some(vec![QueryASTNode {
-                identifier: "duplicate".to_string(),
-                sql_query: "SELECT * FROM example;".to_string(),
-            }]),
-            iterators: vec![IteratorASTNode {
-                identifier: "film_csv".to_string(),
-                iterator_access: "query_sql".to_string(),
-                fields: vec![
-                    FieldASTNode {
-                        field_identifier: "id".to_string(),
-                        access_field_identifier: "@id".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "name".to_string(),
-                        access_field_identifier: "name".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "year".to_string(),
-                        access_field_identifier: "year".to_string(),
-                    },
-                    FieldASTNode {
-                        field_identifier: "country".to_string(),
-                        access_field_identifier: "country".to_string(),
-                    },
-                ],
-            }],
-            expressions: TestUtilities::create_default_expressions_for_file_node(),
-            shapes: vec![ShapeASTNode {
-                prefix: "example".to_string(),
-                identifier: "Films".to_string(),
-                field_prefix: "example".to_string(),
-                field_identifier: IdentOrAccess::Access(AccessASTNode {
-                    identifier: "films".to_string(),
-                    iterator_accessed: "id".to_string(),
-                    field_accessed: None,
-                }),
-                tuples: vec![
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "name".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "name".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "year".to_string(),
-                        object_prefix: Some("example".to_string()),
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "year".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "country".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "country".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                    ShapeTupleASTNode {
-                        prefix: "example".to_string(),
-                        identifier: "director".to_string(),
-                        object_prefix: None,
-                        object: IdentOrAccess::Access(AccessASTNode {
-                            identifier: "films".to_string(),
-                            iterator_accessed: "director".to_string(),
-                            field_accessed: None,
-                        }),
-                    },
-                ],
-            }],
-        };
+    fn identification_with_identifiers_of_other_structures() {
+        reset_table();
+        let mut prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        prefixes.extend(TestUtilities::create_prefixes_for_ast("dbr", "http://dbpedia.org/resource/", 2));
+        prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
+        let sources = TestUtilities::create_sources_for_ast(
+            "films_csv_file",
+            "https://shexml.herminiogarcia.com/files/films.csv",
+            4,
+        );
+        let fields = vec![
+            FieldASTNode::new(
+                Token::create_test_token("id", 6, TokenType::Ident),
+                Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+                Position::new(6),
+            ),
+            FieldASTNode::new(
+                Token::create_test_token("name", 7, TokenType::Ident),
+                Token::create_test_token("name", 7, TokenType::Ident),
+                Position::new(7),
+            ),
+            FieldASTNode::new(
+                Token::create_test_token("year", 8, TokenType::Ident),
+                Token::create_test_token("year", 8, TokenType::Ident),
+                Position::new(8),
+            )
+        ];
+        let ident = Token::create_test_token("films_csv", 5, TokenType::Ident);
+        let iterator_access = Token::create_test_token("example", 5, TokenType::Ident);
 
-        let actual = check_duplicate_identifiers(&input);
-        assert_eq!(actual.len(), 2);
-        assert_eq!(
-            actual[0],
-            CompilerError::new("Identificador duplicado: duplicate".to_string())
+        let iterators = vec![IteratorASTNode::new(
+            ident.clone(),
+            IteratorAccess::Ident(iterator_access.get_lexeme()),
+            fields,
+            Position::new(ident.get_num_line()),
+        )];
+        
+        let identifier = Token::create_test_token("films_csv_file", 9, TokenType::Ident);
+        let first_access = Token::create_test_token("example", 9, TokenType::Ident);
+        let second_access = Token::create_test_token("", 9, TokenType::Ident);
+        let accesses = vec![AccessASTNode::new(
+            identifier.clone(),
+            first_access,
+            Some(second_access),
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let identifier = Token::create_test_token("films", 9, TokenType::Ident);
+
+        let expressions = vec![ExpressionASTNode::new(
+            identifier.clone(),
+            ExpressionType::BASIC,
+            accesses,
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let prefix_ident = Token::create_test_token("", 10, TokenType::Ident);
+        let identifier = Token::create_test_token("Films", 10, TokenType::Ident);
+        let field_prefix_ident = Token::create_test_token("dbr", 10, TokenType::Ident);
+        let access = AccessASTNode::new(
+            Token::create_test_token("films", 10, TokenType::Ident),
+            Token::create_test_token("id", 10, TokenType::Ident),
+            None,
+            Position::new(10),
         );
-        assert_eq!(
-            actual[1],
-            CompilerError::new("Identificador duplicado: duplicate".to_string())
-        );
+        let tuples = vec![
+            ShapeTupleASTNode::new(
+                Some(Token::create_test_token(
+                    "example",
+                    11,
+                    TokenType::Ident,
+                )),
+                Token::create_test_token("name", 11, TokenType::Ident),
+                Some(Token::create_test_token("example", 11, TokenType::Ident)),
+                IdentOrAccess::Access(AccessASTNode::new(
+                    Token::create_test_token("Films", 11, TokenType::Ident),
+                    Token::create_test_token("name", 11, TokenType::Ident),
+                    None,
+                    Position::new(11),
+                )),
+                Position::new(11),
+            ),
+            ShapeTupleASTNode::new(
+                Some(Token::create_test_token(
+                    "example",
+                    12,
+                    TokenType::Ident,
+                )),
+                Token::create_test_token("year", 12, TokenType::Ident),
+                Some(Token::create_test_token("dbr", 12, TokenType::Ident)),
+                IdentOrAccess::Access(AccessASTNode::new(
+                    Token::create_test_token("films", 12, TokenType::Ident),
+                    Token::create_test_token("year", 12, TokenType::Ident),
+                    None,
+                    Position::new(12),
+                )),
+                Position::new(12),
+            )];
+
+        let shapes = vec![ShapeASTNode::new(
+            Some(prefix_ident),
+            identifier.clone(),
+            Some(field_prefix_ident),
+            IdentOrAccess::Access(access),
+            tuples,
+            Position::new(identifier.get_num_line()),
+        )];
+
+        let mut ast = AST::new(prefixes, sources, None, iterators, expressions, shapes);
+        let actual = identification_phase(&mut ast);
+
+        let mut cont_errors = 0;
+        let expected_errors = vec!["Se esperaba que el identificador example se correspondiera con una consulta SQL en la línea 5",
+            "Se esperaba el identificador de un Iterator o Field después del primer '.', pero se encontró example en la línea 9",
+            "Se esperaba el identificador de un Field después del segundo '.', pero se encontró  en la línea 9",
+            "Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró Films en la línea 11"];
+        actual.into_iter().for_each(|error| {
+            if error.is_some() {
+                assert!(expected_errors.contains(&error.unwrap().get_message().as_str()));
+                cont_errors += 1;
+            }
+        });
+        assert_eq!(cont_errors, 4);
+        reset_table();
     }
 }

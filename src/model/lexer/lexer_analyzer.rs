@@ -27,7 +27,7 @@ use regex::Regex;
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(PREFIX).parse_next(input)?;
-    Ok(Token::new(PREFIX.to_string(), TokenType::Prefix))
+    Ok(Token::new(PREFIX, TokenType::Prefix))
 }
 
 /// Encuentra el token Colon en la entrada
@@ -44,7 +44,7 @@ fn prefix(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(COLON).parse_next(input)?;
-    Ok(Token::new(COLON.to_string(), TokenType::Colon))
+    Ok(Token::new(COLON, TokenType::Colon))
 }
 
 /// Encuentra el token SemiColon en la entrada
@@ -61,7 +61,7 @@ fn colon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn semicolon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(SEMICOLON).parse_next(input)?;
-    Ok(Token::new(SEMICOLON.to_string(), TokenType::SemiColon))
+    Ok(Token::new(SEMICOLON, TokenType::SemiColon))
 }
 
 /// Encuentra el token Equal en la entrada
@@ -78,7 +78,7 @@ fn semicolon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn equal(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(EQUAL).parse_next(input)?;
-    Ok(Token::new(EQUAL.to_string(), TokenType::Equal))
+    Ok(Token::new(EQUAL, TokenType::Equal))
 }
 
 /// Encuentra el token AccessDot en la entrada
@@ -95,7 +95,7 @@ fn equal(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn access_dot(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(ACCESS_DOT).parse_next(input)?;
-    Ok(Token::new(ACCESS_DOT.to_string(), TokenType::AccessDot))
+    Ok(Token::new(ACCESS_DOT, TokenType::AccessDot))
 }
 
 /// Encuentra el token LeftAngleBracket en la entrada
@@ -112,10 +112,7 @@ fn access_dot(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(LEFT_ANGLE_BRACKET).parse_next(input)?;
-    Ok(Token::new(
-        LEFT_ANGLE_BRACKET.to_string(),
-        TokenType::LeftAngleBracket,
-    ))
+    Ok(Token::new(LEFT_ANGLE_BRACKET, TokenType::LeftAngleBracket))
 }
 
 /// Encuentra el token RightAngleBracket en la entrada
@@ -133,7 +130,7 @@ fn left_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> 
 fn right_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(RIGHT_ANGLE_BRACKET).parse_next(input)?;
     Ok(Token::new(
-        RIGHT_ANGLE_BRACKET.to_string(),
+        RIGHT_ANGLE_BRACKET,
         TokenType::RightAngleBracket,
     ))
 }
@@ -153,7 +150,7 @@ fn right_angle_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 fn opening_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(OPENING_CURLY_BRACE).parse_next(input)?;
     Ok(Token::new(
-        OPENING_CURLY_BRACE.to_string(),
+        OPENING_CURLY_BRACE,
         TokenType::OpeningCurlyBrace,
     ))
 }
@@ -173,7 +170,7 @@ fn opening_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 fn closing_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(CLOSING_CURLY_BRACE).parse_next(input)?;
     Ok(Token::new(
-        CLOSING_CURLY_BRACE.to_string(),
+        CLOSING_CURLY_BRACE,
         TokenType::ClosingCurlyBrace,
     ))
 }
@@ -192,7 +189,7 @@ fn closing_curly_brace(input: &mut &str) -> Result<Token, ErrMode<ContextError>>
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn left_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(LEFT_BRACKET).parse_next(input)?;
-    Ok(Token::new(LEFT_BRACKET.to_string(), TokenType::LeftBracket))
+    Ok(Token::new(LEFT_BRACKET, TokenType::LeftBracket))
 }
 
 /// Encuentra el token RightBracket en la entrada
@@ -209,10 +206,7 @@ fn left_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn right_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(RIGHT_BRACKET).parse_next(input)?;
-    Ok(Token::new(
-        RIGHT_BRACKET.to_string(),
-        TokenType::RightBracket,
-    ))
+    Ok(Token::new(RIGHT_BRACKET, TokenType::RightBracket))
 }
 
 /// Encuentra el token Source en la entrada
@@ -229,7 +223,7 @@ fn right_bracket(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(SOURCE).parse_next(input)?;
-    Ok(Token::new(SOURCE.to_string(), TokenType::Source))
+    Ok(Token::new(SOURCE, TokenType::Source))
 }
 
 /// Encuentra el token Query en la entrada
@@ -246,7 +240,7 @@ fn source(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(QUERY).parse_next(input)?;
-    Ok(Token::new(QUERY.to_string(), TokenType::Query))
+    Ok(Token::new(QUERY, TokenType::Query))
 }
 
 /// Encuentra el token Iterator en la entrada
@@ -263,7 +257,7 @@ fn query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(ITERATOR).parse_next(input)?;
-    Ok(Token::new(ITERATOR.to_string(), TokenType::Iterator))
+    Ok(Token::new(ITERATOR, TokenType::Iterator))
 }
 
 /// Encuentra el token Field en la entrada
@@ -280,7 +274,7 @@ fn iterator(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn field(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(FIELD).parse_next(input)?;
-    Ok(Token::new(FIELD.to_string(), TokenType::Field))
+    Ok(Token::new(FIELD, TokenType::Field))
 }
 
 /// Encuentra el token Expression en la entrada
@@ -297,7 +291,7 @@ fn field(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn expression(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(EXPRESSION).parse_next(input)?;
-    Ok(Token::new(EXPRESSION.to_string(), TokenType::Expression))
+    Ok(Token::new(EXPRESSION, TokenType::Expression))
 }
 
 /// Encuentra el token Union en la entrada
@@ -314,7 +308,7 @@ fn expression(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn union(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(UNION).parse_next(input)?;
-    Ok(Token::new(UNION.to_string(), TokenType::Union))
+    Ok(Token::new(UNION, TokenType::Union))
 }
 
 /// Encuentra el token Join en la entrada
@@ -331,7 +325,7 @@ fn union(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn join(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(JOIN).parse_next(input)?;
-    Ok(Token::new(JOIN.to_string(), TokenType::Join))
+    Ok(Token::new(JOIN, TokenType::Join))
 }
 
 /// Encuentra el token On en la entrada
@@ -348,7 +342,7 @@ fn join(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn on(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(ON).parse_next(input)?;
-    Ok(Token::new(ON.to_string(), TokenType::On))
+    Ok(Token::new(ON, TokenType::On))
 }
 
 /// Encuentra el token SqlType en la entrada
@@ -365,7 +359,7 @@ fn on(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn sql_type(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(SQL_TYPE).parse_next(input)?;
-    Ok(Token::new(SQL_TYPE.to_string(), TokenType::SqlType))
+    Ok(Token::new(SQL_TYPE, TokenType::SqlType))
 }
 
 /// Encuentra el token CsvPerRow en la entrada
@@ -382,7 +376,7 @@ fn sql_type(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn csv_per_row(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let _ = literal(CSV_PER_ROW).parse_next(input)?;
-    Ok(Token::new(CSV_PER_ROW.to_string(), TokenType::CsvPerRow))
+    Ok(Token::new(CSV_PER_ROW, TokenType::CsvPerRow))
 }
 
 /// Encuentra un token identificador en la entrada
@@ -408,7 +402,7 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         );
         return Err(ErrMode::Backtrack(error.clone()));
     }
-    Ok(Token::new(ident.to_string(), TokenType::Ident))
+    Ok(Token::new(ident, TokenType::Ident))
 }
 
 /// Encuentra un token identificador clave en la entrada
@@ -437,7 +431,7 @@ fn key_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    Ok(Token::new(key_ident.to_string(), TokenType::KeyIdentifier))
+    Ok(Token::new(key_ident, TokenType::KeyIdentifier))
 }
 
 /// Encuentra un token URI en la entrada
@@ -465,7 +459,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    Ok(Token::new(uri.to_string(), TokenType::Uri))
+    Ok(Token::new(uri, TokenType::Uri))
 }
 
 /// Encuentra un token JdbcUrl en la entrada
@@ -493,35 +487,7 @@ fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    Ok(Token::new(jdbc_url.to_string(), TokenType::JdbcUrl))
-}
-
-/// Encuentra un token FilePath en la entrada
-///
-/// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de file
-///
-/// # Parámetros
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token FilePath
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let file_path = take_while(1.., |c: char| c != '>').parse_next(input)?;
-    let re_file_path = Regex::new(r"^file://[/\\][^ \n\r\t]+\.\w+$").unwrap();
-
-    if !re_file_path.is_match(file_path) {
-        let error = &ContextError::new().add_context(
-            &"Formato incorrecto",
-            &file_path.checkpoint(),
-            StrContext::Label("Ruta file incorrecto"),
-        );
-        return Err(ErrMode::Backtrack(error.clone()));
-    }
-
-    Ok(Token::new(file_path.to_string(), TokenType::FilePath))
+    Ok(Token::new(jdbc_url, TokenType::JdbcUrl))
 }
 
 /// Encuentra un token Path en la entrada
@@ -537,13 +503,17 @@ fn file_path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let path = take_while(1.., |c: char| c != '>').parse_next(input)?;
+    let mut path = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_path = Regex::new(
         r"(?ix)                    
             ^(
-                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas
+                file://[a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas
                 |
-                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas
+                file://(\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas
+                |
+                [a-zA-Z]:[\\/](?:[\w\-. ]+[\\/]?)*[\w\-. ]+\.\w+    # rutas absolutas sin file://
+                |
+                (\.{0,2}[\\/])?(?:[\w\-.\\\/]+[\\/])+[\w\-.\\\/*]+\.\w+   # rutas relativas sin file://
             )$
             ",
     )
@@ -558,7 +528,11 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         return Err(ErrMode::Backtrack(error.clone()));
     }
 
-    Ok(Token::new(path.to_string(), TokenType::Path))
+    if path.starts_with("file://") {
+        path = path.strip_prefix("file://").unwrap_or(path);
+    }
+
+    Ok(Token::new(path, TokenType::Path))
 }
 
 /// Encuentra un token SqlQuery en la entrada
@@ -596,10 +570,7 @@ fn sql_query(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
         .unwrap_or(query_definition)
         .trim_start();
 
-    Ok(Token::new(
-        query_definition.to_string(),
-        TokenType::SqlQuery,
-    ))
+    Ok(Token::new(query_definition, TokenType::SqlQuery))
 }
 
 /// Realiza el análisis léxico de la entrada
@@ -728,15 +699,7 @@ fn match_alternatives(
             csv_per_row,
         )),
         // Elementos variables; no tienen un valor fijo
-        alt((
-            sql_query,
-            file_path,
-            path,
-            jdbc_url,
-            uri,
-            key_identifier,
-            identifier,
-        )),
+        alt((sql_query, path, jdbc_url, uri, key_identifier, identifier)),
     ))
     .parse_next(input)
     {
@@ -752,7 +715,7 @@ fn match_alternatives(
             if token_error.is_ok() {
                 errors.push(CompilerError::new(format!(
                     "Error léxico: '{}'; en la línea {}",
-                    token_error.unwrap().to_string(),
+                    token_error.unwrap(),
                     num_line
                 )));
             }
@@ -1337,33 +1300,12 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token FilePath de un fichero CSV usando una ruta con file
-    #[doc(hidden)]
-    #[test]
-    fn valid_file_path() {
-        let expected = Token::create_test_token(
-            "file:///ejemplo/path/a/fichero/fichero.csv",
-            0,
-            TokenType::FilePath,
-        );
-        let actual = file_path(&mut "file:///ejemplo/path/a/fichero/fichero.csv");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token FilePath aquellas cadenas que tengan un path incorrecto
-    #[doc(hidden)]
-    #[test]
-    fn file_path_with_invalid_path() {
-        let actual = file_path(&mut "file//");
-        check_error(actual);
-    }
-
     /// Comprueba que se detecta el token Path de un fichero CSV usando una ruta relativa
     #[doc(hidden)]
     #[test]
     fn valid_relative_path() {
-        let expected = Token::create_test_token("ejemplo/fichero.csv", 0, TokenType::Path);
-        let actual = path(&mut "ejemplo/fichero.csv");
+        let expected = Token::create_test_token("files/fichero.csv", 0, TokenType::Path);
+        let actual = path(&mut "files/fichero.csv");
         check_ok(expected, actual);
     }
 
@@ -1376,7 +1318,7 @@ mod lexer_tests {
             0,
             TokenType::Path,
         );
-        let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
+        let actual = path(&mut "file://C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_ok(expected, actual);
     }
 
@@ -1384,7 +1326,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn path_with_invalid_absolute_path() {
-        let actual = path(&mut "C://..");
+        let actual = path(&mut "C:ejemplo\\path\\a\\fichero\\fichero.csv");
         check_error(actual);
     }
 
@@ -1392,7 +1334,7 @@ mod lexer_tests {
     #[doc(hidden)]
     #[test]
     fn path_with_invalid_relative_path() {
-        let actual = path(&mut "ejemplo.csv");
+        let actual = path(&mut "file:ejemplo.csv");
         check_error(actual);
     }
 
