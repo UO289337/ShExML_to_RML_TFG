@@ -3,7 +3,7 @@
 //! Realiza el análisis semántico del compilador
 //! El análisis semántico se divide en 2 fases: la fase de identificación y la de chequeo de tipos (type checking)
 
-use crate::model::{ast::*, compiler_error::CompilerError, semantic::identification_visitor::Identification, visitor::Visitor};
+use crate::model::{ast::*, compiler_error::CompilerError, semantic::{identification_visitor::Identification, type_checking::TypeChecking}, visitor::Visitor};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -15,9 +15,10 @@ use crate::model::{ast::*, compiler_error::CompilerError, semantic::identificati
 /// # Retorna
 /// El vector con los errores semánticos encontrados durante el análisis; puede estar vacío si no se encontró ninguno
 pub fn semantic_analysis(ast: &mut AST) -> Vec<CompilerError> {
-    // todo!("COMPROBAR LOS TIPOS DE FICHERO QUE SEAN CORRECTOS, LO MISMO CON LAS URLS JDBC");
-    let error_vec = identification_phase(ast);
-
+    let mut error_vec = identification_phase(ast);
+    if all_errors_none(&error_vec) {
+        error_vec.extend(type_checking_phase(ast));
+    }
     convert_option_errors_to_compile_errors(error_vec)
 }
 
@@ -31,6 +32,27 @@ pub fn semantic_analysis(ast: &mut AST) -> Vec<CompilerError> {
 fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
     let mut identification = Identification::new();
     identification.visit_ast(ast)
+}
+
+/// Realiza la llamada al Visitor de la fase de Type Checking
+/// 
+/// # Parámetros
+/// * `ast` - El AST que se va a visitar
+/// 
+/// # Retorna
+/// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de type checking
+fn type_checking_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
+    let mut type_checking = TypeChecking;
+    type_checking.visit_ast(ast)
+}
+
+fn all_errors_none(error_vec: &Vec<Option<CompilerError>>) -> bool {
+    for error in error_vec {
+        if error.is_some() {
+            return false;
+        }
+    }
+    true
 }
 
 /// Convierte un vector con Options con errores en un vector con únicamente los errores
@@ -52,12 +74,10 @@ fn convert_option_errors_to_compile_errors(error_vec: Vec<Option<CompilerError>>
 
 // Tests
 
-/// Módulo de los tests del analizador léxico
-///
-/// Contiene los tests que se encargan de probar que se detectan todos los tokens válidos y se descartan los inválidos
-/// Los tests se hacen tanto a nivel de tokens individuales como a nivel de tokens en conjunto
+/// Módulo de los tests de la fase de identificación del analizador semántico
 #[cfg(test)]
 mod identification_tests {
+
     use super::*;
     use crate::{model::{ast::nodes::*, lexer::token::{Token, TokenType, CSV_PER_ROW}}, test_utils::TestUtilities};
 
@@ -67,8 +87,8 @@ mod identification_tests {
     fn identification_withouth_errors_with_inline_query_and_simple_access() {
         let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
         let sources = TestUtilities::create_sources_for_ast(
-            "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            "films_database",
+            SourceDefinition::JdbcURL("jdbc:mysql://localhost:3306/mydb".to_string()),
             2,
         );
         let mut queries =
@@ -100,7 +120,7 @@ mod identification_tests {
         let first_access = accesses.get(0).unwrap();
         let sources = ast.get_sources();
         let source = sources.get(0).unwrap();
-        assert_eq!(first_access.get_souce_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
+        assert_eq!(first_access.get_source_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
         assert_eq!(first_access.get_iterator().unwrap(), iterator.clone());
 
         // Comprueba que los accesos de las tuplas de la Shape están asociados a la Expression y a Fields
@@ -116,6 +136,10 @@ mod identification_tests {
                 assert!(prefixes.contains(&object_prefix.unwrap()));
             }
         });
+
+        // Comprueba que Expression tiene acceso a los campos esperados
+        let expression = expressions.get(0).unwrap();
+        assert_eq!(expression.get_fields().unwrap().len(), 4);
     }
 
     /// Comprueba que se pasa la fase de identificación con varios prefijos y accesos a iteradores
@@ -127,7 +151,7 @@ mod identification_tests {
         prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
         let sources = TestUtilities::create_sources_for_ast(
             "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            SourceDefinition::URI("https://shexml.herminiogarcia.com/files/films.csv".to_string()),
             4,
         );
         let fields1 = vec![
@@ -280,7 +304,7 @@ mod identification_tests {
         let first_access = accesses.get(0).unwrap();
         let sources = ast.get_sources();
         let source = sources.get(0).unwrap();
-        assert_eq!(first_access.get_souce_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
+        assert_eq!(first_access.get_source_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
         assert_eq!(first_access.get_iterator().unwrap(), iterator.clone());
         assert!(iterator.clone().get_fields().contains(&first_access.get_field().unwrap()));
 
@@ -295,6 +319,10 @@ mod identification_tests {
             let object_prefix = tuple.get_object_prefix();
             assert!(prefixes.contains(&object_prefix.unwrap()));
         });
+
+        // Comprueba que Expression tiene acceso a los campos esperados
+        let expression = expressions.get(0).unwrap();
+        assert_eq!(expression.get_fields().unwrap().len(), 6);
     }
 
     /// Comprueba que no se pasa la fase de identificación si se utilizan identificadores desconocidos
@@ -306,7 +334,7 @@ mod identification_tests {
         prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
         let sources = TestUtilities::create_sources_for_ast(
             "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            SourceDefinition::URI("https://shexml.herminiogarcia.com/files/films.csv".to_string()),
             4,
         );
         let fields = vec![
@@ -434,7 +462,7 @@ mod identification_tests {
         prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
         let sources = TestUtilities::create_sources_for_ast(
             "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            SourceDefinition::URI("https://shexml.herminiogarcia.com/files/films.csv".to_string()),
             4,
         );
         let fields = vec![
@@ -550,5 +578,53 @@ mod identification_tests {
             }
         });
         assert_eq!(cont_errors, 4);
+    }
+}
+
+/// Módulo de los tests de la fase de chequeo de tipos del analizador semántico
+#[cfg(test)]
+mod type_checking_tests {
+    use crate::test_utils::TestUtilities;
+
+    use super::*;
+
+    /// Comprueba que 
+    #[doc(hidden)]
+    #[test]
+    fn type_checking_withouth_errors() {
+        let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        let sources = TestUtilities::create_sources_for_ast(
+            "films_database",
+            SourceDefinition::JdbcURL("jdbc:mysql://localhost:3306/mydb".to_string()),
+            2,
+        );
+        let queries =
+            TestUtilities::create_queries_for_ast("inline_query", "SELECT * FROM example;", 3);
+        let iterators = TestUtilities::create_default_iterators_for_ast(4);
+        let expressions = TestUtilities::create_default_expressions_for_ast(10);
+        let shapes = TestUtilities::create_default_shapes_for_ast(11);
+
+        let mut ast = AST::new(prefixes, sources, queries, iterators.clone(), expressions, shapes);
+        // Es más fácil pasar la fase de identificación directamente
+        let _ = identification_phase(&mut ast);
+        let actual = type_checking_phase(&mut ast);
+
+        actual.into_iter().for_each(|error| {
+            /*
+            if error.is_some() {
+                println!("{}", error.unwrap().get_message());
+            }
+            */
+            assert!(error.is_none());
+        });
+
+        // Comprobamos que se han asignado correctamente los tipos al Iterator y al Source
+        let mut iterators = ast.get_iterators();
+        let iterator = iterators.get_mut(0).unwrap();
+        assert_eq!(iterator.get_type().unwrap(), Type::Database);
+
+        let mut sources = ast.get_sources();
+        let source = sources.get_mut(0).unwrap();
+        assert_eq!(source.get_type().unwrap(), Type::Database);
     }
 }

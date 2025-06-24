@@ -23,7 +23,7 @@ trait ManageScope {
 
 /// Enumerador que contiene todos los nodos del AST de la tabla de simbolos
 // Se utiliza el enum aqui y no en el AST con el fin de tener mayor control de tipos en el AST
-#[derive(Debug, PartialEq, Clone, Eq, Hash)]
+#[derive(Debug, PartialEq, Clone, Eq)]
 enum ASTNodeSymbolTable {
     Prefix(PrefixASTNode, Scope),
     Source(SourceASTNode, Scope),
@@ -303,7 +303,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
         let num_line = iterator_node.get_position().get_num_line();
 
-        match iterator_node.get_iterator_access() {
+        match iterator_node.get_mut_iterator_access() {
             IteratorAccess::Ident(ident) => {
                 let node = self.find(ident.clone());
                 if node.is_none(){
@@ -365,12 +365,11 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         &mut self,
         expression_node: &mut ExpressionASTNode,
     ) -> Vec<Option<CompilerError>> {
+        let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
         self.insert(
             expression_node.get_identifier(),
             ASTNodeSymbolTable::Expression(expression_node.clone(), Scope::GLOBAL),
         );
-
-        let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
 
         expression_node
             .get_mut_accesses()
@@ -378,6 +377,8 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             .for_each(|access| {
                 error_vec.extend(self.visit_access(access));
             });
+
+        expression_node.set_fields(Some(get_expression_fields(expression_node)));
 
         error_vec
     }
@@ -420,12 +421,20 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             }
         });
 
-        match shape_node.get_field_identifier() {
-            IdentOrAccess::Access(mut access) => {
-                self.visit_access(&mut access);
+        match shape_node.get_mut_field_identifier() {
+            IdentOrAccess::Access(access) => {
+                error_vec.extend(self.visit_access(access));
             },
             IdentOrAccess::Ident(iterator_ident) => {
-                associate_iterator_to_shape(shape_node, &mut error_vec, iterator_ident, self);
+                // No se puede extraer a una función externa debido a &mut
+                let possible_iterator = self.find(iterator_ident.to_string());
+
+                if possible_iterator.is_some() {
+                    match possible_iterator.unwrap() {
+                        ASTNodeSymbolTable::Iterator(iterator_node, _) => shape_node.set_object_iterator(Some(iterator_node.clone())),
+                        _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_node.get_position().get_num_line())))),
+                    }
+                }
             },
         }
 
@@ -465,21 +474,22 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             true,
             self,
         );
-
-        let mut object_access = None;
-
-        match shape_tuple_node.get_object() {
-            IdentOrAccess::Access(mut access_node) => {
-                self.visit_access(&mut access_node);
-                object_access = Some(access_node);
+        
+        match shape_tuple_node.get_mut_object() {
+            IdentOrAccess::Access(access) => {
+                error_vec.extend(self.visit_access(access));
             },
             IdentOrAccess::Ident(iterator_ident) => {
-                associate_iterator_to_shape(shape_tuple_node, &mut error_vec, iterator_ident, self);
-            },
-        }
+                // No se puede extraer a una función externa debido a &mut
+                let possible_iterator = self.find(iterator_ident.to_string());
 
-        if object_access.is_some() {
-            error_vec.extend(self.visit_access(&mut object_access.unwrap()));
+                if possible_iterator.is_some() {
+                    match possible_iterator.unwrap() {
+                        ASTNodeSymbolTable::Iterator(iterator_node, _) => shape_tuple_node.set_object_iterator(Some(iterator_node.clone())),
+                        _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_tuple_node.get_position().get_num_line())))),
+                    }
+                }
+            },
         }
 
         error_vec
@@ -504,17 +514,21 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         let node = self.find(ident.clone());
         let first_access_node = self.find(first_access.clone());
 
-        if let Some(ASTNodeSymbolTable::Source(source, _)) = node {
+        if let Some(ASTNodeSymbolTable::Source(mut source, _)) = node {
+            self.visit_source(&mut source);
             access_node.set_source_or_expression(Some(SourceOrExpression::Source(source.clone())));
-        } else if let Some(ASTNodeSymbolTable::Expression(expression, _)) = node {
+        } else if let Some(ASTNodeSymbolTable::Expression(mut expression, _)) = node {
+            self.visit_expression(&mut expression);
             access_node.set_source_or_expression(Some(SourceOrExpression::Expression(expression.clone())));
         } else {
             error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró {ident} en la línea {num_line}"))));
         }
 
-        if let Some(ASTNodeSymbolTable::Iterator(iterator, _)) = first_access_node {
+        if let Some(ASTNodeSymbolTable::Iterator(mut iterator, _)) = first_access_node {
+            self.visit_iterator(&mut iterator);
             access_node.set_iterator(Some(iterator.clone()));
-        } else if let Some(ASTNodeSymbolTable::Field(field, _)) = first_access_node {
+        } else if let Some(ASTNodeSymbolTable::Field(mut field, _)) = first_access_node {
+            self.visit_field(&mut field);
             access_node.set_field(Some(field.clone()));
         } else {
             error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Iterator o Field después del primer '.', pero se encontró {first_access} en la línea {num_line}"))));
@@ -530,23 +544,6 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         }
 
         error_vec
-    }
-}
-
-/// Asocia un iterador con la Shape que lo utiliza en el campo o la tupla que lo utiliza en el objeto
-/// 
-/// # Parámetros
-/// * `node` - El nodo Shape o ShapeTuple al que se quiere asociar el iterador
-/// * `error_vec` - El vector de errores de la fase de identificación
-/// * `iterator_ident` - El identificador del iterador que se quiere asociar con una Shape o con una tupla
-fn associate_iterator_to_shape<T>(node: &mut T, error_vec: &mut Vec<Option<CompilerError>>, iterator_ident: String, identification: &mut Identification) where T: ManageIterator + ManagePosition {
-    let possible_iterator = identification.find(iterator_ident);
-
-    if possible_iterator.is_some() {
-        match possible_iterator.unwrap() {
-            ASTNodeSymbolTable::Iterator(iterator_node, _) => node.set_object_iterator(Some(iterator_node.clone())),
-            _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", node.get_position().get_num_line())))),
-        }
     }
 }
 
@@ -670,4 +667,41 @@ fn create_error(
         duplicate_pos.get_num_line(),
         position.get_num_line()
     )))
+}
+
+fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNode> {
+    let mut expression_fields = Vec::new();
+
+    let first_possible_iterator = expression_node.get_accesses().get(0).unwrap().get_iterator();
+    let first_iterator;
+
+    if first_possible_iterator.is_none() {
+        // No se muestra un error porque ya se comprueba antes que sea un iterator
+        return Vec::new();
+    } else {
+        first_iterator = first_possible_iterator.unwrap();
+    }
+
+    let first_fields = first_iterator.get_fields();
+
+    if expression_node.get_accesses().len() >= 2 {
+        let second_iterator = expression_node.get_accesses().get(1).unwrap().get_iterator().unwrap();
+        let second_fields = second_iterator.get_fields();
+
+        first_fields.into_iter().for_each(|field| {
+            expression_fields.push(field);
+        });
+
+        second_fields.into_iter().for_each(|field| {
+            if !expression_fields.contains(&field) {
+                expression_fields.push(field);
+            }
+        });
+    } else {
+        first_fields.into_iter().for_each(|field| {
+            expression_fields.push(field);
+        });
+    }
+
+    expression_fields
 }

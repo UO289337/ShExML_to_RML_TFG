@@ -2221,8 +2221,8 @@ mod sintax_tests {
 
         let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
         let sources = TestUtilities::create_sources_for_ast(
-            "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            "films_database",
+            SourceDefinition::JdbcURL("jdbc:mysql://localhost:3306/mydb".to_string()),
             2,
         );
         let queries =
@@ -2250,8 +2250,8 @@ mod sintax_tests {
 
         let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
         let sources = TestUtilities::create_sources_for_ast(
-            "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            "films_database",
+            SourceDefinition::JdbcURL("jdbc:mysql://localhost:3306/mydb".to_string()),
             2,
         );
         let iterators = TestUtilities::create_default_iterators_for_ast(3);

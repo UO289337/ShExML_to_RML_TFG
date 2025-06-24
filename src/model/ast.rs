@@ -73,7 +73,7 @@ pub enum IteratorAccess {
 ///
 /// Enumerador que contiene los posibles tipo de Source: CSV o base de datos
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum SourceType {
+pub enum Type {
     CSV,
     Database,
 }
@@ -128,11 +128,6 @@ pub mod nodes {
     pub trait ManagePrefix {
         fn set_prefix(&mut self, prefix: Option<PrefixASTNode>);
         fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>);
-    }
-
-    /// Trait para el manejo de iteradores
-    pub trait ManageIterator {
-        fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>);
     }
 
     /// Nodo de tipo Prefix del AST
@@ -214,7 +209,7 @@ pub mod nodes {
         position: Position,
 
         // Type Checking
-        source_type: Option<SourceType>,
+        source_type: Option<Type>,
     }
 
     impl SourceASTNode {
@@ -250,12 +245,23 @@ pub mod nodes {
             self.source_definition.clone()
         }
 
+        /// Devuelve el tipo del Source
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Source del AST
+        /// 
+        /// # Retorna
+        /// El tipo del Source
+        pub fn get_type(&mut self) -> Option<Type> {
+            self.source_type.clone()
+        }
+
         /// Asocia el tipo del Source a este
         /// 
         /// # Parámetros
         /// * `self` - El propio nodo Source del AST
         /// * `source_type` - El tipo del Source
-        pub fn set_source_type(&mut self, source_type: SourceType) {
+        pub fn set_type(&mut self, source_type: Type) {
             self.source_type = Some(source_type);
         }
     }
@@ -363,6 +369,9 @@ pub mod nodes {
 
         // Fase identificación
         query: Option<QueryASTNode>,
+
+        // Type checking
+        iterator_type: Option<Type>,
     }
 
     impl IteratorASTNode {
@@ -386,6 +395,7 @@ pub mod nodes {
                 iterator_access,
                 fields,
                 query: None,
+                iterator_type: None,
                 position,
             }
         }
@@ -399,6 +409,17 @@ pub mod nodes {
         /// El acceso al Iterator
         pub fn get_iterator_access(&self) -> IteratorAccess {
             self.iterator_access.clone()
+        }
+
+        /// Devuelve el acceso mutable al Iterator
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Iterator
+        ///
+        /// # Retorna
+        /// El acceso mutable al Iterator
+        pub fn get_mut_iterator_access(&mut self) -> &mut IteratorAccess {
+            &mut self.iterator_access
         }
 
         /// Devuelve el vector de nodos Field del Iterator
@@ -445,6 +466,17 @@ pub mod nodes {
             &mut self.query
         }
 
+        /// Devuelve el Option con el tipo del Iterator
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Iterator
+        ///
+        /// # Retorna
+        /// El Option con el tipo del Iterator
+        pub fn get_type(&mut self) -> Option<Type> {
+            self.iterator_type.clone()
+        }
+
         /// Asocia un nodo Query con el Iterator
         ///
         /// # Parámetros
@@ -452,6 +484,15 @@ pub mod nodes {
         /// * `query` - El Option que contiene el nodo Query del AST que se quiere asociar al iterador
         pub fn set_query(&mut self, query: Option<QueryASTNode>) {
             self.query = query.clone();
+        }
+
+        /// Asocia un tipo con el Iterator
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Iterator
+        /// * `query` - El Option que contiene el tipo que se quiere asociar con el iterador
+        pub fn set_type(&mut self, iterator_type: Option<Type>) {
+            self.iterator_type = iterator_type;
         }
     }
 
@@ -555,6 +596,9 @@ pub mod nodes {
         expression_type: ExpressionType,
         accesses: Vec<AccessASTNode>,
         position: Position,
+
+        // Fase Identificación
+        fields: Option<Vec<FieldASTNode>>
     }
 
     impl ExpressionASTNode {
@@ -577,6 +621,7 @@ pub mod nodes {
                 identifier: identifier.get_lexeme(),
                 expression_type,
                 accesses,
+                fields: None,
                 position,
             }
         }
@@ -612,6 +657,26 @@ pub mod nodes {
         /// El vector mutable con los accesos que se realizan en la Expression
         pub fn get_mut_accesses(&mut self) -> &mut Vec<AccessASTNode> {
             &mut self.accesses
+        }
+
+        /// Devuelve el Option con el vector con los Field a los que puede acceder Expression
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Expression
+        ///
+        /// # Retorna
+        /// El Option con el vector con los campos a los que puede acceder Expression
+        pub fn get_fields(&self) -> Option<Vec<FieldASTNode>> {
+            self.fields.clone()
+        }
+
+        /// Asocia un Option con un vector con los campos a los que puede acceder el Field el nodo Expression
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Expression
+        /// * `fields` - El Option con el vector con los nodos Field a asociar con el nodo Expression
+        pub fn set_fields(&mut self, fields: Option<Vec<FieldASTNode>>){
+            self.fields = fields;
         }
     }
 
@@ -725,7 +790,7 @@ pub mod nodes {
         ///
         /// # Retorna
         /// El nodo Source o Expression del acceso
-        pub fn get_souce_or_expression(&self) -> Option<SourceOrExpression> {
+        pub fn get_source_or_expression(&self) -> Option<SourceOrExpression> {
             self.source_or_expression.clone()
         }
 
@@ -884,6 +949,17 @@ pub mod nodes {
             self.field_identifier.clone()
         }
 
+        /// Devuelve el identificador o acceso mutable del campo de la Shape
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Shape
+        ///
+        /// # Retorna
+        /// El identificador o acceso mutable del campo de la Shape
+        pub fn get_mut_field_identifier(&mut self) -> &mut IdentOrAccess {
+            &mut self.field_identifier
+        }
+
         /// Devuelve las tuplas mutables de la Shape
         ///
         /// # Parámetros
@@ -926,6 +1002,15 @@ pub mod nodes {
         /// El nodo Prefix del campo de la Shape
         pub fn get_field_prefix(&self) -> Option<PrefixASTNode> {
             self.field_prefix.clone()
+        }
+
+        /// Asocia un nodo Iterator del AST (el del campo) con la Shape
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo Shape
+        /// * `iterator` - El nodo Iterator que se quiere asociar con la Shape
+        pub fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
+           self.iterator = iterator;
         }
     }
 
@@ -972,17 +1057,6 @@ pub mod nodes {
         /// * `prefix` - Un Option con el nodo Prefix del AST que se quiere asociar al campo de la Shape
         fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.field_prefix = prefix;
-        }
-    }
-
-    impl ManageIterator for ShapeASTNode {
-        /// Asocia un nodo Iterator del AST (el del campo) con la Shape
-        /// 
-        /// # Parámetros
-        /// * `self` - El propio nodo Shape
-        /// * `iterator` - El nodo Iterator que se quiere asociar con la Shape
-        fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
-           self.iterator = iterator;
         }
     }
 
@@ -1071,6 +1145,17 @@ pub mod nodes {
             self.object.clone()
         }
 
+        /// Devuelve el identificador o acceso mutable del objeto de la tupla de la Shape
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo ShapeTuple
+        ///
+        /// # Retorna
+        /// El identificador o acceso mutable del objeto de la tupla de la Shape
+        pub fn get_mut_object(&mut self) -> &mut IdentOrAccess {
+            &mut self.object
+        }
+
         /// Devuelve el Option del nodo Prefix asociado con la tupla de la Shape
         ///
         /// # Parámetros
@@ -1091,6 +1176,15 @@ pub mod nodes {
         /// El Option del nodo Prefix asociado con el objeto de la tupla de la Shape
         pub fn get_object_prefix(&self) -> Option<PrefixASTNode> {
             self.object_prefix.clone()
+        }
+
+        /// Asocia un nodo Iterator del AST (el del objeto) con la tupla de la Shape
+        /// 
+        /// # Parámetros
+        /// * `self` - El propio nodo ShapeTuple
+        /// * `iterator` - El nodo Iterator que se quiere asociar con la tupla de la Shape
+        pub fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
+           self.iterator = iterator;
         }
     }
 
@@ -1137,17 +1231,6 @@ pub mod nodes {
         /// * `prefix` - El Option con el nodo Prefix del AST que se quiere asociar al objeto de la tupla de la Shape
         fn set_object_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.object_prefix = prefix;
-        }
-    }
-
-    impl ManageIterator for ShapeTupleASTNode {
-        /// Asocia un nodo Iterator del AST (el del objeto) con la tupla de la Shape
-        /// 
-        /// # Parámetros
-        /// * `self` - El propio nodo ShapeTuple
-        /// * `iterator` - El nodo Iterator que se quiere asociar con la tupla de la Shape
-        fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
-           self.iterator = iterator;
         }
     }
 

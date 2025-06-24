@@ -1,3 +1,5 @@
+
+
 use crate::model::{ast::nodes::*, ast::*, lexer::token::*};
 
 pub struct TestUtilities;
@@ -33,12 +35,12 @@ impl TestUtilities {
     pub fn create_valid_source_test(num_line: u16) -> Vec<Token> {
         vec![
             Token::create_test_token(SOURCE, num_line, TokenType::Source),
-            Token::create_test_token("films_csv_file", num_line, TokenType::Ident),
+            Token::create_test_token("films_database", num_line, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
             Token::create_test_token(
-                "https://shexml.herminiogarcia.com/files/films.csv",
+                "jdbc:mysql://localhost:3306/mydb",
                 num_line,
-                TokenType::Uri,
+                TokenType::JdbcUrl,
             ),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
         ]
@@ -172,7 +174,7 @@ impl TestUtilities {
             Token::create_test_token(EXPRESSION, num_line, TokenType::Expression),
             Token::create_test_token("films", num_line, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
-            Token::create_test_token("films_csv_file", num_line, TokenType::Ident),
+            Token::create_test_token("films_database", num_line, TokenType::Ident),
             Token::create_test_token(ACCESS_DOT, num_line, TokenType::AccessDot),
             Token::create_test_token("films_csv", num_line, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
@@ -265,9 +267,8 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un Option con un vector de nodos Source que unicamente contiene un nodo Source
-    pub fn create_sources_for_ast(ident: &str, uri: &str, num_line: u16) -> Vec<SourceASTNode> {
+    pub fn create_sources_for_ast(ident: &str, source_definition: SourceDefinition, num_line: u16) -> Vec<SourceASTNode> {
         let identifier = Token::create_test_token(ident, num_line, TokenType::Ident);
-        let source_definition = SourceDefinition::URI(uri.to_string());
 
         vec![SourceASTNode::new(
             identifier.clone(),
@@ -342,7 +343,7 @@ impl TestUtilities {
     /// # Retorna
     /// Un vector de nodos Expression del AST que contiene un nodo Expression
     pub fn create_default_expressions_for_ast(num_line: u16) -> Vec<ExpressionASTNode> {
-        let identifier = Token::create_test_token("films_csv_file", num_line, TokenType::Ident);
+        let identifier = Token::create_test_token("films_database", num_line, TokenType::Ident);
         let first_access = Token::create_test_token("films_csv", num_line, TokenType::Ident);
         let accesses = vec![AccessASTNode::new(
             identifier.clone(),
@@ -425,8 +426,7 @@ impl TestUtilities {
                     Position::new(num_line + 3),
                 )),
                 Position::new(num_line + 3),
-            ),
-        ];
+        )];
 
         vec![ShapeASTNode::new(
             Some(prefix_ident),

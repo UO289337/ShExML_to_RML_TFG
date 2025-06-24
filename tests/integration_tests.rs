@@ -150,6 +150,6 @@ mod integration_lexer_syntax_analyzers_tests {
 
         // Salen muchos errores porque se coge el primer identificador detectado, por lo que films_csv es un Source y no el Iterator y,
         // por tanto, tampoco se cogen sus campos
-        assert_eq!(semantic_result.len(), 10);
+        assert_eq!(semantic_result.len(), 11);
     }
 }
