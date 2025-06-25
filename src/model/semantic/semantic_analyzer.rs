@@ -3,9 +3,14 @@
 //! Realiza el análisis semántico del compilador
 //! El análisis semántico se divide en 2 fases: la fase de identificación y la de chequeo de tipos (type checking)
 
-use std::{collections::HashSet, hash::Hash};
+use std::collections::HashSet;
 
-use crate::model::{ast::*, compiler_error::CompilerError, semantic::{identification_visitor::Identification, type_checking::TypeChecking}, visitor::Visitor};
+use crate::model::{
+    ast::*,
+    compiler_error::CompilerError,
+    semantic::{identification_visitor::Identification, type_checking::TypeChecking},
+    visitor::Visitor,
+};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
 ///
@@ -25,10 +30,10 @@ pub fn semantic_analysis(ast: &mut AST) -> Vec<CompilerError> {
 }
 
 /// Realiza la llamada al Visitor de la fase de identificación
-/// 
+///
 /// # Parámetros
 /// * `ast` - El AST que se va a visitar
-/// 
+///
 /// # Retorna
 /// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de identificación
 fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
@@ -39,10 +44,10 @@ fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
 }
 
 /// Realiza la llamada al Visitor de la fase de Type Checking
-/// 
+///
 /// # Parámetros
 /// * `ast` - El AST que se va a visitar
-/// 
+///
 /// # Retorna
 /// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de type checking
 fn type_checking_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
@@ -52,16 +57,25 @@ fn type_checking_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
     error_vec
 }
 
-fn eliminate_duplicate_errors<T: Eq + Hash + Clone>(vec: &mut Vec<Option<T>>) {
+/// Elimina errores duplicados de un vector de errores
+/// 
+/// # Parámetros
+/// * `error_vec` - La referencia mutable al vector de Options con los errores
+fn eliminate_duplicate_errors(error_vec: &mut Vec<Option<CompilerError>>) {
     let mut seen = HashSet::new();
-    vec.retain(|item| {
-        match item {
-            Some(val) => seen.insert(Some(val.clone())),
-            None => seen.insert(None),
-        }
+    error_vec.retain(|item| match item {
+        Some(val) => seen.insert(Some(val.clone())),
+        None => seen.insert(None),
     });
 }
 
+/// Comprueba que todos los errores de un vector de errores sean None
+/// 
+/// # Parámetros
+/// * `error_vec` - El vector con los Options de los errores
+/// 
+/// # Retorna
+/// true si no hay errores y false en caso contrario
 fn all_errors_none(error_vec: &Vec<Option<CompilerError>>) -> bool {
     for error in error_vec {
         if error.is_some() {
@@ -72,13 +86,15 @@ fn all_errors_none(error_vec: &Vec<Option<CompilerError>>) -> bool {
 }
 
 /// Convierte un vector con Options con errores en un vector con únicamente los errores
-/// 
+///
 /// # Parámetros
 /// * `error_vec` - El vector con los Options que contiene los posibles errores
-/// 
+///
 /// # Retorna
 /// Un vector únicamente con los errores
-fn convert_option_errors_to_compile_errors(error_vec: Vec<Option<CompilerError>>) -> Vec<CompilerError> {
+fn convert_option_errors_to_compile_errors(
+    error_vec: Vec<Option<CompilerError>>,
+) -> Vec<CompilerError> {
     let mut errors: Vec<CompilerError> = Vec::new();
     error_vec.into_iter().for_each(|error| {
         if error.is_some() {
@@ -95,7 +111,13 @@ fn convert_option_errors_to_compile_errors(error_vec: Vec<Option<CompilerError>>
 mod identification_tests {
 
     use super::*;
-    use crate::{model::{ast::nodes::*, lexer::token::{Token, TokenType, CSV_PER_ROW}}, test_utils::TestUtilities};
+    use crate::{
+        model::{
+            ast::nodes::*,
+            lexer::token::{Token, TokenType, CSV_PER_ROW},
+        },
+        test_utils::TestUtilities,
+    };
 
     /// Comprueba que se pasa la fase de identificación con un identificador de Query en el Iterator y con accesos simples
     #[doc(hidden)]
@@ -113,7 +135,14 @@ mod identification_tests {
         let expressions = TestUtilities::create_default_expressions_for_ast(10);
         let shapes = TestUtilities::create_default_shapes_for_ast(11);
 
-        let mut ast = AST::new(prefixes, sources, queries.clone(), iterators, expressions, shapes);
+        let mut ast = AST::new(
+            prefixes,
+            sources,
+            queries.clone(),
+            iterators,
+            expressions,
+            shapes,
+        );
         let actual = identification_phase(&mut ast);
 
         actual.into_iter().for_each(|error| {
@@ -128,7 +157,10 @@ mod identification_tests {
         // Las llaves son necesarias para evitar tener que clonar el ast debido a que es &mut
         let mut iterators = ast.get_iterators();
         let iterator = iterators.get_mut(0).unwrap();
-        assert_eq!(iterator.get_query().clone().unwrap(), queries.as_mut().unwrap().get(0).unwrap().clone());
+        assert_eq!(
+            iterator.get_query().clone().unwrap(),
+            queries.as_mut().unwrap().get(0).unwrap().clone()
+        );
 
         // Comprueba que los accesos de la Expression están asociados al Source y al Iterator
         let mut expressions = ast.get_expressions();
@@ -136,7 +168,10 @@ mod identification_tests {
         let first_access = accesses.get(0).unwrap();
         let sources = ast.get_sources();
         let source = sources.get(0).unwrap();
-        assert_eq!(first_access.get_source_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
+        assert_eq!(
+            first_access.get_source_or_expression().unwrap(),
+            SourceOrExpression::Source(source.clone())
+        );
         assert_eq!(first_access.get_iterator().unwrap(), iterator.clone());
 
         // Comprueba que los accesos de las tuplas de la Shape están asociados a la Expression y a Fields
@@ -162,9 +197,18 @@ mod identification_tests {
     #[doc(hidden)]
     #[test]
     fn identification_withouth_errors_with_various_prefix_and_access_to_iterators() {
-        let mut prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
-        prefixes.extend(TestUtilities::create_prefixes_for_ast("dbr", "http://dbpedia.org/resource/", 2));
-        prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
+        let mut prefixes =
+            TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        prefixes.extend(TestUtilities::create_prefixes_for_ast(
+            "dbr",
+            "http://dbpedia.org/resource/",
+            2,
+        ));
+        prefixes.extend(TestUtilities::create_prefixes_for_ast(
+            "",
+            "http://default.com",
+            3,
+        ));
         let sources = TestUtilities::create_sources_for_ast(
             "films_csv_file",
             SourceDefinition::URI("https://shexml.herminiogarcia.com/files/films.csv".to_string()),
@@ -185,7 +229,7 @@ mod identification_tests {
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Position::new(8),
-            )
+            ),
         ];
         let fields2 = vec![
             FieldASTNode::new(
@@ -202,41 +246,45 @@ mod identification_tests {
                 Token::create_test_token("country", 12, TokenType::Ident),
                 Token::create_test_token("country", 12, TokenType::Ident),
                 Position::new(12),
-            )
+            ),
         ];
         let ident1 = Token::create_test_token("films_csv", 5, TokenType::Ident);
         let ident2 = Token::create_test_token("another_films_csv", 5, TokenType::Ident);
         let csvperrow = Token::create_test_token(CSV_PER_ROW, 5, TokenType::CsvPerRow);
 
-        let iterators = vec![IteratorASTNode::new(
-            ident1.clone(),
-            IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
-            fields1.clone(),
-            Position::new(ident1.get_num_line()),
-        ),
-        IteratorASTNode::new(
-            ident2.clone(),
-            IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
-            fields2,
-            Position::new(ident2.get_num_line()),
-        )];
+        let iterators = vec![
+            IteratorASTNode::new(
+                ident1.clone(),
+                IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
+                fields1.clone(),
+                Position::new(ident1.get_num_line()),
+            ),
+            IteratorASTNode::new(
+                ident2.clone(),
+                IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
+                fields2,
+                Position::new(ident2.get_num_line()),
+            ),
+        ];
 
         let identifier = Token::create_test_token("films_csv_file", 13, TokenType::Ident);
         let first_access1 = Token::create_test_token("films_csv", 13, TokenType::Ident);
         let first_access2 = Token::create_test_token("another_films_csv", 13, TokenType::Ident);
         let second_access = Token::create_test_token("id", 13, TokenType::Ident);
-        let accesses = vec![AccessASTNode::new(
-            identifier.clone(),
-            first_access1,
-            Some(second_access.clone()),
-            Position::new(identifier.get_num_line()),
-        ),
-        AccessASTNode::new(
-            identifier.clone(),
-            first_access2,
-            Some(second_access),
-            Position::new(identifier.get_num_line()),
-        )];
+        let accesses = vec![
+            AccessASTNode::new(
+                identifier.clone(),
+                first_access1,
+                Some(second_access.clone()),
+                Position::new(identifier.get_num_line()),
+            ),
+            AccessASTNode::new(
+                identifier.clone(),
+                first_access2,
+                Some(second_access),
+                Position::new(identifier.get_num_line()),
+            ),
+        ];
 
         let identifier = Token::create_test_token("films_ids", 13, TokenType::Ident);
 
@@ -246,23 +294,25 @@ mod identification_tests {
             accesses,
             Position::new(identifier.get_num_line()),
         )];
-        
+
         let identifier = Token::create_test_token("films_csv_file", 14, TokenType::Ident);
         let first_access1 = Token::create_test_token("films_csv", 14, TokenType::Ident);
         let first_access2 = Token::create_test_token("another_films_csv", 14, TokenType::Ident);
         let second_access = Token::create_test_token("name", 14, TokenType::Ident);
-        let accesses = vec![AccessASTNode::new(
-            identifier.clone(),
-            first_access1,
-            Some(second_access.clone()),
-            Position::new(identifier.get_num_line()),
-        ),
-        AccessASTNode::new(
-            identifier.clone(),
-            first_access2,
-            Some(second_access),
-            Position::new(identifier.get_num_line()),
-        )];
+        let accesses = vec![
+            AccessASTNode::new(
+                identifier.clone(),
+                first_access1,
+                Some(second_access.clone()),
+                Position::new(identifier.get_num_line()),
+            ),
+            AccessASTNode::new(
+                identifier.clone(),
+                first_access2,
+                Some(second_access),
+                Position::new(identifier.get_num_line()),
+            ),
+        ];
 
         let identifier = Token::create_test_token("films_names", 14, TokenType::Ident);
 
@@ -277,18 +327,13 @@ mod identification_tests {
         let prefix_ident = Token::create_test_token("", 15, TokenType::Ident);
         let identifier = Token::create_test_token("Films", 15, TokenType::Ident);
         let field_prefix_ident = Token::create_test_token("dbr", 15, TokenType::Ident);
-        let tuples = vec![
-            ShapeTupleASTNode::new(
-                Some(Token::create_test_token(
-                    "example",
-                    16,
-                    TokenType::Ident,
-                )),
-                Token::create_test_token("name", 16, TokenType::Ident),
-                Some(Token::create_test_token("example", 16, TokenType::Ident)),
-                IdentOrAccess::Ident("films_csv".to_string()),
-                Position::new(16),
-            )];
+        let tuples = vec![ShapeTupleASTNode::new(
+            Some(Token::create_test_token("example", 16, TokenType::Ident)),
+            Token::create_test_token("name", 16, TokenType::Ident),
+            Some(Token::create_test_token("example", 16, TokenType::Ident)),
+            IdentOrAccess::Ident("films_csv".to_string()),
+            Position::new(16),
+        )];
 
         let shapes = vec![ShapeASTNode::new(
             Some(prefix_ident),
@@ -317,9 +362,15 @@ mod identification_tests {
         let first_access = accesses.get(0).unwrap();
         let sources = ast.get_sources();
         let source = sources.get(0).unwrap();
-        assert_eq!(first_access.get_source_or_expression().unwrap(), SourceOrExpression::Source(source.clone()));
+        assert_eq!(
+            first_access.get_source_or_expression().unwrap(),
+            SourceOrExpression::Source(source.clone())
+        );
         assert_eq!(first_access.get_iterator().unwrap(), iterator.clone());
-        assert!(iterator.clone().get_fields().contains(&first_access.get_field().unwrap()));
+        assert!(iterator
+            .clone()
+            .get_fields()
+            .contains(&first_access.get_field().unwrap()));
 
         // Comprueba que los accesos de las tuplas de la Shape están asociados a la Expression y a Fields
         // También comprueba los prefijos
@@ -343,9 +394,18 @@ mod identification_tests {
     #[doc(hidden)]
     #[test]
     fn identification_with_unknown_identifiers() {
-        let mut prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
-        prefixes.extend(TestUtilities::create_prefixes_for_ast("dbr", "http://dbpedia.org/resource/", 2));
-        prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
+        let mut prefixes =
+            TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        prefixes.extend(TestUtilities::create_prefixes_for_ast(
+            "dbr",
+            "http://dbpedia.org/resource/",
+            2,
+        ));
+        prefixes.extend(TestUtilities::create_prefixes_for_ast(
+            "",
+            "http://default.com",
+            3,
+        ));
         let sources = TestUtilities::create_sources_for_ast(
             "films_csv_file",
             SourceDefinition::URI("https://shexml.herminiogarcia.com/files/films.csv".to_string()),
@@ -366,7 +426,7 @@ mod identification_tests {
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Position::new(8),
-            )
+            ),
         ];
         let ident = Token::create_test_token("films_csv", 5, TokenType::Ident);
         let iterator_access = Token::create_test_token("CSV_PER_ROW", 5, TokenType::Ident);
@@ -377,7 +437,7 @@ mod identification_tests {
             fields,
             Position::new(ident.get_num_line()),
         )];
-        
+
         let identifier = Token::create_test_token("films_csv_file", 9, TokenType::Ident);
         let first_access = Token::create_test_token("films", 9, TokenType::Ident);
         let second_access = Token::create_test_token("director", 9, TokenType::Ident);
@@ -408,11 +468,7 @@ mod identification_tests {
         );
         let tuples = vec![
             ShapeTupleASTNode::new(
-                Some(Token::create_test_token(
-                    "example",
-                    11,
-                    TokenType::Ident,
-                )),
+                Some(Token::create_test_token("example", 11, TokenType::Ident)),
                 Token::create_test_token("name", 11, TokenType::Ident),
                 Some(Token::create_test_token("example", 11, TokenType::Ident)),
                 IdentOrAccess::Access(AccessASTNode::new(
@@ -424,11 +480,7 @@ mod identification_tests {
                 Position::new(11),
             ),
             ShapeTupleASTNode::new(
-                Some(Token::create_test_token(
-                    "example",
-                    12,
-                    TokenType::Ident,
-                )),
+                Some(Token::create_test_token("example", 12, TokenType::Ident)),
                 Token::create_test_token("year", 12, TokenType::Ident),
                 Some(Token::create_test_token("dbr", 12, TokenType::Ident)),
                 IdentOrAccess::Access(AccessASTNode::new(
@@ -438,7 +490,8 @@ mod identification_tests {
                     Position::new(12),
                 )),
                 Position::new(12),
-            )];
+            ),
+        ];
 
         let shapes = vec![ShapeASTNode::new(
             Some(prefix_ident),
@@ -472,9 +525,18 @@ mod identification_tests {
     #[doc(hidden)]
     #[test]
     fn identification_with_identifiers_of_other_structures() {
-        let mut prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
-        prefixes.extend(TestUtilities::create_prefixes_for_ast("dbr", "http://dbpedia.org/resource/", 2));
-        prefixes.extend(TestUtilities::create_prefixes_for_ast("", "http://default.com", 3));
+        let mut prefixes =
+            TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
+        prefixes.extend(TestUtilities::create_prefixes_for_ast(
+            "dbr",
+            "http://dbpedia.org/resource/",
+            2,
+        ));
+        prefixes.extend(TestUtilities::create_prefixes_for_ast(
+            "",
+            "http://default.com",
+            3,
+        ));
         let sources = TestUtilities::create_sources_for_ast(
             "films_csv_file",
             SourceDefinition::URI("https://shexml.herminiogarcia.com/files/films.csv".to_string()),
@@ -495,7 +557,7 @@ mod identification_tests {
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Position::new(8),
-            )
+            ),
         ];
         let ident = Token::create_test_token("films_csv", 5, TokenType::Ident);
         let iterator_access = Token::create_test_token("example", 5, TokenType::Ident);
@@ -506,7 +568,7 @@ mod identification_tests {
             fields,
             Position::new(ident.get_num_line()),
         )];
-        
+
         let identifier = Token::create_test_token("films_csv_file", 9, TokenType::Ident);
         let first_access = Token::create_test_token("example", 9, TokenType::Ident);
         let second_access = Token::create_test_token("", 9, TokenType::Ident);
@@ -537,11 +599,7 @@ mod identification_tests {
         );
         let tuples = vec![
             ShapeTupleASTNode::new(
-                Some(Token::create_test_token(
-                    "example",
-                    11,
-                    TokenType::Ident,
-                )),
+                Some(Token::create_test_token("example", 11, TokenType::Ident)),
                 Token::create_test_token("name", 11, TokenType::Ident),
                 Some(Token::create_test_token("example", 11, TokenType::Ident)),
                 IdentOrAccess::Access(AccessASTNode::new(
@@ -553,11 +611,7 @@ mod identification_tests {
                 Position::new(11),
             ),
             ShapeTupleASTNode::new(
-                Some(Token::create_test_token(
-                    "example",
-                    12,
-                    TokenType::Ident,
-                )),
+                Some(Token::create_test_token("example", 12, TokenType::Ident)),
                 Token::create_test_token("year", 12, TokenType::Ident),
                 Some(Token::create_test_token("dbr", 12, TokenType::Ident)),
                 IdentOrAccess::Access(AccessASTNode::new(
@@ -567,7 +621,8 @@ mod identification_tests {
                     Position::new(12),
                 )),
                 Position::new(12),
-            )];
+            ),
+        ];
 
         let shapes = vec![ShapeASTNode::new(
             Some(prefix_ident),
@@ -599,7 +654,13 @@ mod identification_tests {
 /// Módulo de los tests de la fase de chequeo de tipos del analizador semántico
 #[cfg(test)]
 mod type_checking_tests {
-    use crate::{model::{ast::nodes::*, lexer::token::{Token, TokenType, CSV_PER_ROW}}, test_utils::TestUtilities};
+    use crate::{
+        model::{
+            ast::nodes::*,
+            lexer::token::{Token, TokenType, CSV_PER_ROW},
+        },
+        test_utils::TestUtilities,
+    };
 
     use super::*;
 
@@ -619,7 +680,14 @@ mod type_checking_tests {
         let expressions = TestUtilities::create_default_expressions_for_ast(10);
         let shapes = TestUtilities::create_default_shapes_for_ast(11);
 
-        let mut ast = AST::new(prefixes, sources, queries, iterators.clone(), expressions, shapes);
+        let mut ast = AST::new(
+            prefixes,
+            sources,
+            queries,
+            iterators.clone(),
+            expressions,
+            shapes,
+        );
         // Es más fácil pasar la fase de identificación directamente
         let _ = identification_phase(&mut ast);
         let actual = type_checking_phase(&mut ast);
@@ -659,7 +727,14 @@ mod type_checking_tests {
         let expressions = TestUtilities::create_default_expressions_for_ast(10);
         let shapes = TestUtilities::create_default_shapes_for_ast(11);
 
-        let mut ast = AST::new(prefixes, sources, queries, iterators.clone(), expressions, shapes);
+        let mut ast = AST::new(
+            prefixes,
+            sources,
+            queries,
+            iterators.clone(),
+            expressions,
+            shapes,
+        );
         // Es más fácil pasar la fase de identificación directamente
         let _ = identification_phase(&mut ast);
         let actual = type_checking_phase(&mut ast);
@@ -691,13 +766,20 @@ mod type_checking_tests {
         let expressions = TestUtilities::create_default_expressions_for_ast(10);
         let shapes = TestUtilities::create_default_shapes_for_ast(11);
 
-        let mut ast = AST::new(prefixes, sources, queries, iterators.clone(), expressions, shapes);
+        let mut ast = AST::new(
+            prefixes,
+            sources,
+            queries,
+            iterators.clone(),
+            expressions,
+            shapes,
+        );
         // Es más fácil pasar la fase de identificación directamente
         let _ = identification_phase(&mut ast);
         let actual = type_checking_phase(&mut ast);
 
         let mut cont_errors = 0;
-        let expected_errors = vec!["Se ha detectado un tipo de base de datos inválida: desconocido; sólo se permiten: PostgreSQL, MySQL, SQLite, SQLServer y Oracle"];
+        let expected_errors = vec!["Se ha detectado una base de datos inválida: desconocido; sólo se permiten: PostgreSQL, MySQL, SQLite, SQLServer y Oracle"];
         actual.into_iter().for_each(|error| {
             if error.is_some() {
                 assert!(expected_errors.contains(&error.unwrap().get_message().as_str()));
@@ -739,7 +821,7 @@ mod type_checking_tests {
                 Token::create_test_token("country", 8, TokenType::Ident),
                 Token::create_test_token("country", 8, TokenType::Ident),
                 Position::new(8),
-            )
+            ),
         ];
         let ident = Token::create_test_token("films_csv", 4, TokenType::Ident);
         let iterator_access = Token::create_test_token(CSV_PER_ROW, 4, TokenType::CsvPerRow);
@@ -753,7 +835,14 @@ mod type_checking_tests {
         let expressions = TestUtilities::create_default_expressions_for_ast(10);
         let shapes = TestUtilities::create_default_shapes_for_ast(11);
 
-        let mut ast = AST::new(prefixes, sources, queries, iterators.clone(), expressions, shapes);
+        let mut ast = AST::new(
+            prefixes,
+            sources,
+            queries,
+            iterators.clone(),
+            expressions,
+            shapes,
+        );
         // Es más fácil pasar la fase de identificación directamente
         let _ = identification_phase(&mut ast);
         let actual = type_checking_phase(&mut ast);
@@ -781,7 +870,7 @@ mod type_checking_tests {
         );
         let queries =
             TestUtilities::create_queries_for_ast("inline_query", "SELECT * FROM example;", 3);
-        
+
         let fields1 = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 6, TokenType::Ident),
@@ -797,7 +886,7 @@ mod type_checking_tests {
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Token::create_test_token("year", 8, TokenType::Ident),
                 Position::new(8),
-            )
+            ),
         ];
         let fields2 = vec![
             FieldASTNode::new(
@@ -814,41 +903,45 @@ mod type_checking_tests {
                 Token::create_test_token("country", 12, TokenType::Ident),
                 Token::create_test_token("country", 12, TokenType::Ident),
                 Position::new(12),
-            )
+            ),
         ];
         let ident1 = Token::create_test_token("films_csv", 5, TokenType::Ident);
         let ident2 = Token::create_test_token("another_films_csv", 5, TokenType::Ident);
         let csvperrow = Token::create_test_token(CSV_PER_ROW, 5, TokenType::CsvPerRow);
 
-        let iterators = vec![IteratorASTNode::new(
-            ident1.clone(),
-            IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
-            fields1.clone(),
-            Position::new(ident1.get_num_line()),
-        ),
-        IteratorASTNode::new(
-            ident2.clone(),
-            IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
-            fields2,
-            Position::new(ident2.get_num_line()),
-        )];
+        let iterators = vec![
+            IteratorASTNode::new(
+                ident1.clone(),
+                IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
+                fields1.clone(),
+                Position::new(ident1.get_num_line()),
+            ),
+            IteratorASTNode::new(
+                ident2.clone(),
+                IteratorAccess::CsvPerRow(csvperrow.get_lexeme()),
+                fields2,
+                Position::new(ident2.get_num_line()),
+            ),
+        ];
 
         let identifier = Token::create_test_token("films_csv_file", 14, TokenType::Ident);
         let first_access1 = Token::create_test_token("films_csv", 14, TokenType::Ident);
         let first_access2 = Token::create_test_token("another_films_csv", 14, TokenType::Ident);
         let second_access = Token::create_test_token("name", 14, TokenType::Ident);
-        let accesses = vec![AccessASTNode::new(
-            identifier.clone(),
-            first_access1,
-            Some(second_access.clone()),
-            Position::new(identifier.get_num_line()),
-        ),
-        AccessASTNode::new(
-            identifier.clone(),
-            first_access2,
-            Some(second_access),
-            Position::new(identifier.get_num_line()),
-        )];
+        let accesses = vec![
+            AccessASTNode::new(
+                identifier.clone(),
+                first_access1,
+                Some(second_access.clone()),
+                Position::new(identifier.get_num_line()),
+            ),
+            AccessASTNode::new(
+                identifier.clone(),
+                first_access2,
+                Some(second_access),
+                Position::new(identifier.get_num_line()),
+            ),
+        ];
 
         let identifier = Token::create_test_token("films_names", 14, TokenType::Ident);
 
@@ -858,7 +951,7 @@ mod type_checking_tests {
             accesses,
             Position::new(identifier.get_num_line()),
         )];
-        
+
         let prefix_ident = Token::create_test_token("example", 15, TokenType::Ident);
         let identifier = Token::create_test_token("Films", 15, TokenType::Ident);
         let field_prefix_ident = Token::create_test_token("example", 15, TokenType::Ident);
@@ -870,11 +963,7 @@ mod type_checking_tests {
         );
         let tuples = vec![
             ShapeTupleASTNode::new(
-                Some(Token::create_test_token(
-                    "example",
-                    16,
-                    TokenType::Ident,
-                )),
+                Some(Token::create_test_token("example", 16, TokenType::Ident)),
                 Token::create_test_token("name", 16, TokenType::Ident),
                 Some(Token::create_test_token("example", 16, TokenType::Ident)),
                 IdentOrAccess::Access(AccessASTNode::new(
@@ -886,11 +975,7 @@ mod type_checking_tests {
                 Position::new(16),
             ),
             ShapeTupleASTNode::new(
-                Some(Token::create_test_token(
-                    "example",
-                    17,
-                    TokenType::Ident,
-                )),
+                Some(Token::create_test_token("example", 17, TokenType::Ident)),
                 Token::create_test_token("year", 17, TokenType::Ident),
                 Some(Token::create_test_token("example", 17, TokenType::Ident)),
                 IdentOrAccess::Access(AccessASTNode::new(
@@ -900,7 +985,8 @@ mod type_checking_tests {
                     Position::new(17),
                 )),
                 Position::new(17),
-            )];
+            ),
+        ];
 
         let shapes = vec![ShapeASTNode::new(
             Some(prefix_ident),
@@ -911,7 +997,14 @@ mod type_checking_tests {
             Position::new(identifier.get_num_line()),
         )];
 
-        let mut ast = AST::new(prefixes, sources, queries, iterators.clone(), expressions, shapes);
+        let mut ast = AST::new(
+            prefixes,
+            sources,
+            queries,
+            iterators.clone(),
+            expressions,
+            shapes,
+        );
         // Es más fácil pasar la fase de identificación directamente
         let _ = identification_phase(&mut ast);
         let actual = type_checking_phase(&mut ast);

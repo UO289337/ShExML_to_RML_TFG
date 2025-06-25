@@ -33,8 +33,9 @@ mod integration_lexer_syntax_analyzers_tests {
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::syntax::syntax_analyzer::parser(lexer_result.unwrap());
         let sintax_result_for_semantic = sintax_result.clone();
-        let semantic_result =
-            model::semantic::semantic_analyzer::semantic_analysis(&mut sintax_result_for_semantic.unwrap());
+        let semantic_result = model::semantic::semantic_analyzer::semantic_analysis(
+            &mut sintax_result_for_semantic.unwrap(),
+        );
 
         assert!(semantic_result.is_empty());
         assert!(sintax_result
@@ -142,6 +143,7 @@ mod integration_lexer_syntax_analyzers_tests {
         let semantic_result =
             model::semantic::semantic_analyzer::semantic_analysis(&mut sintax_result.unwrap());
 
+        // Por si se quieren ver los errores en consola; descomentar el bucle
         /*
         semantic_result.into_iter().for_each(|error| {
             println!("{}", error.get_message());

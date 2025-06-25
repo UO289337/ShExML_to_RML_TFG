@@ -1,14 +1,18 @@
 //! Módulo de la fase de identificación del analizador semántico; se utiliza el patrón Visitor
 //!
 //! Comprueba que todos los identificadores utilizados están definidos y que no hay duplicados.
-//! También comprueba algunos tipos de identificadores 
+//! También comprueba algunos tipos de identificadores
 
 use std::collections::HashMap;
 
-use crate::model::{ast::{nodes::*, *}, compiler_error::CompilerError, visitor::*};
+use crate::model::{
+    ast::{nodes::*, *},
+    compiler_error::CompilerError,
+    visitor::*,
+};
 
 /// enum Scope
-/// 
+///
 /// Define los diferentes ámbitos que hay en ShExML
 #[derive(Debug, PartialEq, Clone, Eq, Hash)]
 enum Scope {
@@ -37,10 +41,10 @@ enum ASTNodeSymbolTable {
 
 impl ManageScope for ASTNodeSymbolTable {
     /// Devuelve el ámbito del nodo AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio nodo del AST
-    /// 
+    ///
     /// # Retorna
     /// El ámbito del nodo
     fn get_scope(&self) -> Scope {
@@ -60,10 +64,10 @@ impl ManageScope for ASTNodeSymbolTable {
 
 impl ManagePosition for ASTNodeSymbolTable {
     /// Devuelve la posición del nodo AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio nodo del AST
-    /// 
+    ///
     /// # Retorna
     /// La posición del nodo
     fn get_position(&self) -> Position {
@@ -88,15 +92,17 @@ struct SymbolTableStack {
 
 impl SymbolTableStack {
     /// Crea un nuevo stack de la tabla de símbolos
-    /// 
+    ///
     /// # Retorna
     /// Un stack de la tabla de símbolos
     fn new() -> Self {
-        Self { stack: vec![HashMap::new()] }
+        Self {
+            stack: vec![HashMap::new()],
+        }
     }
 
     /// Crea un nuevo diccionario dentro del stack; generalmente al entrar en un ámbito nuevo
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct del stack
     fn set(&mut self) {
@@ -104,7 +110,7 @@ impl SymbolTableStack {
     }
 
     /// Inserta un identificador como clave y un nodo como valor en la última tabla de símbolos del stack
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct del stack
     /// * `ident` - El identificador que se quiere insertar como clave
@@ -117,11 +123,11 @@ impl SymbolTableStack {
     }
 
     /// Encuentra un identificador en una de las tablas de símbolos del stack, empezando por la última, y devuelve su nodo asociado
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct del stack
     /// * `ident` - El identificador que se quiere buscar en el stack
-    /// 
+    ///
     /// # Retorna
     /// Un Option con el nodo encontrado relacionado con el identificador pasado como parámetro
     fn find(&self, ident: String) -> Option<ASTNodeSymbolTable> {
@@ -142,17 +148,17 @@ pub struct Identification {
 
 impl Identification {
     /// Crea un nuevo struct Identificaction con el stack de las tablas de símbolos
-    /// 
+    ///
     /// # Retorna
     /// Un struct de Identificación
-     pub fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             symbol_stack: SymbolTableStack::new(),
         }
     }
 
     /// Crea un nuevo ámbito en el stack de las tablas de símbolos
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de Identificación
     fn set(&mut self) {
@@ -160,7 +166,7 @@ impl Identification {
     }
 
     /// Inserta un identificador como clave y un nodo como valor en la última tabla de símbolos del stack
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de Identificación
     /// * `ident` - El identificador que se quiere insertar como clave
@@ -170,11 +176,11 @@ impl Identification {
     }
 
     /// Encuentra un identificador en una de las tablas de símbolos del stack, empezando por la última, y devuelve su nodo asociado
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de Identificación
     /// * `ident` - El identificador que se quiere buscar en el stack
-    /// 
+    ///
     /// # Retorna
     /// Un Option con el nodo encontrado relacionado con el identificador pasado como parámetro
     fn find(&self, ident: String) -> Option<ASTNodeSymbolTable> {
@@ -184,11 +190,11 @@ impl Identification {
 
 impl Visitor<Vec<Option<CompilerError>>> for Identification {
     /// Realiza la visita al AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `ast` - El AST que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante esta fase
     fn visit_ast(&mut self, ast: &mut AST) -> Vec<Option<CompilerError>> {
@@ -214,22 +220,18 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                 }
             });
         }
-        
-        ast.get_mut_iterators()
-            .iter_mut()
-            .for_each(|iterator| {
-                if previous_checking(&mut error_vec, iterator, self) {
-                    error_vec.extend(self.visit_iterator(iterator));
-                }
-            });
 
-        ast.get_mut_expressions()
-            .iter_mut()
-            .for_each(|expression| {
-                if previous_checking(&mut error_vec, expression, self) {
-                    error_vec.extend(self.visit_expression(expression));
-                }
-            });
+        ast.get_mut_iterators().iter_mut().for_each(|iterator| {
+            if previous_checking(&mut error_vec, iterator, self) {
+                error_vec.extend(self.visit_iterator(iterator));
+            }
+        });
+
+        ast.get_mut_expressions().iter_mut().for_each(|expression| {
+            if previous_checking(&mut error_vec, expression, self) {
+                error_vec.extend(self.visit_expression(expression));
+            }
+        });
 
         ast.get_mut_shapes().iter_mut().for_each(|shape| {
             if previous_checking(&mut error_vec, shape, self) {
@@ -241,29 +243,35 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
     }
 
     /// Realiza la visita a un nodo Prefix del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `prefix_node` - El nodo Prefix que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita al Prefix
     fn visit_prefix(&mut self, prefix_node: &mut PrefixASTNode) -> Vec<Option<CompilerError>> {
         if prefix_node.get_identifier() != String::new() {
-            self.insert(prefix_node.get_identifier(), ASTNodeSymbolTable::Prefix(prefix_node.clone(), Scope::GLOBAL));
+            self.insert(
+                prefix_node.get_identifier(),
+                ASTNodeSymbolTable::Prefix(prefix_node.clone(), Scope::GLOBAL),
+            );
         } else {
             // Para el prefijo por defecto (:)
-            self.insert(String::new(), ASTNodeSymbolTable::Prefix(prefix_node.clone(), Scope::GLOBAL));
+            self.insert(
+                String::new(),
+                ASTNodeSymbolTable::Prefix(prefix_node.clone(), Scope::GLOBAL),
+            );
         }
         vec![None]
     }
 
     /// Realiza la visita a un nodo Source del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `source_node` - El nodo Source que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita al Source
     fn visit_source(&mut self, source_node: &mut SourceASTNode) -> Vec<Option<CompilerError>> {
@@ -275,11 +283,11 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
     }
 
     /// Realiza la visita a un nodo Query del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `query_node` - El nodo Query que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita al Query
     fn visit_query(&mut self, query_node: &mut QueryASTNode) -> Vec<Option<CompilerError>> {
@@ -291,14 +299,17 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
     }
 
     /// Realiza la visita a un nodo Iterator del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `iterator_node` - El nodo Iterator que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita al Iterator
-    fn visit_iterator(&mut self, iterator_node: &mut IteratorASTNode) -> Vec<Option<CompilerError>> {
+    fn visit_iterator(
+        &mut self,
+        iterator_node: &mut IteratorASTNode,
+    ) -> Vec<Option<CompilerError>> {
         self.set();
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
         let num_line = iterator_node.get_position().get_num_line();
@@ -306,7 +317,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         match iterator_node.get_mut_iterator_access() {
             IteratorAccess::Ident(ident) => {
                 let node = self.find(ident.clone());
-                if node.is_none(){
+                if node.is_none() {
                     error_vec.push(Some(CompilerError::new(format!("No se encuentra el identificador de la Query del acceso del iterador: {}, en la línea {num_line}", ident.clone()))));
                 } else {
                     if let Some(ASTNodeSymbolTable::Query(query, _)) = node {
@@ -325,24 +336,21 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             ASTNodeSymbolTable::Iterator(iterator_node.clone(), Scope::GLOBAL),
         );
 
-        iterator_node
-            .get_mut_fields()
-            .iter_mut()
-            .for_each(|field| {
-                if previous_checking(&mut error_vec, field, self) {
-                    error_vec.extend(self.visit_field(field));
-                }
-            });
+        iterator_node.get_mut_fields().iter_mut().for_each(|field| {
+            if previous_checking(&mut error_vec, field, self) {
+                error_vec.extend(self.visit_field(field));
+            }
+        });
 
         error_vec
     }
 
     /// Realiza la visita a un nodo Field del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `field_node` - El nodo Field que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita al Field
     fn visit_field(&mut self, field_node: &mut FieldASTNode) -> Vec<Option<CompilerError>> {
@@ -354,11 +362,11 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
     }
 
     /// Realiza la visita a un nodo Expression del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `expression_node` - El nodo Expression que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita al Expression
     fn visit_expression(
@@ -384,11 +392,11 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
     }
 
     /// Realiza la visita a un nodo Shape del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `shape_node` - El nodo Shape que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita a la Shape
     fn visit_shape(&mut self, shape_node: &mut ShapeASTNode) -> Vec<Option<CompilerError>> {
@@ -424,7 +432,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         match shape_node.get_mut_field_identifier() {
             IdentOrAccess::Access(access) => {
                 error_vec.extend(self.visit_access(access));
-            },
+            }
             IdentOrAccess::Ident(iterator_ident) => {
                 // No se puede extraer a una función externa debido a &mut
                 let possible_iterator = self.find(iterator_ident.to_string());
@@ -437,18 +445,18 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                 } else {
                     error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la Shape de la línea {}", shape_node.get_position().get_num_line()))));
                 }
-            },
+            }
         }
 
         error_vec
     }
 
     /// Realiza la visita a un nodo tupla de la Shape del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `shape_tuple_node` - El nodo tupla de la Shape que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita a la tupla de la Shape
     fn visit_shape_tuple(
@@ -476,11 +484,11 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             true,
             self,
         );
-        
+
         match shape_tuple_node.get_mut_object() {
             IdentOrAccess::Access(access) => {
                 error_vec.extend(self.visit_access(access));
-            },
+            }
             IdentOrAccess::Ident(iterator_ident) => {
                 // No se puede extraer a una función externa debido a &mut
                 let possible_iterator = self.find(iterator_ident.to_string());
@@ -493,18 +501,18 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                 } else {
                     error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_tuple_node.get_position().get_num_line()))));
                 }
-            },
+            }
         }
 
         error_vec
     }
 
     /// Realiza la visita a un nodo Access del AST
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct de la fase de Identificación
     /// * `access_node` - El nodo Access que se va a visitar
-    /// 
+    ///
     /// # Retorna
     /// Un vector con Options que contienen los posibles errores detectados durante la visita al Access
     fn visit_access(&mut self, access_node: &mut AccessASTNode) -> Vec<Option<CompilerError>> {
@@ -523,7 +531,8 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             access_node.set_source_or_expression(Some(SourceOrExpression::Source(source.clone())));
         } else if let Some(ASTNodeSymbolTable::Expression(expression, _)) = &mut node {
             error_vec.extend(self.visit_expression(expression));
-            access_node.set_source_or_expression(Some(SourceOrExpression::Expression(expression.clone())));
+            access_node
+                .set_source_or_expression(Some(SourceOrExpression::Expression(expression.clone())));
         } else {
             error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró {ident} en la línea {num_line}"))));
         }
@@ -552,7 +561,7 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
 }
 
 /// Asocia un prefijo a una Shape o a una tupla
-/// 
+///
 /// # Parámetros
 /// * `node` - El nodo AST al que se quiere asociar el prefijo
 /// * `prefix` - El prefijo que se quiere asociar al nodo AST
@@ -594,13 +603,15 @@ fn asociate_prefix_to_shape<T>(
 }
 
 /// Asocia un nodo Prefix a otro nodo
-/// 
+///
 /// # Parámetros
 /// * `node` - El nodo del AST al cual se le va a asociar el prefijo
 /// * `object_prefix` - Un booleano que indica si es el prefix del objeto o campo (true) o si no (false)
 /// * `prefix` - El nodo Prefix que se quiere asociar con el nodo del AST
-fn asociate_prefix<T>(node: &mut T, object_prefix: bool, prefix: &PrefixASTNode) where
-    T: ManagePrefix {
+fn asociate_prefix<T>(node: &mut T, object_prefix: bool, prefix: &PrefixASTNode)
+where
+    T: ManagePrefix,
+{
     if !object_prefix {
         node.set_prefix(Some(prefix.clone()));
     } else {
@@ -609,16 +620,20 @@ fn asociate_prefix<T>(node: &mut T, object_prefix: bool, prefix: &PrefixASTNode)
 }
 
 /// Realiza el chequeo previo de un nodo
-/// 
+///
 /// Comprueba si el identificador del nodo a chequear ya existe en la tabla de símbolos
-/// 
+///
 /// # Parámetros
 /// * `error_vec` - El vecto de errores de la fase de identificación
 /// * `node` - El nodo a chequear
-/// 
+///
 /// # Retorna
 /// true si el nodo pasa el chequeo o false en caso contrario
-fn previous_checking<T>(error_vec: &mut Vec<Option<CompilerError>>, node: &T, identification: &mut Identification) -> bool
+fn previous_checking<T>(
+    error_vec: &mut Vec<Option<CompilerError>>,
+    node: &T,
+    identification: &mut Identification,
+) -> bool
 where
     T: ManagePosition + Identifiable,
 {
@@ -631,21 +646,29 @@ where
 }
 
 /// Comprueba que el identificador que se le pasa no se encuentra en la tabla de símbolos
-/// 
+///
 /// # Parámetros
 /// * `ident` - El identificador a comprobar si existe en la tabla de símbolos
 /// * `position` - La posición del nodo origen; se utiliza para personalizar el mensaje de error
-/// 
+///
 /// # Retorna
 /// Un Option con el posible error creado al detectar que el identificador ya existe en la tabla de símbolos
-fn check_duplicate_identifier<T>(node: &T, identification: &mut Identification) -> Option<CompilerError> where T: Identifiable + ManagePosition {
+fn check_duplicate_identifier<T>(
+    node: &T,
+    identification: &mut Identification,
+) -> Option<CompilerError>
+where
+    T: Identifiable + ManagePosition,
+{
     let identifier = node.get_identifier();
     let node_ident = identification.find(identifier.clone());
 
     if node_ident.is_some() {
         let duplicate: &ASTNodeSymbolTable = &node_ident.clone().unwrap();
 
-        if node_ident.unwrap().get_scope() == duplicate.get_scope() && duplicate.get_scope() == Scope::GLOBAL {
+        if node_ident.unwrap().get_scope() == duplicate.get_scope()
+            && duplicate.get_scope() == Scope::GLOBAL
+        {
             return create_error(identifier, node.get_position(), duplicate.get_position());
         }
     }
@@ -653,12 +676,12 @@ fn check_duplicate_identifier<T>(node: &T, identification: &mut Identification) 
 }
 
 /// Crea un error con un mensaje que indica que el identificador está duplicado
-/// 
+///
 /// # Parámetros
 /// * `ident` - El identificador duplicado
 /// * `position` - La posición del nodo al que pertenece el identificador
 /// * `duplicate_pos` - La posición del nodo al que pertenece el identificador que se encuentra en la tabla de símbolos
-/// 
+///
 /// # Retorna
 /// Un Option con el error que indica que hay un identificador duplicado
 fn create_error(
@@ -673,10 +696,21 @@ fn create_error(
     )))
 }
 
+/// Obtiene la lista de fields que pueden ser accedidos desde una Expression
+/// 
+/// # Parámetros
+/// * `expression_node` - El nodo Expression del AST al cual se quieren asociar los fields
+/// 
+/// # Retorna
+/// Un vector con los nodos Field que pueden ser accedidos desde la Expression
 fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNode> {
     let mut expression_fields = Vec::new();
 
-    let first_possible_iterator = expression_node.get_accesses().get(0).unwrap().get_iterator();
+    let first_possible_iterator = expression_node
+        .get_accesses()
+        .get(0)
+        .unwrap()
+        .get_iterator();
     let first_iterator;
 
     if first_possible_iterator.is_none() {
@@ -689,7 +723,12 @@ fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNod
     let first_fields_of_iterator = first_iterator.get_fields();
 
     if expression_node.get_accesses().len() >= 2 {
-        let second_iterator = expression_node.get_accesses().get(1).unwrap().get_iterator().unwrap();
+        let second_iterator = expression_node
+            .get_accesses()
+            .get(1)
+            .unwrap()
+            .get_iterator()
+            .unwrap();
         let second_fields_of_iterator = second_iterator.get_fields();
 
         let mut first_fields = Vec::new();
@@ -713,14 +752,24 @@ fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNod
     expression_fields
 }
 
-
+/// Obtiene la intersección de 2 vectores de nodos Field, es decir, los nodos Field que se encuentran en ambos vectores
+/// 
+/// # Parámetros
+/// * `vec1` - El primer vector de nodos Field
+/// * `vec2` - El segundo vector de nodos Field
+/// 
+/// # Retorna
+/// Un vector de nodos Field que contiene la intersección de los 2 vectores pasados como parámetros
 fn get_fields_intersection(vec1: Vec<FieldASTNode>, vec2: Vec<FieldASTNode>) -> Vec<FieldASTNode> {
     let mut vec = Vec::new();
     vec.extend(vec1.clone());
 
     for field in vec.clone() {
         if !vec2.contains(&field) {
-            if let Some(index) = vec.iter().position(|x| x.get_identifier() == field.get_identifier()) {
+            if let Some(index) = vec
+                .iter()
+                .position(|x| x.get_identifier() == field.get_identifier())
+            {
                 vec.remove(index);
             }
         }

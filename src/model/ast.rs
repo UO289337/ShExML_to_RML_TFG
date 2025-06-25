@@ -146,6 +146,7 @@ pub mod nodes {
         /// # Parámetros
         /// * `identifier` - El identificador del nodo Prefix
         /// * `uri` - La URI del nodo Prefix
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Prefix del AST
@@ -180,7 +181,7 @@ pub mod nodes {
         /// El String del identificador del Prefix
         fn get_identifier(&self) -> String {
             if self.identifier.is_some() {
-                return self.identifier.as_ref().unwrap().to_string()
+                return self.identifier.as_ref().unwrap().to_string();
             }
             String::new()
         }
@@ -188,10 +189,10 @@ pub mod nodes {
 
     impl ManagePosition for PrefixASTNode {
         /// Devuelve la posición del nodo Prefix
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Prefix del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Prefix con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -218,6 +219,7 @@ pub mod nodes {
         /// # Parámetros
         /// * `identifier` - El identificador del nodo Source
         /// * `source_definition` - La definición del nodo Source
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Source del AST
@@ -246,10 +248,10 @@ pub mod nodes {
         }
 
         /// Devuelve el tipo del Source
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Source del AST
-        /// 
+        ///
         /// # Retorna
         /// El tipo del Source
         pub fn get_type(&mut self) -> Option<Type> {
@@ -257,7 +259,7 @@ pub mod nodes {
         }
 
         /// Asocia el tipo del Source a este
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Source del AST
         /// * `source_type` - El tipo del Source
@@ -268,10 +270,10 @@ pub mod nodes {
 
     impl ManagePosition for SourceASTNode {
         /// Devuelve la posición del nodo Source
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Source del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Source con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -308,6 +310,7 @@ pub mod nodes {
         /// # Parámetros
         /// * `identifier` - El identificador del nodo Query
         /// * `sql_query` - La consulta SQL del nodo Query
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Query del AST
@@ -333,10 +336,10 @@ pub mod nodes {
 
     impl ManagePosition for QueryASTNode {
         /// Devuelve la posición del nodo Query
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Query del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Query con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -381,6 +384,7 @@ pub mod nodes {
         /// * `identifier` - El identificador del nodo Iterator
         /// * `iterator_access` - El acceso al Iterator
         /// * `fields` - El vector con los campos del Iterator
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Iterator del AST
@@ -498,10 +502,10 @@ pub mod nodes {
 
     impl ManagePosition for IteratorASTNode {
         /// Devuelve la posición del nodo Iterator
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Iterator del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Iterator con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -544,6 +548,7 @@ pub mod nodes {
         /// # Parámetros
         /// * `identifier` - El identificador del nodo Field
         /// * `access_field_identifier` - El identificador del acceso al campo del nodo Fied
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Field del AST
@@ -582,10 +587,10 @@ pub mod nodes {
 
     impl ManagePosition for FieldASTNode {
         /// Devuelve la posición del nodo Field
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Field del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Field con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -604,7 +609,7 @@ pub mod nodes {
         position: Position,
 
         // Fase Identificación
-        fields: Option<Vec<FieldASTNode>>
+        fields: Option<Vec<FieldASTNode>>,
     }
 
     impl ExpressionASTNode {
@@ -614,6 +619,7 @@ pub mod nodes {
         /// * `identifier` - El identificador del nodo Expression
         /// * `expression_type` - El tipo de la Expression
         /// * `accesses` - El vector con los accesos realizados en la Expression
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Expression del AST
@@ -681,17 +687,17 @@ pub mod nodes {
         /// # Parámetros
         /// * `self` - El propio nodo Expression
         /// * `fields` - El Option con el vector con los nodos Field a asociar con el nodo Expression
-        pub fn set_fields(&mut self, fields: Option<Vec<FieldASTNode>>){
+        pub fn set_fields(&mut self, fields: Option<Vec<FieldASTNode>>) {
             self.fields = fields;
         }
     }
 
     impl ManagePosition for ExpressionASTNode {
         /// Devuelve la posición del nodo Expression
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Expression del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Expression con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -735,6 +741,7 @@ pub mod nodes {
         /// * `identifier` - El identificador del nodo Access
         /// * `first_access` - El primer acceso del nodo Access
         /// * `second_access` - El segundo acceso del nodo Access
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Access del AST
@@ -855,10 +862,10 @@ pub mod nodes {
 
     impl ManagePosition for AccessASTNode {
         /// Devuelve la posición del nodo Access
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Access del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Access con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -896,6 +903,7 @@ pub mod nodes {
         /// * `tuples` - El vector con las tuplas de la Shape
         /// * `prefix` - El Option con el nodo Prefix asociado con la Shape
         /// * `field_prefix` - El Option con el nodo Prefix asociado con el campo de la Shape
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Shape del AST
@@ -1011,21 +1019,21 @@ pub mod nodes {
         }
 
         /// Asocia un nodo Iterator del AST (el del campo) con la Shape
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape
         /// * `iterator` - El nodo Iterator que se quiere asociar con la Shape
         pub fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
-           self.iterator = iterator;
+            self.iterator = iterator;
         }
     }
 
     impl ManagePosition for ShapeASTNode {
         /// Devuelve la posición del nodo Shape
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo Shape con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -1055,9 +1063,9 @@ pub mod nodes {
         fn set_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.prefix = prefix;
         }
-        
+
         /// Asocia un nodo Prefix con el campo de la Shape
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape
         /// * `prefix` - Un Option con el nodo Prefix del AST que se quiere asociar al campo de la Shape
@@ -1094,6 +1102,7 @@ pub mod nodes {
         /// * `object` - El identificador o acceso del objeto de la Shape
         /// * `prefix` - El Option con el nodo Prefix asociado con la tupla de la Shape
         /// * `object_prefix` - El Option con el nodo Prefix asociado con el objeto de la Shape
+        /// * `position` - La posición del nodo en la entrada
         ///
         /// # Retorna
         /// Un nodo Access del AST
@@ -1196,21 +1205,21 @@ pub mod nodes {
         }
 
         /// Asocia un nodo Iterator del AST (el del objeto) con la tupla de la Shape
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo ShapeTuple
         /// * `iterator` - El nodo Iterator que se quiere asociar con la tupla de la Shape
         pub fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
-           self.iterator = iterator;
+            self.iterator = iterator;
         }
     }
 
     impl ManagePosition for ShapeTupleASTNode {
         /// Devuelve la posición del nodo ShapeTuple
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo ShapeTuple del AST
-        /// 
+        ///
         /// # Retorna
         /// La posición del nodo ShapeTuple con respecto a la entrada
         fn get_position(&self) -> Position {
@@ -1240,9 +1249,9 @@ pub mod nodes {
         fn set_prefix(&mut self, prefix: Option<PrefixASTNode>) {
             self.prefix = prefix;
         }
-        
+
         /// Asocia un nodo Prefix con el objeto de la tupla de la Shape
-        /// 
+        ///
         /// # Parámetros
         /// * `self` - El propio nodo ShapeTuple
         /// * `prefix` - El Option con el nodo Prefix del AST que se quiere asociar al objeto de la tupla de la Shape
@@ -1290,6 +1299,7 @@ impl AST {
     /// * `iterators` - Un vector con los nodos Iterator del AST
     /// * `expressions` - Un vector con los nodos Expression del AST
     /// * `shapes` - Un vector con los nodos Shape del AST
+    /// * `position` - La posición del nodo en la entrada
     ///
     /// # Retorna
     /// Un AST creado con todos sus componentes

@@ -1,4 +1,4 @@
-
+//! Módulo de funciones útiles para los tests
 
 use crate::model::{ast::nodes::*, ast::*, lexer::token::*};
 
@@ -267,7 +267,11 @@ impl TestUtilities {
     ///
     /// # Retorna
     /// Un Option con un vector de nodos Source que unicamente contiene un nodo Source
-    pub fn create_sources_for_ast(ident: &str, source_definition: SourceDefinition, num_line: u16) -> Vec<SourceASTNode> {
+    pub fn create_sources_for_ast(
+        ident: &str,
+        source_definition: SourceDefinition,
+        num_line: u16,
+    ) -> Vec<SourceASTNode> {
         let identifier = Token::create_test_token(ident, num_line, TokenType::Ident);
 
         vec![SourceASTNode::new(
@@ -426,7 +430,8 @@ impl TestUtilities {
                     Position::new(num_line + 3),
                 )),
                 Position::new(num_line + 3),
-        )];
+            ),
+        ];
 
         vec![ShapeASTNode::new(
             Some(prefix_ident),
