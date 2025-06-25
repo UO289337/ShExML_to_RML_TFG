@@ -525,11 +525,17 @@ pub mod nodes {
     /// Nodo de tipo Field del AST
     ///
     /// Se corresponde con los Field de un ITERATOR de SheXMl; contiene un identificador para el field y otro para el campo accedido
-    #[derive(Debug, PartialEq, Clone, Eq, Hash)]
+    #[derive(Debug, Clone, Eq, Hash)]
     pub struct FieldASTNode {
         identifier: String,
         access_field_identifier: String,
         position: Position,
+    }
+
+    impl PartialEq for FieldASTNode {
+        fn eq(&self, other: &Self) -> bool {
+            self.identifier == other.identifier
+        }
     }
 
     impl FieldASTNode {
@@ -1176,6 +1182,17 @@ pub mod nodes {
         /// El Option del nodo Prefix asociado con el objeto de la tupla de la Shape
         pub fn get_object_prefix(&self) -> Option<PrefixASTNode> {
             self.object_prefix.clone()
+        }
+
+        /// Devuelve el Option del nodo Iterator asociado con el objeto de la tupla de la Shape
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo ShapeTuple
+        ///
+        /// # Retorna
+        /// El Option del nodo Iterator asociado con el objeto de la tupla de la Shape
+        pub fn get_iterator(&self) -> Option<IteratorASTNode> {
+            self.iterator.clone()
         }
 
         /// Asocia un nodo Iterator del AST (el del objeto) con la tupla de la Shape

@@ -432,8 +432,10 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                 if possible_iterator.is_some() {
                     match possible_iterator.unwrap() {
                         ASTNodeSymbolTable::Iterator(iterator_node, _) => shape_node.set_object_iterator(Some(iterator_node.clone())),
-                        _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_node.get_position().get_num_line())))),
+                        _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la Shape de la línea {}", shape_node.get_position().get_num_line())))),
                     }
+                } else {
+                    error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la Shape de la línea {}", shape_node.get_position().get_num_line()))));
                 }
             },
         }
@@ -488,6 +490,8 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                         ASTNodeSymbolTable::Iterator(iterator_node, _) => shape_tuple_node.set_object_iterator(Some(iterator_node.clone())),
                         _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_tuple_node.get_position().get_num_line())))),
                     }
+                } else {
+                    error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_tuple_node.get_position().get_num_line()))));
                 }
             },
         }
@@ -682,26 +686,45 @@ fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNod
         first_iterator = first_possible_iterator.unwrap();
     }
 
-    let first_fields = first_iterator.get_fields();
+    let first_fields_of_iterator = first_iterator.get_fields();
 
     if expression_node.get_accesses().len() >= 2 {
         let second_iterator = expression_node.get_accesses().get(1).unwrap().get_iterator().unwrap();
-        let second_fields = second_iterator.get_fields();
+        let second_fields_of_iterator = second_iterator.get_fields();
 
-        first_fields.into_iter().for_each(|field| {
-            expression_fields.push(field);
+        let mut first_fields = Vec::new();
+        let mut second_fields = Vec::new();
+
+        first_fields_of_iterator.into_iter().for_each(|field| {
+            first_fields.push(field);
         });
 
-        second_fields.into_iter().for_each(|field| {
-            if !expression_fields.contains(&field) {
-                expression_fields.push(field);
-            }
+        second_fields_of_iterator.into_iter().for_each(|field| {
+            second_fields.push(field);
         });
+
+        expression_fields.extend(get_fields_intersection(first_fields, second_fields));
     } else {
-        first_fields.into_iter().for_each(|field| {
+        first_fields_of_iterator.into_iter().for_each(|field| {
             expression_fields.push(field);
         });
     }
 
     expression_fields
+}
+
+
+fn get_fields_intersection(vec1: Vec<FieldASTNode>, vec2: Vec<FieldASTNode>) -> Vec<FieldASTNode> {
+    let mut vec = Vec::new();
+    vec.extend(vec1.clone());
+
+    for field in vec.clone() {
+        if !vec2.contains(&field) {
+            if let Some(index) = vec.iter().position(|x| x.get_identifier() == field.get_identifier()) {
+                vec.remove(index);
+            }
+        }
+    }
+
+    vec
 }

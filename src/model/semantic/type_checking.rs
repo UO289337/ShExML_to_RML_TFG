@@ -54,12 +54,12 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
 
         match source_node.get_source_definition() {
             crate::model::ast::SourceDefinition::URI(uri) => {
-                if check_csv_file_extension(source_node, uri, "URI", &mut error_vec) {
+                if check_csv_file_extension(source_node, uri, "La URI", &mut error_vec) {
                     source_node.set_type(Type::CSV);
                 }
             },
             crate::model::ast::SourceDefinition::Path(path) => {
-                if check_csv_file_extension(source_node, path, "Path", &mut error_vec) {
+                if check_csv_file_extension(source_node, path, "El Path", &mut error_vec) {
                     source_node.set_type(Type::CSV);
                 }
             },
@@ -127,18 +127,6 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
         match shape_tuple_node.get_mut_object() {
             IdentOrAccess::Access(access_node) => {
                 error_vec.extend(self.visit_access(access_node));
-
-                let access = access_node.get_source_or_expression().unwrap();
-                let field_access = access_node.get_field().unwrap();
-
-                match access {
-                    crate::model::ast::SourceOrExpression::Expression(expression_node) => {
-                        if !expression_node.get_fields().unwrap().contains(&field_access) {
-                            error_vec.push(Some(CompilerError::new(format!("No se puede acceder al campo {} en el acceso de la tupla de la línea {}", field_access.get_access_field_identifier(), shape_tuple_node.get_position().get_num_line()))));
-                        }
-                    },
-                    crate::model::ast::SourceOrExpression::Source(_) => (),
-                }
             },
             IdentOrAccess::Ident(_) => (),
         }
@@ -148,22 +136,27 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
 
     fn visit_access(&mut self, access_node: &mut AccessASTNode) -> Vec<Option<CompilerError>> {
         let mut error_vec = Vec::new();
-        let first_access = access_node.get_source_or_expression().unwrap();
         let num_line = access_node.get_position().get_num_line();
+        let first_access = access_node.get_source_or_expression().unwrap();
 
         match first_access {
             SourceOrExpression::Source(mut source_node) => {
-                // El tipo estará seguro en el Source y en el Iterator pero puede ser que se visite el access antes de eso
-                if source_node.get_type().is_some() && (access_node.get_iterator().is_some() && access_node.get_iterator().unwrap().get_type().is_some()) {
-                    if source_node.get_type().unwrap() != access_node.get_iterator().unwrap().get_type().unwrap() {
+                let mut iterator = access_node.get_iterator().unwrap();
+                error_vec.extend(self.visit_source(&mut source_node));
+                error_vec.extend(self.visit_iterator(&mut iterator));
+                
+                // Si el tipo del fichero Source no es CSV o la base de datos no está permitida no habra tipo
+                if source_node.get_type().is_some() {
+                    if source_node.get_type().unwrap() != iterator.get_type().unwrap() {
                         error_vec.push(Some(CompilerError::new(format!("El iterador y el Source del acceso de la expresión de la línea {num_line} deben ser del mismo tipo: CSV o base de datos"))));
-                    }
+                    }   
                 }
             },
-            SourceOrExpression::Expression(expression_node) => {
+            SourceOrExpression::Expression(mut expression_node) => {
+                error_vec.extend(self.visit_expression(&mut expression_node));
                 let field_access = access_node.get_field().unwrap();
                 if !expression_node.get_fields().unwrap().contains(&field_access) {
-                    error_vec.push(Some(CompilerError::new(format!("No se puede acceder al campo {} en el acceso de la tupla de la línea {}", field_access.get_access_field_identifier(), access_node.get_position().get_num_line()))));
+                    error_vec.push(Some(CompilerError::new(format!("No se puede acceder al campo '{}' en el acceso de la tupla de la línea {}", field_access.get_access_field_identifier(), access_node.get_position().get_num_line()))));
                 }
             },
         } 
@@ -174,7 +167,7 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
 
 fn check_csv_file_extension(source_node: &mut SourceASTNode, file: String, source_definition_type: &str, error_vec: &mut Vec<Option<CompilerError>>) -> bool {
     if !file.ends_with(".csv") {
-        error_vec.push(Some(CompilerError::new(format!("El Path {source_definition_type} del Source de la línea {} no apunta a un fichero CSV", source_node.get_position().get_num_line()))));
+        error_vec.push(Some(CompilerError::new(format!("{source_definition_type} del Source de la línea {} no apunta a un fichero CSV", source_node.get_position().get_num_line()))));
         return false;
     }
     true
