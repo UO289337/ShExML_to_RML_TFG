@@ -3,6 +3,8 @@
 //! Realiza el análisis semántico del compilador
 //! El análisis semántico se divide en 2 fases: la fase de identificación y la de chequeo de tipos (type checking)
 
+use std::{collections::HashSet, hash::Hash};
+
 use crate::model::{ast::*, compiler_error::CompilerError, semantic::{identification_visitor::Identification, type_checking::TypeChecking}, visitor::Visitor};
 
 /// Realiza el análisis semántico del AST resultado del analizador sintáctico
@@ -31,7 +33,9 @@ pub fn semantic_analysis(ast: &mut AST) -> Vec<CompilerError> {
 /// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de identificación
 fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
     let mut identification = Identification::new();
-    identification.visit_ast(ast)
+    let mut error_vec = identification.visit_ast(ast);
+    eliminate_duplicate_errors(&mut error_vec);
+    error_vec
 }
 
 /// Realiza la llamada al Visitor de la fase de Type Checking
@@ -43,7 +47,19 @@ fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
 /// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de type checking
 fn type_checking_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
     let mut type_checking = TypeChecking;
-    type_checking.visit_ast(ast)
+    let mut error_vec = type_checking.visit_ast(ast);
+    eliminate_duplicate_errors(&mut error_vec);
+    error_vec
+}
+
+fn eliminate_duplicate_errors<T: Eq + Hash + Clone>(vec: &mut Vec<Option<T>>) {
+    let mut seen = HashSet::new();
+    vec.retain(|item| {
+        match item {
+            Some(val) => seen.insert(Some(val.clone())),
+            None => seen.insert(None),
+        }
+    });
 }
 
 fn all_errors_none(error_vec: &Vec<Option<CompilerError>>) -> bool {
@@ -446,6 +462,7 @@ mod identification_tests {
             "Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró ejemplo en la línea 11"];
         actual.into_iter().for_each(|error| {
             if error.is_some() {
+                println!("{}", error.clone().unwrap().get_message());
                 assert!(expected_errors.contains(&error.unwrap().get_message().as_str()));
                 cont_errors += 1;
             }

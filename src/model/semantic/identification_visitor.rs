@@ -511,24 +511,24 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
         let first_access = access_node.get_first_access();
         let second_access = access_node.get_second_access();
 
-        let node = self.find(ident.clone());
-        let first_access_node = self.find(first_access.clone());
+        let mut node = self.find(ident.clone());
+        let mut first_access_node = self.find(first_access.clone());
 
-        if let Some(ASTNodeSymbolTable::Source(mut source, _)) = node {
-            self.visit_source(&mut source);
+        if let Some(ASTNodeSymbolTable::Source(source, _)) = &mut node {
+            error_vec.extend(self.visit_source(source));
             access_node.set_source_or_expression(Some(SourceOrExpression::Source(source.clone())));
-        } else if let Some(ASTNodeSymbolTable::Expression(mut expression, _)) = node {
-            self.visit_expression(&mut expression);
+        } else if let Some(ASTNodeSymbolTable::Expression(expression, _)) = &mut node {
+            error_vec.extend(self.visit_expression(expression));
             access_node.set_source_or_expression(Some(SourceOrExpression::Expression(expression.clone())));
         } else {
             error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Source o una Expression antes del primer '.', pero se encontró {ident} en la línea {num_line}"))));
         }
 
-        if let Some(ASTNodeSymbolTable::Iterator(mut iterator, _)) = first_access_node {
-            self.visit_iterator(&mut iterator);
+        if let Some(ASTNodeSymbolTable::Iterator(iterator, _)) = &mut first_access_node {
+            error_vec.extend(self.visit_iterator(iterator));
             access_node.set_iterator(Some(iterator.clone()));
-        } else if let Some(ASTNodeSymbolTable::Field(mut field, _)) = first_access_node {
-            self.visit_field(&mut field);
+        } else if let Some(ASTNodeSymbolTable::Field(field, _)) = &mut first_access_node {
+            error_vec.extend(self.visit_field(field));
             access_node.set_field(Some(field.clone()));
         } else {
             error_vec.push(Some(CompilerError::new(format!("Se esperaba el identificador de un Iterator o Field después del primer '.', pero se encontró {first_access} en la línea {num_line}"))));
