@@ -6,15 +6,12 @@ use shexml_to_rml_tfg::model;
 #[cfg(test)]
 mod integration_lexer_syntax_analyzers_tests {
 
-    use shexml_to_rml_tfg::model::semantic::semantic_analyzer::reset_table;
-
     use super::*;
 
     /// Comprueba que la integración entre el analizador léxico, el analizador sintáctico y el semántico se realiza correctamente
     #[doc(hidden)]
     #[test]
     fn integration_with_valid_input() {
-        reset_table();
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE films_csv_ast <https://shexml.herminiogarcia.com/asts/films.csv>
@@ -36,8 +33,9 @@ mod integration_lexer_syntax_analyzers_tests {
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         let sintax_result = model::syntax::syntax_analyzer::parser(lexer_result.unwrap());
         let sintax_result_for_semantic = sintax_result.clone();
-        let semantic_result =
-            model::semantic::semantic_analyzer::semantic_analysis(&mut sintax_result_for_semantic.unwrap());
+        let semantic_result = model::semantic::semantic_analyzer::semantic_analysis(
+            &mut sintax_result_for_semantic.unwrap(),
+        );
 
         assert!(semantic_result.is_empty());
         assert!(sintax_result
@@ -57,14 +55,12 @@ mod integration_lexer_syntax_analyzers_tests {
             assert_eq!(ast.get_expressions().len(), 1);
             assert_eq!(ast.get_shapes().len(), 1);
         });
-        reset_table();
     }
 
     /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis léxico
     #[doc(hidden)]
     #[test]
     fn integration_with_lexer_fail() {
-        reset_table();
         let mut input = "PREFIX 123example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE films_csv_ast <https://shexml.herminiogarcia.com/asts/films.csv>
@@ -85,14 +81,12 @@ mod integration_lexer_syntax_analyzers_tests {
             }";
         let lexer_result = model::lexer::lexer_analyzer::lexer(&mut input);
         assert!(lexer_result.is_err());
-        reset_table();
     }
 
     /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis sintáctico
     #[doc(hidden)]
     #[test]
     fn integration_with_syntax_fail() {
-        reset_table();
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX dbr: <http://dbpedia.org/resource/>
             SOURCE <https://shexml.herminiogarcia.com/asts/films.csv>
@@ -120,14 +114,12 @@ mod integration_lexer_syntax_analyzers_tests {
             assert_eq!(ast.get_prefixes().len(), 0);
             assert_eq!(ast.get_sources().len(), 0);
         });
-        reset_table();
     }
 
     /// Comprueba que la integración entre los analizadores falla en el caso de que ocurra un error en el análisis semántico
     #[doc(hidden)]
     #[test]
     fn integration_with_semantic_fail() {
-        reset_table();
         let mut input = "PREFIX example: <http://example.com/>
             PREFIX example: <http://dbpedia.org/resource/>
             SOURCE films_csv <https://shexml.herminiogarcia.com/asts/films.csv>
@@ -151,6 +143,7 @@ mod integration_lexer_syntax_analyzers_tests {
         let semantic_result =
             model::semantic::semantic_analyzer::semantic_analysis(&mut sintax_result.unwrap());
 
+        // Por si se quieren ver los errores en consola; descomentar el bucle
         /*
         semantic_result.into_iter().for_each(|error| {
             println!("{}", error.get_message());
@@ -159,7 +152,6 @@ mod integration_lexer_syntax_analyzers_tests {
 
         // Salen muchos errores porque se coge el primer identificador detectado, por lo que films_csv es un Source y no el Iterator y,
         // por tanto, tampoco se cogen sus campos
-        assert_eq!(semantic_result.len(), 10);
-        reset_table();
+        assert_eq!(semantic_result.len(), 11);
     }
 }

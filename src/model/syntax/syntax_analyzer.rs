@@ -155,7 +155,97 @@ fn source_parser() -> impl Parser<Token, Vec<SourceASTNode>, Error = Simple<Toke
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_source_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, Or<Or<Or<Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> SourceDefinition, Token>, Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> SourceDefinition, Token>>, Map<impl Parser<Token, AccessASTNode, Error = Simple<Token>>, impl Fn(AccessASTNode) -> SourceDefinition, AccessASTNode>>, Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> SourceDefinition, Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), SourceDefinition), Token)) -> ((Token, Token), SourceDefinition), (((Token, Token), SourceDefinition), Token)> {
+fn single_source_parser() -> Map<
+    Then<
+        Then<
+            Map<
+                Then<
+                    Then<
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                    >,
+                    MapErr<
+                        Map<
+                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                            impl Fn(Token) -> Token,
+                            Token,
+                        >,
+                        impl Fn(Simple<Token>) -> Simple<Token>,
+                    >,
+                >,
+                fn(((Token, Token), Token)) -> (Token, Token),
+                ((Token, Token), Token),
+            >,
+            Or<
+                Or<
+                    Or<
+                        Map<
+                            MapErr<
+                                Map<
+                                    Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                    impl Fn(Token) -> Token,
+                                    Token,
+                                >,
+                                impl Fn(Simple<Token>) -> Simple<Token>,
+                            >,
+                            impl Fn(Token) -> SourceDefinition,
+                            Token,
+                        >,
+                        Map<
+                            MapErr<
+                                Map<
+                                    Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                    impl Fn(Token) -> Token,
+                                    Token,
+                                >,
+                                impl Fn(Simple<Token>) -> Simple<Token>,
+                            >,
+                            impl Fn(Token) -> SourceDefinition,
+                            Token,
+                        >,
+                    >,
+                    Map<
+                        impl Parser<Token, AccessASTNode, Error = Simple<Token>>,
+                        impl Fn(AccessASTNode) -> SourceDefinition,
+                        AccessASTNode,
+                    >,
+                >,
+                Map<
+                    MapErr<
+                        Map<
+                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                            impl Fn(Token) -> Token,
+                            Token,
+                        >,
+                        impl Fn(Simple<Token>) -> Simple<Token>,
+                    >,
+                    impl Fn(Token) -> SourceDefinition,
+                    Token,
+                >,
+            >,
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+    fn((((Token, Token), SourceDefinition), Token)) -> ((Token, Token), SourceDefinition),
+    (((Token, Token), SourceDefinition), Token),
+> {
     source_token_parser()
         .then(identifier_parser(SOURCE))
         .then_ignore(left_angle_bracket_parser("la URL o ruta"))
@@ -172,13 +262,59 @@ fn single_source_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl 
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn source_definition_parser() -> Or<Or<Or<Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> SourceDefinition, Token>, Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> SourceDefinition, Token>>, Map<impl Parser<Token, AccessASTNode, Error = Simple<Token>>, impl Fn(AccessASTNode) -> SourceDefinition, AccessASTNode>>, Map<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, impl Fn(Token) -> SourceDefinition, Token>> {
+fn source_definition_parser() -> Or<
+    Or<
+        Or<
+            Map<
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+                impl Fn(Token) -> SourceDefinition,
+                Token,
+            >,
+            Map<
+                MapErr<
+                    Map<
+                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                        impl Fn(Token) -> Token,
+                        Token,
+                    >,
+                    impl Fn(Simple<Token>) -> Simple<Token>,
+                >,
+                impl Fn(Token) -> SourceDefinition,
+                Token,
+            >,
+        >,
+        Map<
+            impl Parser<Token, AccessASTNode, Error = Simple<Token>>,
+            impl Fn(AccessASTNode) -> SourceDefinition,
+            AccessASTNode,
+        >,
+    >,
+    Map<
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+        impl Fn(Token) -> SourceDefinition,
+        Token,
+    >,
+> {
     uri_parser()
         .map(|uri| SourceDefinition::URI(uri.get_lexeme()))
         .or(path_parser().map(|path| SourceDefinition::Path(path.get_lexeme())))
         .or(access_parser(LEFT_ANGLE_BRACKET).map(|access| {
             // Se puede detectar una ruta relativa fichero.tipo como acceso
-            let path = format!("{}{ACCESS_DOT}{}", access.get_identifier(), access.get_first_access());
+            let path = format!(
+                "{}{ACCESS_DOT}{}",
+                access.get_identifier(),
+                access.get_first_access()
+            );
             SourceDefinition::Path(path)
         }))
         .or(jdbc_url_parser().map(|jdbc_url| SourceDefinition::JdbcURL(jdbc_url.get_lexeme())))
@@ -2221,8 +2357,8 @@ mod sintax_tests {
 
         let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
         let sources = TestUtilities::create_sources_for_ast(
-            "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            "films_database",
+            SourceDefinition::JdbcURL("jdbc:mysql://localhost:3306/mydb".to_string()),
             2,
         );
         let queries =
@@ -2250,8 +2386,8 @@ mod sintax_tests {
 
         let prefixes = TestUtilities::create_prefixes_for_ast("example", "https://example.com/", 1);
         let sources = TestUtilities::create_sources_for_ast(
-            "films_csv_file",
-            "https://shexml.herminiogarcia.com/files/films.csv",
+            "films_database",
+            SourceDefinition::JdbcURL("jdbc:mysql://localhost:3306/mydb".to_string()),
             2,
         );
         let iterators = TestUtilities::create_default_iterators_for_ast(3);
