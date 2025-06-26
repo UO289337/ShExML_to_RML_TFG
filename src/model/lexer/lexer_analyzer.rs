@@ -476,7 +476,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let jdbc_url = take_while(1.., |c: char| c != '>').parse_next(input)?;
-    let re_jdbc_url = Regex::new(r"^jdbc:[a-zA-Z0-9]+://[^\s<>]+$").unwrap();
+    let re_jdbc_url = Regex::new(r"^jdbc:[a-zA-Z0-9]+:.*$").unwrap();
 
     if !re_jdbc_url.is_match(jdbc_url) {
         let error = &ContextError::new().add_context(

@@ -15,6 +15,23 @@ pub enum SourceDefinition {
     JdbcURL(String),
 }
 
+impl SourceDefinition {
+    /// Obtiene el String que se encuentra en el Source Definition
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Source Definition
+    /// 
+    /// # Retorna
+    /// El String que se encuentra en el Source Definition
+    pub fn to_string(&self) -> String {
+        match self {
+            SourceDefinition::URI(uri) => uri.to_string(),
+            SourceDefinition::Path(path) => path.to_string(),
+            SourceDefinition::JdbcURL(jdbc_url) => jdbc_url.to_string(),
+        }
+    }
+}
+
 /// Tipos de expresiones
 ///
 /// Enumerador que contiene todos los tipos de expresiones que puede haber en el compilador
@@ -76,6 +93,22 @@ pub enum IteratorAccess {
 pub enum Type {
     CSV,
     Database,
+}
+
+impl Type {
+    /// Pasa el tipo a un String
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio tipo
+    /// 
+    /// # Retorna
+    /// La representación, en String del tipo
+    pub fn to_string(&self) -> String {
+        match self {
+            Type::CSV => String::from("CSV"),
+            Type::Database => String::from("Database"),
+        }
+    }
 }
 
 /// La posición de un nodo

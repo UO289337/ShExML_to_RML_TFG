@@ -3,6 +3,17 @@
 @prefix d2rq:     <http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#> .
 @prefix ql:       <http://semweb.mmlab.be/ns/ql#> .
 @prefix map:      <http://mapping.example.com/> .
-@prefix :     <http://example.com/> .
-@prefix dbr:     <http://dbpedia.org/resource/> .
+@prefix :	<http://example.com/> .
+@prefix dbr:	<http://dbpedia.org/resource/> .
+
+map:l_1  a					rml:LogicalSource ;
+	rml:query				"SELECT * FROM tabla;" ; 
+	rml:source				map:db_1 ;
+	rr:sqlVersion			rr:SQL2008 .
+
+map:db_1  a			"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database" ;
+	d2rq:jdbcDSN		jdbc:mysql://localhost:3306/mydb ;
+	d2rq:jdbcDriver		com.mysql.cj.jdbc.Driver ;
+	d2rq:password		"" ;
+	d2rq:username		"" .
 

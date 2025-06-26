@@ -20,7 +20,7 @@ const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";
 /// # Parámetros
 /// * `ast` - El AST
 pub fn rml_generator(mut ast: AST) {
-    let mut generator = Generator;
+    let mut generator = Generator::new();
     let mut rml_file = fs::File::create(RML_FILE_NAME).unwrap();
 
     // Contenido general
