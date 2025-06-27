@@ -90,15 +90,15 @@ impl Generator {
         let mut database_generation = String::new();
         database_generation.push_str(format!("map:{}  a\t\t\t\t\"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database\" ;\n", self.find_last_unused_identifier(String::from(DATABASE))).as_str());
 
-        database_generation.push_str(format!("\t{D2RQ_JDBC_DSN}\t\t{} ;\n", source_node.get_source_definition().to_string()).as_str());
-        database_generation.push_str(format!("\t{D2RQ_JDBC_DRIVER}\t\t{} ;\n", generate_database_driver(source_node)).as_str());
+        database_generation.push_str(format!("\t{D2RQ_JDBC_DSN}\t\t\"{}\" ;\n", source_node.get_source_definition().to_string()).as_str());
+        database_generation.push_str(format!("\t{D2RQ_JDBC_DRIVER}\t\t\"{}\" ;\n", generate_database_driver(source_node)).as_str());
         database_generation.push_str(format!("\t{D2RQ_PASSWORD}\t\t\"\" ;\n").as_str());
         database_generation.push_str(format!("\t{D2RQ_USERNAME}\t\t\"\" .\n\n").as_str());
         database_generation
     }
     
     fn predicate_map_generation(&mut self, shape_tuple_node: &mut ShapeTupleASTNode, shape_tuple_generation: &mut String) {
-        shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(OBJECT_MAP)).as_str());
+        shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(PREDICATE_MAP)).as_str());
         shape_tuple_generation.push_str("  a");
         shape_tuple_generation.push_str(format!("\t\t\t\t{RR_PREDICATE_MAP} ;\n").as_str());
     
@@ -115,16 +115,16 @@ impl Generator {
     }
 
     fn object_map_generation(&mut self, shape_tuple_node: &mut ShapeTupleASTNode, shape_tuple_generation: &mut String) {
-        shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(PREDICATE_MAP)).as_str());
+        shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(OBJECT_MAP)).as_str());
         shape_tuple_generation.push_str("  a");
         shape_tuple_generation.push_str(format!("\t\t\t\t{RR_OBJECT_MAP} ;\n").as_str());
     
-        let possible_object_prefix= shape_tuple_node.get_object_prefix();
+        let possible_object_prefix = shape_tuple_node.get_object_prefix_ident();
         let mut object_type = String::from("Literal");
         let mut template = String::new();
     
         if possible_object_prefix.is_some() {
-            template = possible_object_prefix.unwrap().get_uri();
+            template = shape_tuple_node.get_object_prefix().unwrap().get_uri();
             object_type = String::from("IRI");
         }
 
@@ -139,7 +139,7 @@ impl Generator {
 
         template.push_str(format!("{{{}}}", object).as_str());
     
-        shape_tuple_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t{template} ;\n").as_str());
+        shape_tuple_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t\"{template}\" ;\n").as_str());
         shape_tuple_generation.push_str(format!("\t{RR_TERM_TYPE}\t\t\trr:{object_type} .\n\n").as_str());
     }
     
@@ -231,14 +231,14 @@ const OBJECT_MAP: &str = "o";
 const PREDICATE_OBJECT_MAP: &str = "po";
 const TRIPLES_MAP: &str = "m";
 
-const RML_LOGICAL_SOURCE: &str = "rml:LogicalSource";
+const RML_LOGICAL_SOURCE: &str = "rml:logicalSource";
 const RML_REFERENCE_FORMULATION: &str = "rml:referenceFormulation";
 const RML_SOURCE: &str = "rml:source";
 const RML_QUERY: &str = "rml:query";
 
 const RR_SQL_VERSION: &str = "rr:sqlVersion";
 const RR_PREDICATE_MAP: &str = "rr:predicateMap";
-const RR_SUBJECT_MAP: &str = "rr:SubjectMap";
+const RR_SUBJECT_MAP: &str = "rr:subjectMap";
 const RR_OBJECT_MAP: &str = "rr:objectMap";
 const RR_PREDICATE_OBJECT_MAP: &str = "rr:predicateObjectMap";
 const RR_TRIPLES_MAP: &str = "rr:TriplesMap";
@@ -268,13 +268,13 @@ impl Visitor<String> for Generator {
         });
         file_generation.push_str("\n");
 
+        ast.get_mut_shapes().iter_mut().for_each(|shape| {
+            file_generation.push_str(&format!("{}", self.visit_shape(shape)));
+        });
+
         ast.get_mut_iterators().iter_mut().for_each(|iterator| {
             file_generation.push_str(&format!("{}", self.visit_iterator(iterator)));
             check_query_iterator(&mut file_generation, iterator);
-        });
-
-        ast.get_mut_shapes().iter_mut().for_each(|shape| {
-            file_generation.push_str(&format!("{}", self.visit_shape(shape)));
         });
 
         file_generation.push_str(self.generate_predicate_object_map().as_str());
@@ -381,7 +381,7 @@ fn generate_csv_logical_source(source_node: &mut SourceASTNode) -> String {
     source_generation.push_str(format!("ql:{} ; \n", source_node.get_type().unwrap().to_string()).as_str());
 
     source_generation.push_str(format!("\t{RML_SOURCE}\t\t\t").as_str());
-    source_generation.push_str(format!("{} .\n\n", source_node.get_source_definition().to_string()).as_str());
+    source_generation.push_str(format!("\"{}\" .\n\n", source_node.get_source_definition().to_string()).as_str());
     source_generation
 }
 

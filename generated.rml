@@ -6,46 +6,39 @@
 @prefix :	<http://example.com/> .
 @prefix dbr:	<http://dbpedia.org/resource/> .
 
-map:s_1  a				rr:SubjectMap ;
+map:s_1  a				rr:subjectMap ;
 	rr:template			"http://example.com/{@id}" .
 
-map:l_1  a				rml:LogicalSource ;
-	rml:query ; 
-	rml:source			map:db_1 ;
-	rr:sqlVersion		rr:SQL2008 .
+map:l_1  a				rml:logicalSource ;
+	rml:referenceFormulation	ql:CSV ; 
+	rml:source			"films.csv" .
 
-map:db_1  a				"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database" ;
-	d2rq:jdbcDSN		jdbc:mysql://localhost:3306/mydb ;
-	d2rq:jdbcDriver		com.mysql.cj.jdbc.Driver ;
-	d2rq:password		"" ;
-	d2rq:username		"" .
-
-map:o_1  a				rr:predicateMap ;
+map:r_1  a				rr:predicateMap ;
 	rr:constant			:name .
 
-map:r_1  a				rr:objectMap ;
-	rr:template			http://example.com/{name} ;
-	rr:termType			rr:IRI .
+map:o_1  a				rr:objectMap ;
+	rr:template			"{name}" ;
+	rr:termType			rr:Literal .
 
-map:o_2  a				rr:predicateMap ;
+map:r_2  a				rr:predicateMap ;
 	rr:constant			:year .
 
-map:r_2  a				rr:objectMap ;
-	rr:template			http://example.com/{year} ;
-	rr:termType			rr:IRI .
+map:o_2  a				rr:objectMap ;
+	rr:template			"{year}" ;
+	rr:termType			rr:Literal .
 
-map:o_3  a				rr:predicateMap ;
+map:r_3  a				rr:predicateMap ;
 	rr:constant			:country .
 
-map:r_3  a				rr:objectMap ;
-	rr:template			http://dbpedia.org/resource/{country} ;
+map:o_3  a				rr:objectMap ;
+	rr:template			"http://dbpedia.org/resource/{country}" ;
 	rr:termType			rr:IRI .
 
-map:o_4  a				rr:predicateMap ;
+map:r_4  a				rr:predicateMap ;
 	rr:constant			:director .
 
-map:r_4  a				rr:objectMap ;
-	rr:template			http://dbpedia.org/resource/{director} ;
+map:o_4  a				rr:objectMap ;
+	rr:template			"http://dbpedia.org/resource/{director}" ;
 	rr:termType			rr:IRI .
 
 map:po_1 a				rr:predicateObjectMap ;
@@ -65,8 +58,8 @@ map:po_4 a				rr:predicateObjectMap ;
 	rr:predicateMap		map:r_4 .
 
 map:m_1	 a					rr:TriplesMap ;
-	rml:LogicalSource		map:l_1 ;
+	rml:logicalSource		map:l_1 ;
 	rr:predicateObjectMap	map:po_1, map:po_2, map:po_3, map:po_4 ;
-	rr:SubjectMap			map:s_1 .
+	rr:subjectMap			map:s_1 .
 
 
