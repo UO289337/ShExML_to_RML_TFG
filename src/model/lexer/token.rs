@@ -12,8 +12,6 @@ pub enum TokenType {
     Field,
     Expression,
     Union,
-    Join,
-    On,
     SqlType,
     CsvPerRow,
     Ident,
@@ -24,7 +22,6 @@ pub enum TokenType {
     SqlQuery,
     Colon,
     SemiColon,
-    Equal,
     AccessDot,
     LeftAngleBracket,
     RightAngleBracket,
@@ -42,13 +39,10 @@ pub const ITERATOR: &str = "ITERATOR";
 pub const FIELD: &str = "FIELD";
 pub const EXPRESSION: &str = "EXPRESSION";
 pub const UNION: &str = "UNION";
-pub const JOIN: &str = "JOIN";
-pub const ON: &str = "ON";
 pub const SQL_TYPE: &str = "sql:";
 pub const CSV_PER_ROW: &str = "csvperrow";
 pub const COLON: &str = ":";
 pub const SEMICOLON: &str = ";";
-pub const EQUAL: &str = "=";
 pub const ACCESS_DOT: &str = ".";
 pub const LEFT_ANGLE_BRACKET: &str = "<";
 pub const RIGHT_ANGLE_BRACKET: &str = ">";

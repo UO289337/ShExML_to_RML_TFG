@@ -3,14 +3,70 @@
 //! Comprueba que el tipo del Source es correcto y que las bases de datos utilizadas están permitidas
 //! También comprueba que los accesos a campos en las tuplas están permitidos
 
+use std::collections::HashMap;
+
 use crate::model::{
-    ast::{nodes::*, IdentOrAccess, SourceOrExpression, Type},
+    ast::{nodes::*, IdentOrAccess, SourceOrExpression, Type, ManageType},
     compiler_error::CompilerError,
     visitor::Visitor,
 };
 
+
+#[derive(Debug, PartialEq, Clone, Eq)]
+enum ASTNodeTypeChecking {
+    Source(SourceASTNode),
+    Iterator(IteratorASTNode),
+}
+
+impl ASTNodeTypeChecking {
+    fn get_source(&self) -> Option<SourceASTNode> {
+        match self {
+            ASTNodeTypeChecking::Source(source_node) => Some(source_node.clone()),
+            ASTNodeTypeChecking::Iterator(_) => None,
+        }
+    }
+}
+
+impl ManageType for ASTNodeTypeChecking {
+    fn get_type(&self) -> Option<Type> {
+        match self {
+            ASTNodeTypeChecking::Source(source_node) => source_node.get_type(),
+            ASTNodeTypeChecking::Iterator(iterator_node) => iterator_node.get_type(),
+        }
+    }
+
+    fn set_type(&mut self, node_type: Type) {
+        match self {
+            ASTNodeTypeChecking::Source(source_node) => source_node.set_type(node_type),
+            ASTNodeTypeChecking::Iterator(iterator_node) => iterator_node.set_type(node_type),
+        }
+    }
+}
+
 /// Struct para poder realizar las visitas del visitor de la fase de Type Checking sobre él
-pub struct TypeChecking;
+pub struct TypeChecking {
+    // Sólo se almacenan diccionarios de nodos que tengan tipo
+    nodes_with_type: HashMap<String, ASTNodeTypeChecking>,
+}
+
+impl TypeChecking {
+    pub fn new() -> Self {
+        Self {
+            nodes_with_type: HashMap::new(),
+        }
+    }
+
+    fn insert(&mut self, ident: String, node: ASTNodeTypeChecking) {
+        self.nodes_with_type.insert(ident, node);
+    }
+
+    fn find(&self, ident: String) -> Option<ASTNodeTypeChecking> {
+        if self.nodes_with_type.contains_key(&ident) {
+            return Some(self.nodes_with_type.get(&ident).unwrap().clone());
+        }
+        None
+    }
+}
 
 impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
     /// Realiza la visita al AST
@@ -95,6 +151,8 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
             }
         }
 
+        self.insert(source_node.get_identifier(), ASTNodeTypeChecking::Source(source_node.clone()));
+
         error_vec
     }
 
@@ -130,15 +188,18 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
 
         match iterator_node.get_iterator_access() {
             crate::model::ast::IteratorAccess::Ident(_) => {
-                iterator_node.set_type(Some(Type::Database))
+                iterator_node.set_type(Type::Database)
             }
             crate::model::ast::IteratorAccess::SqlQuery(_) => {
-                iterator_node.set_type(Some(Type::Database))
+                iterator_node.set_type(Type::Database)
             }
             crate::model::ast::IteratorAccess::CsvPerRow(_) => {
-                iterator_node.set_type(Some(Type::CSV))
+                iterator_node.set_type(Type::CSV)
             }
         }
+
+        self.insert(iterator_node.get_identifier(), ASTNodeTypeChecking::Iterator(iterator_node.clone()));
+
         error_vec
     }
 
@@ -167,12 +228,16 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
         expression_node: &mut ExpressionASTNode,
     ) -> Vec<Option<CompilerError>> {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
+        let mut types: Vec<Option<Type>> = Vec::new();
+
         expression_node
-            .get_accesses()
+            .get_mut_accesses()
             .iter_mut()
             .for_each(|access| {
                 error_vec.extend(self.visit_access(access));
+                types.push(access.get_type());
             });
+
         error_vec
     }
 
@@ -240,16 +305,20 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
         let first_access = access_node.get_source_or_expression().unwrap();
 
         match first_access {
-            SourceOrExpression::Source(mut source_node) => {
-                let mut iterator = access_node.get_iterator().unwrap();
-                error_vec.extend(self.visit_source(&mut source_node));
-                error_vec.extend(self.visit_iterator(&mut iterator));
+            SourceOrExpression::Source(source_node) => {
+                let iterator = access_node.get_iterator().unwrap();
+                let source = self.find(source_node.get_identifier()).unwrap();
+                let ite = self.find(iterator.get_identifier()).unwrap();
 
                 // Si el tipo del fichero Source no es CSV o la base de datos no está permitida no habra tipo
-                if source_node.get_type().is_some() {
-                    if source_node.get_type().unwrap() != iterator.get_type().unwrap() {
+                if source.get_type().is_some() {
+                    if source.get_type().unwrap() != ite.get_type().unwrap() {
                         error_vec.push(Some(CompilerError::new(format!("El iterador y el Source del acceso de la expresión de la línea {num_line} deben ser del mismo tipo: CSV o base de datos"))));
+                    } else {
+                        access_node.set_type(source.get_type().unwrap());
                     }
+                    // Hay que cambiar el Source que hay por el nuevo, que tiene el tipo
+                    access_node.set_source_or_expression(Some(SourceOrExpression::Source(source.get_source().unwrap())));
                 }
             }
             SourceOrExpression::Expression(mut expression_node) => {
@@ -266,6 +335,11 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                         access_node.get_position().get_num_line()
                     ))));
                 }
+                expression_node.get_accesses().iter_mut().for_each(|access| {
+                    error_vec.extend(self.visit_access(access));
+                });
+                // Hay que cambiar el Expression que hay por el nuevo, que tiene el tipo
+                access_node.set_source_or_expression(Some(SourceOrExpression::Expression(expression_node)));
             }
         }
 

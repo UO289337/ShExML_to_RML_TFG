@@ -666,33 +666,11 @@ fn single_expression_parser() -> impl Parser<Token, ExpressionASTNode, Error = S
         .then(identifier_parser(EXPRESSION))
         .then_ignore(left_angle_bracket_parser("el acceso"))
         .then(access_parser(LEFT_ANGLE_BRACKET))
-        .then(optional_union_or_join_parser())
+        .then(union_access_parser().or_not())
         .then_ignore(right_angle_bracket_parser("el acceso"))
-        .map(|(((_, ident), iterator_access), more_accesses)| {
-            create_expression_node(ident, iterator_access, more_accesses)
+        .map(|(((_, ident), iterator_access), union_access)| {
+            create_expression_node(ident, iterator_access, union_access)
         })
-}
-
-/// Parsea los tokens del Access con Union o Join
-///
-/// Realiza el parseo de los tokens para parsear la secuencia opcional: (Union|Join)?
-///
-/// # Retorna
-/// El parser de Join o Union del Access
-///
-/// # Errores
-/// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn optional_union_or_join_parser() -> impl Parser<
-    Token,
-    Option<(
-        Token,
-        AccessASTNode,
-        Option<AccessASTNode>,
-        Option<AccessASTNode>,
-    )>,
-    Error = Simple<Token>,
-> {
-    union_access_parser().or(join_access_parser()).or_not()
 }
 
 /// Parsea los tokens del Access con UNION
@@ -705,48 +683,12 @@ fn optional_union_or_join_parser() -> impl Parser<
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
 fn union_access_parser() -> impl Parser<
-    Token,
-    (
-        Token,
-        AccessASTNode,
-        Option<AccessASTNode>,
-        Option<AccessASTNode>,
-    ),
+    Token, AccessASTNode,
     Error = Simple<Token>,
 > {
     union_parser()
-        .then(access_parser(UNION))
-        .map(|(union_token, access)| (union_token, access, None, None))
-}
-
-/// Parsea los tokens del Access con Join
-///
-/// Realiza el parseo de los tokens para parsear la secuencia: Join Access On Access Equal Access
-///
-/// # Retorna
-/// Una tupla con: el token de Join, el token de acceso, el Option con el token de acceso del on y el Option con el token de acceso del equal
-///
-/// # Errores
-/// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn join_access_parser() -> impl Parser<
-    Token,
-    (
-        Token,
-        AccessASTNode,
-        Option<AccessASTNode>,
-        Option<AccessASTNode>,
-    ),
-    Error = Simple<Token>,
-> {
-    join_parser()
-        .then(access_parser(JOIN))
-        .then_ignore(on_parser())
-        .then(access_parser(ON))
-        .then_ignore(equal_parser())
-        .then(access_parser(EQUAL))
-        .map(|(((join_token, access_join), access_on), access_equal)| {
-            (join_token, access_join, Some(access_on), Some(access_equal))
-        })
+        .ignore_then(access_parser(UNION))
+        .map(|access| access)
 }
 
 /// Crea un nodo Expression del AST
@@ -756,8 +698,7 @@ fn join_access_parser() -> impl Parser<
 /// # Parámetros
 /// * `identifier` - El identificado de la expresión
 /// * `iterator_access` - El nodo Access del AST de acceso al iterador
-/// * `union_or_join` - Un Option con el token UNION, JOIN o ninguno indicando el tipo de la expresión
-/// * `more_accesses` - Un Option con los posibles accesos a: el JOIN O UNION, el ON y el que puede haber después del =
+/// * `union_access` - Un Option con el acceso al UNION
 ///
 /// # Retorna
 /// Un nodo ExpressionASTNode
@@ -767,28 +708,16 @@ fn join_access_parser() -> impl Parser<
 fn create_expression_node(
     identifier: Token,
     iterator_access: AccessASTNode,
-    more_accesses: Option<(
-        Token,
-        AccessASTNode,
-        Option<AccessASTNode>,
-        Option<AccessASTNode>,
-    )>,
+    union_access: Option<AccessASTNode>,
 ) -> ExpressionASTNode {
-    let basic_expression = more_accesses.is_none();
-    let (join_or_union_token, accesses) = create_vec_of_accesses(iterator_access, more_accesses);
+    let basic_expression = union_access.is_none();
+    let accesses = create_vec_of_accesses(iterator_access, union_access);
     let position = Position::new(identifier.get_num_line());
 
     if basic_expression {
         return ExpressionASTNode::new(identifier, ExpressionType::BASIC, accesses, position);
     }
-
-    let expression_type = ExpressionType::from(join_or_union_token.unwrap());
-
-    if expression_type == ExpressionType::UNION {
-        ExpressionASTNode::new(identifier, ExpressionType::UNION, accesses, position)
-    } else {
-        ExpressionASTNode::new(identifier, ExpressionType::JOIN, accesses, position)
-    }
+    ExpressionASTNode::new(identifier, ExpressionType::UNION, accesses, position)
 }
 
 /// Crea un vector de nodos AccessASTNode
@@ -797,34 +726,21 @@ fn create_expression_node(
 ///
 /// # Parámetros
 /// * `iterator_access` - El nodo Access del AST de acceso al iterador
-/// * `more_accesses` - Un Option con los posibles accesos a: el JOIN O UNION, el ON y el que puede haber después del =
+/// * `union_access` - Un Option con el acceso del UNION
 ///
 /// # Retorna
-/// Una tupla con un Option con el JOIN o UNION y un vector con todos los accesos de una expresión
+/// Una tupla con un Option con el UNION y un vector con todos los accesos de una expresión
 fn create_vec_of_accesses(
     iterator_access: AccessASTNode,
-    more_accesses: Option<(
-        Token,
-        AccessASTNode,
-        Option<AccessASTNode>,
-        Option<AccessASTNode>,
-    )>,
-) -> (Option<Token>, Vec<AccessASTNode>) {
+    union_access: Option<AccessASTNode>,
+) -> Vec<AccessASTNode> {
     let mut accesses = vec![iterator_access];
-    let mut token: Option<Token> = None;
 
-    if more_accesses.is_some() {
-        let (tok, field_access, on_access, equal_access) = more_accesses.unwrap();
-        token = Some(tok);
-        accesses.push(field_access);
-
-        if on_access.is_some() && equal_access.is_some() {
-            accesses.push(on_access.unwrap());
-            accesses.push(equal_access.unwrap());
-        }
+    if union_access.is_some() {
+        accesses.push(union_access.unwrap());
     }
 
-    (token, accesses)
+    accesses
 }
 
 /// Parsea los tokens para generar un nodo Access del AST
@@ -1313,40 +1229,6 @@ fn union_parser() -> MapErr<
     )
 }
 
-/// Parsea el token Join en los tokens
-///
-/// # Retorna
-/// Un token de tipo Join si el token actual es de dicho tipo
-///
-/// # Errores
-/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Join
-fn join_parser() -> MapErr<
-    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-    impl Fn(Simple<Token>) -> Simple<Token>,
-> {
-    general_parser(
-        TokenType::Join,
-        format!("Se esperaba un JOIN en la expresión de la línea"),
-    )
-}
-
-/// Parsea el token On en los tokens
-///
-/// # Retorna
-/// Un token de tipo On si el token actual es de dicho tipo
-///
-/// # Errores
-/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo On
-fn on_parser() -> MapErr<
-    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-    impl Fn(Simple<Token>) -> Simple<Token>,
-> {
-    general_parser(
-        TokenType::On,
-        format!("Se esperaba un ON después del segundo acceso en la expresión de la línea"),
-    )
-}
-
 /// Parsea el token CsvPerRow en los tokens
 ///
 /// # Retorna
@@ -1538,25 +1420,6 @@ fn access_dot_parser() -> MapErr<
     general_parser(
         TokenType::AccessDot,
         format!("Falta un '.' después del identificador en la línea"),
-    )
-}
-
-/// Parsea el token '=' en los tokens
-///
-/// # Retorna
-/// Un token de tipo = si el token actual es de dicho tipo
-///
-/// # Errores
-/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo =
-fn equal_parser() -> MapErr<
-    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-    impl Fn(Simple<Token>) -> Simple<Token>,
-> {
-    general_parser(
-        TokenType::Equal,
-        format!(
-            "Falta un '=' después del identificador siguiente al ON de la expresión de la línea"
-        ),
     )
 }
 
@@ -1880,42 +1743,7 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_union() {
-        let actual = union_parser().parse(vec![Token::create_test_token(JOIN, 1, TokenType::Join)]);
-        check_error(actual);
-    }
-
-    /// Comprueba que se parsean los tokens Join
-    #[doc(hidden)]
-    #[test]
-    fn parse_valid_join() {
-        let expected_token = Token::create_test_token(JOIN, 1, TokenType::Join);
-        let actual = join_parser().parse(vec![expected_token.clone()]);
-        check_ok(expected_token, actual);
-    }
-
-    /// Comprueba que no se parsean como tokens Join aquellos que lo son
-    #[doc(hidden)]
-    #[test]
-    fn not_parse_invalid_join() {
-        let actual =
-            join_parser().parse(vec![Token::create_test_token(UNION, 1, TokenType::Union)]);
-        check_error(actual);
-    }
-
-    /// Comprueba que se parsean los tokens On
-    #[doc(hidden)]
-    #[test]
-    fn parse_valid_on() {
-        let expected_token = Token::create_test_token(ON, 1, TokenType::On);
-        let actual = on_parser().parse(vec![expected_token.clone()]);
-        check_ok(expected_token, actual);
-    }
-
-    /// Comprueba que no se parsean como tokens On aquellos que lo son
-    #[doc(hidden)]
-    #[test]
-    fn not_parse_invalid_on() {
-        let actual = on_parser().parse(vec![Token::create_test_token(UNION, 1, TokenType::Union)]);
+        let actual = union_parser().parse(vec![Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon)]);
         check_error(actual);
     }
 
@@ -2136,24 +1964,6 @@ mod sintax_parsers_tests {
     fn not_parse_invalid_access_dot() {
         let actual =
             access_dot_parser().parse(vec![Token::create_test_token("ident", 1, TokenType::Ident)]);
-        check_error(actual);
-    }
-
-    /// Comprueba que se parsean los tokens Equal (=)
-    #[doc(hidden)]
-    #[test]
-    fn parse_valid_equal() {
-        let expected_token = Token::create_test_token(EQUAL, 1, TokenType::Equal);
-        let actual = equal_parser().parse(vec![expected_token.clone()]);
-        check_ok(expected_token, actual);
-    }
-
-    /// Comprueba que no se parsean como tokens Equal (=) aquellos que lo son
-    #[doc(hidden)]
-    #[test]
-    fn not_parse_equal() {
-        let actual =
-            equal_parser().parse(vec![Token::create_test_token(COLON, 1, TokenType::Colon)]);
         check_error(actual);
     }
 
@@ -3992,87 +3802,6 @@ mod sintax_tests {
         assert_eq!(expected, actual.unwrap()[0]);
     }
 
-    /// Comprueba que el parser de Expression parsea la secuencia de tokens:
-    /// Expression Ident LeftAngleBracket Access Union Access RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn valid_join_expression_sintax() {
-        let ident = Token::create_test_token("ident", 1, TokenType::Ident);
-        let iterator1 = Token::create_test_token("iterator1", 1, TokenType::Ident);
-        let access_ident1 = Token::create_test_token("id1", 1, TokenType::Ident);
-        let iterator2 = Token::create_test_token("iterator2", 1, TokenType::Ident);
-        let access_ident2 = Token::create_test_token("id2", 1, TokenType::Ident);
-        let iterator3 = Token::create_test_token("iterator3", 1, TokenType::Ident);
-        let field3 = Token::create_test_token("field3", 1, TokenType::Ident);
-        let access_ident3 = Token::create_test_token("id3", 1, TokenType::Ident);
-        let iterator4 = Token::create_test_token("iterator4", 1, TokenType::Ident);
-        let access_ident4 = Token::create_test_token("id4", 1, TokenType::Ident);
-        let field4 = Token::create_test_token("field4", 1, TokenType::Ident);
-
-        let tokens_vector = vec![
-            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            ident.clone(),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            iterator1.clone(),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            access_ident1.clone(),
-            Token::create_test_token(JOIN, 1, TokenType::Join),
-            iterator2.clone(),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            access_ident2.clone(),
-            Token::create_test_token(ON, 1, TokenType::On),
-            iterator3.clone(),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            access_ident3.clone(),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            field3.clone(),
-            Token::create_test_token(EQUAL, 1, TokenType::Equal),
-            iterator4.clone(),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            access_ident4.clone(),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            field4.clone(),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        let accesses = vec![
-            AccessASTNode::new(
-                iterator1.clone(),
-                access_ident1,
-                None,
-                Position::new(iterator1.get_num_line()),
-            ),
-            AccessASTNode::new(
-                iterator2.clone(),
-                access_ident2,
-                None,
-                Position::new(iterator2.get_num_line()),
-            ),
-            AccessASTNode::new(
-                iterator3.clone(),
-                access_ident3,
-                Some(field3),
-                Position::new(iterator3.get_num_line()),
-            ),
-            AccessASTNode::new(
-                iterator4.clone(),
-                access_ident4,
-                Some(field4),
-                Position::new(iterator4.get_num_line()),
-            ),
-        ];
-        let expected = ExpressionASTNode::new(
-            ident.clone(),
-            ExpressionType::JOIN,
-            accesses,
-            Position::new(ident.get_num_line()),
-        );
-
-        let actual = expression_parser().parse(tokens_vector.clone());
-        assert_eq!(expected, actual.unwrap()[0]);
-    }
-
     /// Comprueba que el parser de Expression básicas no parsea como tales aquellas secuencias de tokens que son:
     /// Ident LeftAngleBracket Access RightAngleBracket
     #[doc(hidden)]
@@ -4249,224 +3978,6 @@ mod sintax_tests {
             expression_parser(),
             fail_tokens_vector,
             "Se esperaba un identificador después de UNION en la línea 1",
-        );
-    }
-
-    /// Comprueba que el parser de Expression Join no parsea como tales aquellas secuencias de tokens que son:
-    /// Expression LeftAngleBracket Access Access On Access Equal Access RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn join_expression_sintax_withouth_join() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
-            Token::create_test_token("id2", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator2", 1, TokenType::Ident),
-            Token::create_test_token(ON, 1, TokenType::On),
-            Token::create_test_token("id3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field3", 1, TokenType::Ident),
-            Token::create_test_token(EQUAL, 1, TokenType::Equal),
-            Token::create_test_token("id4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field4", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        check_parser_error::<Vec<ExpressionASTNode>>(
-            expression_parser(),
-            fail_tokens_vector,
-            "Se esperaba un '>' después de el acceso en la línea 1",
-        );
-    }
-
-    /// Comprueba que el parser de Expression Join no parsea como tales aquellas secuencias de tokens que son:
-    /// Expression LeftAngleBracket Access Join On Access Equal Access RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn join_expression_sintax_withouth_second_access() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
-            Token::create_test_token(JOIN, 1, TokenType::Join),
-            Token::create_test_token(ON, 1, TokenType::On),
-            Token::create_test_token("id3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field3", 1, TokenType::Ident),
-            Token::create_test_token(EQUAL, 1, TokenType::Equal),
-            Token::create_test_token("id4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field4", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        check_parser_error::<Vec<ExpressionASTNode>>(
-            expression_parser(),
-            fail_tokens_vector,
-            "Se esperaba un identificador después de JOIN en la línea 1",
-        );
-    }
-
-    /// Comprueba que el parser de Expression Join no parsea como tales aquellas secuencias de tokens que son:
-    /// Expression LeftAngleBracket Access Join Access Access Equal Access RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn join_expression_sintax_withouth_on() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
-            Token::create_test_token(JOIN, 1, TokenType::Join),
-            Token::create_test_token("id2", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator2", 1, TokenType::Ident),
-            Token::create_test_token("id3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field3", 1, TokenType::Ident),
-            Token::create_test_token(EQUAL, 1, TokenType::Equal),
-            Token::create_test_token("id4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field4", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        check_parser_error::<Vec<ExpressionASTNode>>(
-            expression_parser(),
-            fail_tokens_vector,
-            "Se esperaba un ON después del segundo acceso en la expresión de la línea 1",
-        );
-    }
-
-    /// Comprueba que el parser de Expression Join no parsea como tales aquellas secuencias de tokens que son:
-    /// Expression LeftAngleBracket Access Join Access On Equal Access RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn join_expression_sintax_withouth_third_access() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
-            Token::create_test_token(JOIN, 1, TokenType::Join),
-            Token::create_test_token("id2", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator2", 1, TokenType::Ident),
-            Token::create_test_token(ON, 1, TokenType::On),
-            Token::create_test_token(EQUAL, 1, TokenType::Equal),
-            Token::create_test_token("id4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field4", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        check_parser_error::<Vec<ExpressionASTNode>>(
-            expression_parser(),
-            fail_tokens_vector,
-            "Se esperaba un identificador después de ON en la línea 1",
-        );
-    }
-
-    /// Comprueba que el parser de Expression Join no parsea como tales aquellas secuencias de tokens que son:
-    /// Expression LeftAngleBracket Access Join Access On Access Access RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn join_expression_sintax_withouth_equal() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
-            Token::create_test_token(JOIN, 1, TokenType::Join),
-            Token::create_test_token("id2", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator2", 1, TokenType::Ident),
-            Token::create_test_token(ON, 1, TokenType::On),
-            Token::create_test_token("id3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field3", 1, TokenType::Ident),
-            Token::create_test_token("id4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator4", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field4", 1, TokenType::Ident),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        check_parser_error::<Vec<ExpressionASTNode>>(
-            expression_parser(),
-            fail_tokens_vector,
-            "Falta un '=' después del identificador siguiente al ON de la expresión de la línea 1",
-        );
-    }
-
-    /// Comprueba que el parser de Expression Join no parsea como tales aquellas secuencias de tokens que son:
-    /// Expression LeftAngleBracket Access Join Access On Access Equal RightAngleBracket
-    #[doc(hidden)]
-    #[test]
-    fn join_expression_sintax_withouth_fourth_access() {
-        let fail_tokens_vector = vec![
-            Token::create_test_token(EXPRESSION, 1, TokenType::Expression),
-            Token::create_test_token("ident", 1, TokenType::Ident),
-            Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("id1", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator1", 1, TokenType::Ident),
-            Token::create_test_token(JOIN, 1, TokenType::Join),
-            Token::create_test_token("id2", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator2", 1, TokenType::Ident),
-            Token::create_test_token(ON, 1, TokenType::On),
-            Token::create_test_token("id3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("iterator3", 1, TokenType::Ident),
-            Token::create_test_token(ACCESS_DOT, 1, TokenType::AccessDot),
-            Token::create_test_token("field3", 1, TokenType::Ident),
-            Token::create_test_token(EQUAL, 1, TokenType::Equal),
-            Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
-            Token::create_test_token(EOF, 1, TokenType::EOF),
-        ];
-
-        check_parser_error::<Vec<ExpressionASTNode>>(
-            expression_parser(),
-            fail_tokens_vector,
-            "Se esperaba un identificador después de = en la línea 1",
         );
     }
 

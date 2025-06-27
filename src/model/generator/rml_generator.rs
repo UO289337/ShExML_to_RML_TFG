@@ -19,8 +19,8 @@ const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";
 ///
 /// # Parámetros
 /// * `ast` - El AST
-pub fn rml_generator(mut ast: AST) {
-    let mut generator = Generator;
+pub fn rml_generator(ast: &mut AST) {
+    let mut generator = Generator::new();
     let mut rml_file = fs::File::create(RML_FILE_NAME).unwrap();
 
     // Contenido general
@@ -51,5 +51,5 @@ pub fn rml_generator(mut ast: AST) {
     .expect(ERR_MESSAGE);
 
     // Contenido del fichero Shexml
-    writeln!(rml_file, "{}", generator.visit_ast(&mut ast)).expect(ERR_MESSAGE);
+    writeln!(rml_file, "{}", generator.visit_ast(ast)).expect(ERR_MESSAGE);
 }

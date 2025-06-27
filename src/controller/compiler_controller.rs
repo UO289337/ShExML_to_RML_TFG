@@ -49,7 +49,7 @@ fn run_semantic_analyzer(ast: &mut AST) {
     let semantic_errors = model::semantic::semantic_analyzer::semantic_analysis(ast);
 
     if semantic_errors.is_empty() {
-        model::generator::rml_generator::rml_generator(ast.clone());
+        model::generator::rml_generator::rml_generator(ast);
         view::main_view::show_correct_generation()
     } else {
         show_errors(semantic_errors);

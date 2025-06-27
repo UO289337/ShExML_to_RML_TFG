@@ -64,23 +64,6 @@ fn semicolon(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(SEMICOLON, TokenType::SemiColon))
 }
 
-/// Encuentra el token Equal en la entrada
-///
-/// Acepta la entrada '='
-///
-/// # Parámetros
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token =
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn equal(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal(EQUAL).parse_next(input)?;
-    Ok(Token::new(EQUAL, TokenType::Equal))
-}
-
 /// Encuentra el token AccessDot en la entrada
 ///
 /// Acepta la entrada '.'
@@ -311,40 +294,6 @@ fn union(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(UNION, TokenType::Union))
 }
 
-/// Encuentra el token Join en la entrada
-///
-/// Acepta la entrada 'JOIN'
-///
-/// # Parámetros
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token Join
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn join(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal(JOIN).parse_next(input)?;
-    Ok(Token::new(JOIN, TokenType::Join))
-}
-
-/// Encuentra el token On en la entrada
-///
-/// Acepta la entrada 'ON'
-///
-/// # Parámetros
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token On
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn on(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let _ = literal(ON).parse_next(input)?;
-    Ok(Token::new(ON, TokenType::On))
-}
-
 /// Encuentra el token SqlType en la entrada
 ///
 /// Acepta la entrada ':sql'
@@ -476,7 +425,7 @@ fn uri(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     let jdbc_url = take_while(1.., |c: char| c != '>').parse_next(input)?;
-    let re_jdbc_url = Regex::new(r"^jdbc:[a-zA-Z0-9]+://[^\s<>]+$").unwrap();
+    let re_jdbc_url = Regex::new(r"^jdbc:[a-zA-Z0-9]+:.*$").unwrap();
 
     if !re_jdbc_url.is_match(jdbc_url) {
         let error = &ContextError::new().add_context(
@@ -675,7 +624,6 @@ fn match_alternatives(
         alt((
             colon,
             semicolon,
-            equal,
             access_dot,
             left_angle_bracket,
             right_angle_bracket,
@@ -693,8 +641,6 @@ fn match_alternatives(
             field,
             expression,
             union,
-            join,
-            on,
             sql_type,
             csv_per_row,
         )),
@@ -785,23 +731,6 @@ mod lexer_tests {
     #[test]
     fn invalid_semicolon() {
         let actual = semicolon(&mut ":");
-        check_error(actual);
-    }
-
-    /// Comprueba que se detecta el token =
-    #[doc(hidden)]
-    #[test]
-    fn valid_equal() {
-        let expected = Token::create_test_token(EQUAL, 0, TokenType::Equal);
-        let actual = equal(&mut "=");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token = aquellas cadenas que no lo sean
-    #[doc(hidden)]
-    #[test]
-    fn invalid_equal() {
-        let actual = equal(&mut ":");
         check_error(actual);
     }
 
@@ -1028,40 +957,7 @@ mod lexer_tests {
         let actual = union(&mut "FIELD");
         check_error(actual);
     }
-
-    /// Comprueba que se detecta el token Join
-    #[doc(hidden)]
-    #[test]
-    fn valid_join() {
-        let expected = Token::create_test_token(JOIN, 0, TokenType::Join);
-        let actual = join(&mut "JOIN");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token Join aquellas cadenas que no lo sean
-    #[doc(hidden)]
-    #[test]
-    fn invalid_join() {
-        let actual = join(&mut "UNION");
-        check_error(actual);
-    }
-
-    /// Comprueba que se detecta el token On
-    #[doc(hidden)]
-    #[test]
-    fn valid_on() {
-        let expected = Token::create_test_token(ON, 0, TokenType::On);
-        let actual = on(&mut "ON");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token On aquellas cadenas que no lo sean
-    #[doc(hidden)]
-    #[test]
-    fn invalid_on() {
-        let actual = on(&mut "UNION");
-        check_error(actual);
-    }
+ 
 
     /// Comprueba que se detecta el token SqlType
     #[doc(hidden)]
