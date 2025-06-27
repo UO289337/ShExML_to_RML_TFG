@@ -1,0 +1,17 @@
+PREFIX : <http://example.com/>
+PREFIX dbr: <http://dbpedia.org/resource/>
+SOURCE films_csv_file <films.csv>
+ITERATOR films_csv <csvperrow> {
+  FIELD id <@id>
+  FIELD name <name>
+  FIELD year <year>
+  FIELD country <country>
+  FIELD director <director>
+}
+EXPRESSION films <films_csv_file.films_csv>
+:Films :[films.id] {
+  :name [films.name] ;
+  :year [films.year] ;
+  :country dbr:[films.country] ;
+  :director dbr:[films.director] ;
+}

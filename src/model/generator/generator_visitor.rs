@@ -143,20 +143,23 @@ impl Generator {
         shape_tuple_generation.push_str(format!("\t{RR_TERM_TYPE}\t\t\trr:{object_type} .\n\n").as_str());
     }
     
-    fn generate_sources(&mut self, expression: Option<ExpressionASTNode>, sources_generation: &mut String) {
+    fn generate_rest_of_rml(&mut self, expression: Option<ExpressionASTNode>, rml_generation: &mut String) {
         let mut sources_visited = Vec::new();
+        let mut access_node = None;
     
         expression.unwrap().get_mut_accesses().iter_mut().for_each(|access| {
+            access_node = Some(access.clone());
             match access.get_source_or_expression().unwrap() {
                 SourceOrExpression::Source(mut source_node) => {
                     if !sources_visited.contains(&source_node.get_identifier()) {
-                        sources_generation.push_str(self.visit_source(&mut source_node).as_str());
+                        rml_generation.push_str(self.visit_source(&mut source_node).as_str());
                         sources_visited.push(source_node.get_identifier());
                     }
                 },
                 SourceOrExpression::Expression(_) => (),
             }
         });
+        check_query_iterator(rml_generation, &mut access_node.unwrap().get_iterator().unwrap());
     }
 
     fn generate_predicate_object_map(&mut self) -> String {
@@ -272,14 +275,6 @@ impl Visitor<String> for Generator {
             file_generation.push_str(&format!("{}", self.visit_shape(shape)));
         });
 
-        ast.get_mut_iterators().iter_mut().for_each(|iterator| {
-            file_generation.push_str(&format!("{}", self.visit_iterator(iterator)));
-            check_query_iterator(&mut file_generation, iterator);
-        });
-
-        file_generation.push_str(self.generate_predicate_object_map().as_str());
-        file_generation.push_str(self.generate_triples_map().as_str());
-
         file_generation
     }
 
@@ -333,19 +328,11 @@ impl Visitor<String> for Generator {
     fn visit_shape(&mut self, shape_node: &mut ShapeASTNode) -> String {
         let mut shape_generation = String::new();
         let mut expression = None;
+        let mut access = None;
 
         match shape_node.get_field_identifier() {
             IdentOrAccess::Access(access_node) => {
-                shape_generation.push_str(format!("map:{}", self.generate_next_identifier(SUBJECT_MAP)).as_str());
-                shape_generation.push_str("  a");
-                shape_generation.push_str(format!("\t\t\t\t{RR_SUBJECT_MAP} ;\n").as_str());
-
-                shape_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t").as_str());
-
-                let field_prefix = shape_node.get_field_prefix().unwrap().get_uri();
-                let field_identifier = access_node.get_field().unwrap().get_access_field_identifier();
-                shape_generation.push_str(format!("\"{field_prefix}{{{field_identifier}}}\" .\n\n").as_str());
-
+                access = Some(access_node.clone());
                 match access_node.get_source_or_expression().unwrap() {
                     SourceOrExpression::Expression(expression_node) => expression = Some(expression_node),
                     SourceOrExpression::Source(_) => (),
@@ -354,11 +341,27 @@ impl Visitor<String> for Generator {
             IdentOrAccess::Ident(_) => ()
         }
 
-        self.generate_sources(expression, &mut shape_generation);
+        self.generate_rest_of_rml(expression.clone(), &mut shape_generation);
 
-        shape_node.get_mut_tuples().iter_mut().for_each(|tuple| {
-            shape_generation.push_str(self.visit_shape_tuple(tuple).as_str());
-        });
+        // Se generan tantos predicates, subjects y objects como iteradores (es decir, accesos) haya en la expresion
+        for _ in 0..expression.clone().unwrap().get_accesses().len() {
+            shape_generation.push_str(format!("map:{}", self.generate_next_identifier(SUBJECT_MAP)).as_str());
+            shape_generation.push_str("  a");
+            shape_generation.push_str(format!("\t\t\t\t{RR_SUBJECT_MAP} ;\n").as_str());
+
+            shape_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t").as_str());
+
+            let field_prefix = shape_node.get_field_prefix().unwrap().get_uri();
+            let field_identifier = access.as_ref().unwrap().get_field().unwrap().get_access_field_identifier();
+            shape_generation.push_str(format!("\"{field_prefix}{{{field_identifier}}}\" .\n\n").as_str());
+
+            shape_node.get_mut_tuples().iter_mut().for_each(|tuple| {
+                shape_generation.push_str(self.visit_shape_tuple(tuple).as_str());
+            });
+
+            shape_generation.push_str(self.generate_predicate_object_map().as_str());
+            shape_generation.push_str(self.generate_triples_map().as_str());
+        }
 
         shape_generation
     }
@@ -417,7 +420,7 @@ fn check_query_iterator(file_generation: &mut String, iterator: &mut IteratorAST
 }
 
 fn set_query_in_logical_source(file_generation: &mut String, query: String) {
-    if let Some(pos) = file_generation.find("rml:query") {
+    if let Some(pos) = file_generation.find(RML_QUERY) {
         let insert_pos = pos + "rml:query".len();
         file_generation.insert_str(insert_pos, format!("\t\t\t\"{}\"", query).as_str());
     }

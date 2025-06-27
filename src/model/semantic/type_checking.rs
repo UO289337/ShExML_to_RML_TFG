@@ -237,22 +237,6 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                 error_vec.extend(self.visit_access(access));
                 types.push(access.get_type());
             });
-        
-        let first_type = types.get(0).unwrap().as_ref().unwrap().clone();
-        let mut flag = true;
-
-        for i in 0..types.len() - 1 {
-            let t =  types.get(i).as_ref().unwrap().as_ref().unwrap().clone();
-            if t != first_type {
-                error_vec.push(Some(CompilerError::new(format!("Encontrados tipos distintos en la expresión de la línea {}", expression_node.get_position().get_num_line()))));
-                flag = false;
-                break;
-            }
-        }
-
-        if flag {
-            expression_node.set_type(first_type);
-        }
 
         error_vec
     }

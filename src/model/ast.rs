@@ -652,9 +652,6 @@ pub mod nodes {
 
         // Fase Identificación
         fields: Option<Vec<FieldASTNode>>,
-
-        // Type Checking
-        expression_type: Option<Type>,
     }
 
     impl ExpressionASTNode {
@@ -679,7 +676,6 @@ pub mod nodes {
                 expression_expr_type: expression_type,
                 accesses,
                 fields: None,
-                expression_type: None,
                 position,
             }
         }
@@ -735,16 +731,6 @@ pub mod nodes {
         /// * `fields` - El Option con el vector con los nodos Field a asociar con el nodo Expression
         pub fn set_fields(&mut self, fields: Option<Vec<FieldASTNode>>) {
             self.fields = fields;
-        }
-    }
-
-    impl ManageType for ExpressionASTNode {
-        fn get_type(&self) -> Option<Type> {
-            self.expression_type.clone()
-        }
-    
-        fn set_type(&mut self, node_type: Type) {
-            self.expression_type = Some(node_type);
         }
     }
 

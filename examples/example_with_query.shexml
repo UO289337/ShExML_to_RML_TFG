@@ -1,7 +1,8 @@
 PREFIX : <http://example.com/>
 PREFIX dbr: <http://dbpedia.org/resource/>
-SOURCE films_database <films.csv>
-ITERATOR films_da <csvperrow> {
+SOURCE films_database <jdbc:mysql://localhost:3306/mydb>
+QUERY inline_query <sql: SELECT * FROM tabla;>
+ITERATOR films_da <inline_query> {
   FIELD id <@id>
   FIELD name <name>
   FIELD year <year>

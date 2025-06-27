@@ -1,0 +1,26 @@
+PREFIX : <http://example.com/>
+PREFIX dbr: <http://dbpedia.org/resource/>
+SOURCE films_csv_file <films.csv>
+SOURCE films_database <jdbc:mysql://localhost:3306/mydb>
+ITERATOR films_csv <csvperrow> {
+  FIELD id <@id>
+  FIELD name <name>
+  FIELD year <year>
+  FIELD country <country>
+  FIELD director <director>
+}
+ITERATOR films_da <sql: SELECT * FROM example;> {
+  FIELD id <id>
+  FIELD name <name>
+  FIELD year <year>
+  FIELD country <country>
+  FIELD director <director>
+}
+
+EXPRESSION films <films_csv_file.films_csv UNION films_database.films_da>
+:Films :[films.id] {
+  :name [films.name] ;
+  :year [films.year] ;
+  :country dbr:[films.country] ;
+  :director dbr:[films.director] ;
+}
