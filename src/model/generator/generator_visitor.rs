@@ -2,53 +2,254 @@ use crate::model::{ast::nodes::*, ast::*, visitor::Visitor};
 
 /// Struct para poder realizar las visitas del visitor sobre él
 pub struct Generator {
-    source_number: u16,
+    logical_source_number: u16,
     database_number: u16,
+    subject_map_number: u16,
+    predicate_map_number: u16,
+    object_map_number: u16,
+    predicate_object_number: u16,
+    triples_map_number: u16,
 
     unused_identifiers: Vec<String>,
 }
 
 impl Generator {
     pub fn new() -> Self {
-        Generator { source_number: 0, database_number: 0, unused_identifiers: Vec::new() }
+        Generator { logical_source_number: 0, database_number: 0, subject_map_number: 0, predicate_map_number: 0, object_map_number: 0, predicate_object_number: 0, triples_map_number: 0, unused_identifiers: Vec::new() }
     }
 
     fn generate_next_identifier(&mut self, identifier_prefix: &str) -> String {
         match identifier_prefix {
-            "source" => {
-                self.source_number += 1;
-                let ident = format!("l_{}", self.source_number);
+            LOGICAL_SOURCE => {
+                self.logical_source_number += 1;
+                let ident = format!("{LOGICAL_SOURCE}_{}", self.logical_source_number);
                 self.unused_identifiers.push(ident.clone());
                 ident
             },
-            "database" => {
+            DATABASE => {
                 self.database_number += 1;
-                let ident = format!("db_{}", self.source_number);
+                let ident = format!("{DATABASE}_{}", self.database_number);
                 self.unused_identifiers.push(ident.clone());
                 ident
             },
+            PREDICATE_MAP => {
+                self.predicate_map_number += 1;
+                let ident = format!("{PREDICATE_MAP}_{}", self.predicate_map_number);
+                self.unused_identifiers.push(ident.clone());
+                ident
+            },
+            SUBJECT_MAP => {
+                self.subject_map_number += 1;
+                let ident = format!("{SUBJECT_MAP}_{}", self.subject_map_number);
+                self.unused_identifiers.push(ident.clone());
+                ident
+            },
+            OBJECT_MAP => {
+                self.object_map_number += 1;
+                let ident = format!("{OBJECT_MAP}_{}", self.object_map_number);
+                self.unused_identifiers.push(ident.clone());
+                ident
+            },
+            PREDICATE_OBJECT_MAP => {
+                self.predicate_object_number += 1;
+                let ident = format!("{PREDICATE_OBJECT_MAP}_{}", self.predicate_object_number);
+                self.unused_identifiers.push(ident.clone());
+                ident
+            },
+            TRIPLES_MAP => {
+                self.triples_map_number += 1;
+                let ident = format!("{TRIPLES_MAP}_{}", self.triples_map_number);
+                self.unused_identifiers.push(ident.clone());
+                ident
+            }
             _ => String::new(),
         }
     }
 
     fn find_last_unused_identifier(&mut self, identifier: String) -> String {
-        let mut index = 0;
         if let Some(pos) = self.unused_identifiers.iter().position(|x| x.starts_with(&identifier)) {
-            index = pos;
+            return self.unused_identifiers.remove(pos);
+        } else {
+            String::new()
         }
-        self.unused_identifiers.remove(index)
+    }
+
+    fn generate_database_logical_source(&mut self, source_node: &mut SourceASTNode) -> String {
+        let mut source_generation = String::new();
+        source_generation.push_str(format!("\t{RML_QUERY} ; \n").as_str());
+        
+        source_generation.push_str(format!("\t{RML_SOURCE}\t\t\t").as_str());
+        source_generation.push_str(format!("map:{} ;\n", self.generate_next_identifier(DATABASE)).as_str());
+
+        source_generation.push_str(format!("\t{RR_SQL_VERSION}\t\trr:SQL2008 .\n\n").as_str());
+        source_generation.push_str(self.generate_database_declaration(source_node).as_str());
+        source_generation
+    }
+
+    fn generate_database_declaration(&mut self, source_node: &mut SourceASTNode) -> String {
+        let mut database_generation = String::new();
+        database_generation.push_str(format!("map:{}  a\t\t\t\t\"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database\" ;\n", self.find_last_unused_identifier(String::from(DATABASE))).as_str());
+
+        database_generation.push_str(format!("\t{D2RQ_JDBC_DSN}\t\t{} ;\n", source_node.get_source_definition().to_string()).as_str());
+        database_generation.push_str(format!("\t{D2RQ_JDBC_DRIVER}\t\t{} ;\n", generate_database_driver(source_node)).as_str());
+        database_generation.push_str(format!("\t{D2RQ_PASSWORD}\t\t\"\" ;\n").as_str());
+        database_generation.push_str(format!("\t{D2RQ_USERNAME}\t\t\"\" .\n\n").as_str());
+        database_generation
+    }
+    
+    fn predicate_map_generation(&mut self, shape_tuple_node: &mut ShapeTupleASTNode, shape_tuple_generation: &mut String) {
+        shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(OBJECT_MAP)).as_str());
+        shape_tuple_generation.push_str("  a");
+        shape_tuple_generation.push_str(format!("\t\t\t\t{RR_PREDICATE_MAP} ;\n").as_str());
+    
+        let possible_prefix_ident = shape_tuple_node.get_prefix_ident();
+        let prefix_ident;
+    
+        if possible_prefix_ident.is_some() {
+            prefix_ident = possible_prefix_ident.unwrap();
+        } else {
+            prefix_ident = String::from(":");
+        }
+    
+        shape_tuple_generation.push_str(format!("\t{RR_CONSTANT}\t\t\t{prefix_ident}{} .\n\n", shape_tuple_node.get_identifier()).as_str());
+    }
+
+    fn object_map_generation(&mut self, shape_tuple_node: &mut ShapeTupleASTNode, shape_tuple_generation: &mut String) {
+        shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(PREDICATE_MAP)).as_str());
+        shape_tuple_generation.push_str("  a");
+        shape_tuple_generation.push_str(format!("\t\t\t\t{RR_OBJECT_MAP} ;\n").as_str());
+    
+        let possible_object_prefix= shape_tuple_node.get_object_prefix();
+        let mut object_type = String::from("Literal");
+        let mut template = String::new();
+    
+        if possible_object_prefix.is_some() {
+            template = possible_object_prefix.unwrap().get_uri();
+            object_type = String::from("IRI");
+        }
+
+        let object;
+
+        match shape_tuple_node.get_object() {
+            IdentOrAccess::Access(access_node) => {
+                object = access_node.get_field().unwrap().get_access_field_identifier();
+            },
+            IdentOrAccess::Ident(_) => todo!(),
+        }
+
+        template.push_str(format!("{{{}}}", object).as_str());
+    
+        shape_tuple_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t{template} ;\n").as_str());
+        shape_tuple_generation.push_str(format!("\t{RR_TERM_TYPE}\t\t\trr:{object_type} .\n\n").as_str());
+    }
+    
+    fn generate_sources(&mut self, expression: Option<ExpressionASTNode>, sources_generation: &mut String) {
+        let mut sources_visited = Vec::new();
+    
+        expression.unwrap().get_mut_accesses().iter_mut().for_each(|access| {
+            match access.get_source_or_expression().unwrap() {
+                SourceOrExpression::Source(mut source_node) => {
+                    if !sources_visited.contains(&source_node.get_identifier()) {
+                        sources_generation.push_str(self.visit_source(&mut source_node).as_str());
+                        sources_visited.push(source_node.get_identifier());
+                    }
+                },
+                SourceOrExpression::Expression(_) => (),
+            }
+        });
+    }
+
+    fn generate_predicate_object_map(&mut self) -> String {
+        let mut predicate_object_map_generation = String::new();
+        let flag = true;
+
+        while flag {
+            let object_map_ident = self.find_last_unused_identifier(String::from(OBJECT_MAP));
+            let predicate_map_ident = self.find_last_unused_identifier(String::from(PREDICATE_MAP));
+
+            if object_map_ident == String::new() || predicate_map_ident == String::new() {
+                break;
+            }
+
+            let ident = self.generate_next_identifier(PREDICATE_OBJECT_MAP);
+            predicate_object_map_generation.push_str(format!("map:{}", ident).as_str());
+            predicate_object_map_generation.push_str(" a");
+            predicate_object_map_generation.push_str(format!("\t\t\t\t{RR_PREDICATE_OBJECT_MAP} ;\n").as_str());
+
+            predicate_object_map_generation.push_str(format!("\t{RR_OBJECT_MAP}\t\tmap:{object_map_ident} ;\n").as_str());
+            predicate_object_map_generation.push_str(format!("\t{RR_PREDICATE_MAP}\t\tmap:{predicate_map_ident} .\n\n").as_str());
+        }
+        predicate_object_map_generation
+    }
+
+    fn generate_triples_map(&mut self) -> String {
+        let mut predicate_object_map_generation = String::new();
+        let ident = self.generate_next_identifier(TRIPLES_MAP);
+        predicate_object_map_generation.push_str(format!("map:{}\t", ident).as_str());
+        predicate_object_map_generation.push_str(" a");
+        predicate_object_map_generation.push_str(format!("\t\t\t\t\t{RR_TRIPLES_MAP} ;\n").as_str());
+
+        predicate_object_map_generation.push_str(format!("\t{RML_LOGICAL_SOURCE}\t\tmap:{} ;\n", self.find_last_unused_identifier(String::from(LOGICAL_SOURCE))).as_str());
+        predicate_object_map_generation.push_str(format!("\t{RR_PREDICATE_OBJECT_MAP}\t").as_str());
+
+        // Vector para los identificadores de los predicateObject
+        let mut ident_vec = Vec::new();
+        let mut flag = true;
+
+        while flag {
+            let unused_ident = self.find_last_unused_identifier(String::from(PREDICATE_OBJECT_MAP));
+            if unused_ident == String::new() {
+                flag = false;
+            } else {
+                ident_vec.push(unused_ident);
+            }
+        }
+
+        let len = ident_vec.len();
+
+        if len == 1 {
+            predicate_object_map_generation.push_str(format!("map:{}", ident_vec.get(0).unwrap()).as_str());
+        } else if len != 0 {
+            for i in 0..len - 1 {
+                predicate_object_map_generation.push_str(format!("map:{}, ", ident_vec.get(i).unwrap()).as_str());
+            }
+            predicate_object_map_generation.push_str(format!("map:{}", ident_vec.get(len-1).unwrap()).as_str());
+        }
+
+        predicate_object_map_generation.push_str(" ;\n");
+        predicate_object_map_generation.push_str(format!("\t{RR_SUBJECT_MAP}\t\t\tmap:{} .\n\n", self.find_last_unused_identifier(String::from(SUBJECT_MAP))).as_str());
+
+        predicate_object_map_generation
     }
 }
 
-const LOGICAL_SOURCE: &str = "rml:LogicalSource";
-const REFERENCE_FORMULATION: &str = "rml:referenceFormulation";
-const SOURCE: &str = "rml:source";
-const QUERY: &str = "rml:query";
-const SQL_VERSION: &str = "rr:sqlVersion";
-const JDBC_DSN: &str = "d2rq:jdbcDSN";
-const JDBC_DRIVER: &str = "d2rq:jdbcDriver";
-const PASSWORD: &str = "d2rq:password";
-const USERNAME: &str = "d2rq:username";
+const LOGICAL_SOURCE: &str = "l";
+const DATABASE: &str = "db";
+const SUBJECT_MAP: &str = "s";
+const PREDICATE_MAP: &str = "r";    // Se usa r y no p para que no haya problemas en el find con po
+const OBJECT_MAP: &str = "o";
+const PREDICATE_OBJECT_MAP: &str = "po";
+const TRIPLES_MAP: &str = "m";
+
+const RML_LOGICAL_SOURCE: &str = "rml:LogicalSource";
+const RML_REFERENCE_FORMULATION: &str = "rml:referenceFormulation";
+const RML_SOURCE: &str = "rml:source";
+const RML_QUERY: &str = "rml:query";
+
+const RR_SQL_VERSION: &str = "rr:sqlVersion";
+const RR_PREDICATE_MAP: &str = "rr:predicateMap";
+const RR_SUBJECT_MAP: &str = "rr:SubjectMap";
+const RR_OBJECT_MAP: &str = "rr:objectMap";
+const RR_PREDICATE_OBJECT_MAP: &str = "rr:predicateObjectMap";
+const RR_TRIPLES_MAP: &str = "rr:TriplesMap";
+const RR_TEMPLATE: &str = "rr:template";
+const RR_TERM_TYPE: &str = "rr:termType";
+const RR_CONSTANT: &str = "rr:constant";
+
+const D2RQ_JDBC_DSN: &str = "d2rq:jdbcDSN";
+const D2RQ_JDBC_DRIVER: &str = "d2rq:jdbcDriver";
+const D2RQ_PASSWORD: &str = "d2rq:password";
+const D2RQ_USERNAME: &str = "d2rq:username";
 
 // No se utiliza &str porque no se podria devolver el valor al tener la propiedad
 impl Visitor<String> for Generator {
@@ -67,15 +268,17 @@ impl Visitor<String> for Generator {
         });
         file_generation.push_str("\n");
 
-        // No se hace aquí la visita a los Source porque solamente se meten los que se utilizan, es decir, los que están referenciados desde un acceso
-        ast.get_sources().iter_mut().for_each(|source| {
-            file_generation.push_str(&format!("{}", self.visit_source(source)));
-        });
-
-        ast.get_iterators().iter_mut().for_each(|iterator| {
+        ast.get_mut_iterators().iter_mut().for_each(|iterator| {
             file_generation.push_str(&format!("{}", self.visit_iterator(iterator)));
             check_query_iterator(&mut file_generation, iterator);
         });
+
+        ast.get_mut_shapes().iter_mut().for_each(|shape| {
+            file_generation.push_str(&format!("{}", self.visit_shape(shape)));
+        });
+
+        file_generation.push_str(self.generate_predicate_object_map().as_str());
+        file_generation.push_str(self.generate_triples_map().as_str());
 
         file_generation
     }
@@ -99,13 +302,13 @@ impl Visitor<String> for Generator {
 
     fn visit_source(&mut self, source_node: &mut SourceASTNode) -> String {
         let mut source_generation = String::new();
-        source_generation.push_str(format!("map:{}", self.generate_next_identifier("source")).as_str());
+        source_generation.push_str(format!("map:{}", self.generate_next_identifier(LOGICAL_SOURCE)).as_str());
         source_generation.push_str("  a");
-        source_generation.push_str(format!("\t\t\t\t\t{LOGICAL_SOURCE} ;\n").as_str());
+        source_generation.push_str(format!("\t\t\t\t{RML_LOGICAL_SOURCE} ;\n").as_str());
 
         match source_node.get_type().unwrap() {
             Type::CSV => source_generation.push_str(generate_csv_logical_source(source_node).as_str()),
-            Type::Database => source_generation.push_str(generate_database_logical_source(source_node, self).as_str()),
+            Type::Database => source_generation.push_str(self.generate_database_logical_source(source_node).as_str()),
         }
 
         source_generation
@@ -120,19 +323,51 @@ impl Visitor<String> for Generator {
     }
 
     fn visit_field(&mut self, _field_node: &mut FieldASTNode) -> String {
-        todo!()
+        String::new()
     }
 
     fn visit_expression(&mut self, _expression_node: &mut ExpressionASTNode) -> String {
         todo!()
     }
 
-    fn visit_shape(&mut self, _shape_node: &mut ShapeASTNode) -> String {
-        todo!()
+    fn visit_shape(&mut self, shape_node: &mut ShapeASTNode) -> String {
+        let mut shape_generation = String::new();
+        let mut expression = None;
+
+        match shape_node.get_field_identifier() {
+            IdentOrAccess::Access(access_node) => {
+                shape_generation.push_str(format!("map:{}", self.generate_next_identifier(SUBJECT_MAP)).as_str());
+                shape_generation.push_str("  a");
+                shape_generation.push_str(format!("\t\t\t\t{RR_SUBJECT_MAP} ;\n").as_str());
+
+                shape_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t").as_str());
+
+                let field_prefix = shape_node.get_field_prefix().unwrap().get_uri();
+                let field_identifier = access_node.get_field().unwrap().get_access_field_identifier();
+                shape_generation.push_str(format!("\"{field_prefix}{{{field_identifier}}}\" .\n\n").as_str());
+
+                match access_node.get_source_or_expression().unwrap() {
+                    SourceOrExpression::Expression(expression_node) => expression = Some(expression_node),
+                    SourceOrExpression::Source(_) => (),
+                }
+            },
+            IdentOrAccess::Ident(_) => ()
+        }
+
+        self.generate_sources(expression, &mut shape_generation);
+
+        shape_node.get_mut_tuples().iter_mut().for_each(|tuple| {
+            shape_generation.push_str(self.visit_shape_tuple(tuple).as_str());
+        });
+
+        shape_generation
     }
 
-    fn visit_shape_tuple(&mut self, _shape_tuple_node: &mut ShapeTupleASTNode) -> String {
-        todo!()
+    fn visit_shape_tuple(&mut self, shape_tuple_node: &mut ShapeTupleASTNode) -> String {
+        let mut shape_tuple_generation = String::new();
+        self.predicate_map_generation(shape_tuple_node, &mut shape_tuple_generation);
+        self.object_map_generation(shape_tuple_node, &mut shape_tuple_generation);
+        shape_tuple_generation
     }
 
     fn visit_access(&mut self, _access_node: &mut AccessASTNode) -> String {
@@ -142,35 +377,12 @@ impl Visitor<String> for Generator {
 
 fn generate_csv_logical_source(source_node: &mut SourceASTNode) -> String {
     let mut source_generation = String::new();
-    source_generation.push_str(format!("\t{REFERENCE_FORMULATION}\t").as_str());
+    source_generation.push_str(format!("\t{RML_REFERENCE_FORMULATION}\t").as_str());
     source_generation.push_str(format!("ql:{} ; \n", source_node.get_type().unwrap().to_string()).as_str());
 
-    source_generation.push_str(format!("\t{SOURCE}\t\t\t\t").as_str());
-    source_generation.push_str(format!("{}", source_node.get_source_definition().to_string()).as_str());
+    source_generation.push_str(format!("\t{RML_SOURCE}\t\t\t").as_str());
+    source_generation.push_str(format!("{} .\n\n", source_node.get_source_definition().to_string()).as_str());
     source_generation
-}
-
-fn generate_database_logical_source(source_node: &mut SourceASTNode, generator: &mut Generator) -> String {
-    let mut source_generation = String::new();
-    source_generation.push_str(format!("\t{QUERY} ; \n").as_str());
-    
-    source_generation.push_str(format!("\t{SOURCE}\t\t\t\t").as_str());
-    source_generation.push_str(format!("map:{} ;\n", generator.generate_next_identifier("database")).as_str());
-
-    source_generation.push_str(format!("\t{SQL_VERSION}\t\t\trr:SQL2008 .\n\n").as_str());
-    source_generation.push_str(generate_database_declaration(source_node, generator).as_str());
-    source_generation
-}
-
-fn generate_database_declaration(source_node: &mut SourceASTNode, generator: &mut Generator) -> String {
-    let mut database_generation = String::new();
-    database_generation.push_str(format!("map:{}  a\t\t\t\"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database\" ;\n", generator.find_last_unused_identifier("db".to_string())).as_str());
-
-    database_generation.push_str(format!("\t{JDBC_DSN}\t\t{} ;\n", source_node.get_source_definition().to_string()).as_str());
-    database_generation.push_str(format!("\t{JDBC_DRIVER}\t\t{} ;\n", generate_database_driver(source_node)).as_str());
-    database_generation.push_str(format!("\t{PASSWORD}\t\t\"\" ;\n").as_str());
-    database_generation.push_str(format!("\t{USERNAME}\t\t\"\" .\n").as_str());
-    database_generation
 }
 
 fn generate_database_driver(source_node: &mut SourceASTNode) -> String {
@@ -207,6 +419,6 @@ fn check_query_iterator(file_generation: &mut String, iterator: &mut IteratorAST
 fn set_query_in_logical_source(file_generation: &mut String, query: String) {
     if let Some(pos) = file_generation.find("rml:query") {
         let insert_pos = pos + "rml:query".len();
-        file_generation.insert_str(insert_pos, format!("\t\t\t\t\"{}\"", query).as_str());
+        file_generation.insert_str(insert_pos, format!("\t\t\t\"{}\"", query).as_str());
     }
 }

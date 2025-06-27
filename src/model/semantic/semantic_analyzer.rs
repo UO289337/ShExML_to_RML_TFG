@@ -51,7 +51,7 @@ fn identification_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
 /// # Retorna
 /// Un vector con Options que contienen los posibles errores que se pueden dar en la fase de type checking
 fn type_checking_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
-    let mut type_checking = TypeChecking;
+    let mut type_checking = TypeChecking::new();
     let mut error_vec = type_checking.visit_ast(ast);
     eliminate_duplicate_errors(&mut error_vec);
     error_vec

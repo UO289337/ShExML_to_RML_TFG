@@ -95,6 +95,11 @@ pub enum Type {
     Database,
 }
 
+pub trait ManageType {
+    fn get_type(&self) -> Option<Type>;
+    fn set_type(&mut self, node_type: Type);
+}
+
 impl Type {
     /// Pasa el tipo a un String
     /// 
@@ -279,7 +284,9 @@ pub mod nodes {
         pub fn get_source_definition(&self) -> SourceDefinition {
             self.source_definition.clone()
         }
+    }
 
+    impl ManageType for SourceASTNode {
         /// Devuelve el tipo del Source
         ///
         /// # Parámetros
@@ -287,7 +294,7 @@ pub mod nodes {
         ///
         /// # Retorna
         /// El tipo del Source
-        pub fn get_type(&mut self) -> Option<Type> {
+        fn get_type(&self) -> Option<Type> {
             self.source_type.clone()
         }
 
@@ -296,8 +303,8 @@ pub mod nodes {
         /// # Parámetros
         /// * `self` - El propio nodo Source del AST
         /// * `source_type` - El tipo del Source
-        pub fn set_type(&mut self, source_type: Type) {
-            self.source_type = Some(source_type);
+        fn set_type(&mut self, node_type: Type) {
+            self.source_type = Some(node_type);
         }
     }
 
@@ -503,17 +510,6 @@ pub mod nodes {
             &mut self.query
         }
 
-        /// Devuelve el Option con el tipo del Iterator
-        ///
-        /// # Parámetros
-        /// * `self` - El propio nodo Iterator
-        ///
-        /// # Retorna
-        /// El Option con el tipo del Iterator
-        pub fn get_type(&mut self) -> Option<Type> {
-            self.iterator_type.clone()
-        }
-
         /// Asocia un nodo Query con el Iterator
         ///
         /// # Parámetros
@@ -521,15 +517,28 @@ pub mod nodes {
         /// * `query` - El Option que contiene el nodo Query del AST que se quiere asociar al iterador
         pub fn set_query(&mut self, query: Option<QueryASTNode>) {
             self.query = query.clone();
-        }
+        } 
+    }
 
-        /// Asocia un tipo con el Iterator
+    impl ManageType for IteratorASTNode {
+        /// Devuelve el tipo del Source
         ///
         /// # Parámetros
-        /// * `self` - El propio nodo Iterator
-        /// * `query` - El Option que contiene el tipo que se quiere asociar con el iterador
-        pub fn set_type(&mut self, iterator_type: Option<Type>) {
-            self.iterator_type = iterator_type;
+        /// * `self` - El propio nodo Source del AST
+        ///
+        /// # Retorna
+        /// El tipo del Source
+        fn get_type(&self) -> Option<Type> {
+            self.iterator_type.clone()
+        }
+
+        /// Asocia el tipo del Source a este
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Source del AST
+        /// * `source_type` - El tipo del Source
+        fn set_type(&mut self, node_type: Type) {
+            self.iterator_type = Some(node_type);
         }
     }
 
@@ -637,12 +646,15 @@ pub mod nodes {
     #[derive(Debug, PartialEq, Eq, Clone, Hash)]
     pub struct ExpressionASTNode {
         identifier: String,
-        expression_type: ExpressionType,
+        expression_expr_type: ExpressionType,
         accesses: Vec<AccessASTNode>,
         position: Position,
 
         // Fase Identificación
         fields: Option<Vec<FieldASTNode>>,
+
+        // Type Checking
+        expression_type: Option<Type>,
     }
 
     impl ExpressionASTNode {
@@ -664,9 +676,10 @@ pub mod nodes {
         ) -> Self {
             ExpressionASTNode {
                 identifier: identifier.get_lexeme(),
-                expression_type,
+                expression_expr_type: expression_type,
                 accesses,
                 fields: None,
+                expression_type: None,
                 position,
             }
         }
@@ -678,8 +691,8 @@ pub mod nodes {
         ///
         /// # Retorna
         /// El tipo de la Expression
-        pub fn get_expression_type(&self) -> ExpressionType {
-            self.expression_type.clone()
+        pub fn get_expression_expr_type(&self) -> ExpressionType {
+            self.expression_expr_type.clone()
         }
 
         /// Devuelve el vector con los accesos que se realizan en la Expression
@@ -725,6 +738,16 @@ pub mod nodes {
         }
     }
 
+    impl ManageType for ExpressionASTNode {
+        fn get_type(&self) -> Option<Type> {
+            self.expression_type.clone()
+        }
+    
+        fn set_type(&mut self, node_type: Type) {
+            self.expression_type = Some(node_type);
+        }
+    }
+
     impl ManagePosition for ExpressionASTNode {
         /// Devuelve la posición del nodo Expression
         ///
@@ -765,6 +788,9 @@ pub mod nodes {
         source_or_expression: Option<SourceOrExpression>,
         iterator: Option<IteratorASTNode>,
         field: Option<FieldASTNode>,
+
+        // Type Checking
+        access_type: Option<Type>,
     }
 
     impl AccessASTNode {
@@ -792,6 +818,7 @@ pub mod nodes {
                 source_or_expression: None,
                 iterator: None,
                 field: None,
+                access_type: None,
                 position,
             }
         }
@@ -838,6 +865,18 @@ pub mod nodes {
         /// El nodo Source o Expression del acceso
         pub fn get_source_or_expression(&self) -> Option<SourceOrExpression> {
             self.source_or_expression.clone()
+
+        }
+
+        /// Devuelve el nodo Source o Expression mutable del acceso
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Access
+        ///
+        /// # Retorna
+        /// El nodo Source o Expression mutable del acceso
+        pub fn get_mut_source_or_expression(&mut self) -> Option<&mut SourceOrExpression> {
+            self.source_or_expression.as_mut()
         }
 
         /// Devuelve el nodo del Iterator accedido en el acceso
@@ -849,6 +888,17 @@ pub mod nodes {
         /// El nodo del Iterator accedido en el acceso
         pub fn get_iterator(&self) -> Option<IteratorASTNode> {
             self.iterator.clone()
+        }
+
+        /// Devuelve el nodo del Iterator mutable accedido en el acceso
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Access
+        ///
+        /// # Retorna
+        /// El nodo del Iterator mutable accedido en el acceso
+        pub fn get_mut_iterator(&mut self) -> Option<&mut IteratorASTNode> {
+            self.iterator.as_mut()
         }
 
         /// Devuelve el Option del nodo del Field accedido en el acceso
@@ -890,6 +940,16 @@ pub mod nodes {
         /// * `query` - El Option que contiene el nodo Field del AST que se quiere asociar con el Access
         pub fn set_field(&mut self, field: Option<FieldASTNode>) {
             self.field = field;
+        }
+    }
+
+    impl ManageType for AccessASTNode {
+        fn get_type(&self) -> Option<Type> {
+            self.access_type.clone()
+        }
+    
+        fn set_type(&mut self, node_type: Type) {
+            self.access_type = Some(node_type);
         }
     }
 
