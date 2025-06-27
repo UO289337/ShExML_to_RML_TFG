@@ -1,3 +1,7 @@
+//! Módulo de la fase de la generación de RML
+//!
+//! Genera el código RML a partir de la información del AST decorado proveniente de la fase de análisis semántico
+
 use crate::model::{ast::nodes::*, ast::*, visitor::Visitor};
 
 /// Struct para poder realizar las visitas del visitor sobre él
@@ -14,10 +18,22 @@ pub struct Generator {
 }
 
 impl Generator {
+    /// Crea un nuevo struct Generador
+    /// 
+    /// # Retorna
+    /// Un Generador
     pub fn new() -> Self {
         Generator { logical_source_number: 0, database_number: 0, subject_map_number: 0, predicate_map_number: 0, object_map_number: 0, predicate_object_number: 0, triples_map_number: 0, unused_identifiers: Vec::new() }
     }
 
+    /// Genera el siguiente identificador de RML a partir del tipo que se quiera generar
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `identifier_prefix` - El prefijo que identifica el tipo de identificador que se quiere generar
+    /// 
+    /// # Retorna
+    /// El identificador generado
     fn generate_next_identifier(&mut self, identifier_prefix: &str) -> String {
         match identifier_prefix {
             LOGICAL_SOURCE => {
@@ -66,14 +82,27 @@ impl Generator {
         }
     }
 
-    fn find_last_unused_identifier(&mut self, identifier: String) -> String {
-        if let Some(pos) = self.unused_identifiers.iter().position(|x| x.starts_with(&identifier)) {
+    /// Encuentra el último identificador no utilizado de RML a partir del prefijo
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `identifier_prefix` - El prefijo del identificador que se quiere buscar
+    fn find_last_unused_identifier(&mut self, identifier_prefix: String) -> String {
+        if let Some(pos) = self.unused_identifiers.iter().position(|x| x.starts_with(&identifier_prefix)) {
             return self.unused_identifiers.remove(pos);
         } else {
             String::new()
         }
     }
 
+    /// Genera un logicalSource de RML de una base de datos
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `source_node` - El nodo Source de la base de datos
+    /// 
+    /// # Retorna
+    /// El logicalSource de RML de la base de datos
     fn generate_database_logical_source(&mut self, source_node: &mut SourceASTNode) -> String {
         let mut source_generation = String::new();
         source_generation.push_str(format!("\t{RML_QUERY} ; \n").as_str());
@@ -86,6 +115,14 @@ impl Generator {
         source_generation
     }
 
+    /// Genera la declaración en D2RQ de la base de datos
+    /// 
+    /// # Parámetros
+    /// `self` - El propio Generador
+    /// `source_node` - El nodo Source de la base de datos
+    /// 
+    /// # Retorna
+    /// La declaración de la base de datos en D2RQ
     fn generate_database_declaration(&mut self, source_node: &mut SourceASTNode) -> String {
         let mut database_generation = String::new();
         database_generation.push_str(format!("map:{}  a\t\t\t\t\"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database\" ;\n", self.find_last_unused_identifier(String::from(DATABASE))).as_str());
@@ -97,6 +134,12 @@ impl Generator {
         database_generation
     }
     
+    /// Genera un predicateMap de RML
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `shape_tuple_node` - El nodo de la tupla de Shape que contiene el predicado a generar
+    /// * `shape_tuple_generation` - El código RML generado hasta ahora
     fn predicate_map_generation(&mut self, shape_tuple_node: &mut ShapeTupleASTNode, shape_tuple_generation: &mut String) {
         shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(PREDICATE_MAP)).as_str());
         shape_tuple_generation.push_str("  a");
@@ -114,6 +157,12 @@ impl Generator {
         shape_tuple_generation.push_str(format!("\t{RR_CONSTANT}\t\t\t{prefix_ident}{} .\n\n", shape_tuple_node.get_identifier()).as_str());
     }
 
+    /// Genera un objectMap de RML
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `shape_tuple_node` - El nodo de la tupla de la Shape que contiene el objeto a generar
+    /// * `shape_tuple_generation` - El código RML generado hasta ahora
     fn object_map_generation(&mut self, shape_tuple_node: &mut ShapeTupleASTNode, shape_tuple_generation: &mut String) {
         shape_tuple_generation.push_str(format!("map:{}", self.generate_next_identifier(OBJECT_MAP)).as_str());
         shape_tuple_generation.push_str("  a");
@@ -143,6 +192,12 @@ impl Generator {
         shape_tuple_generation.push_str(format!("\t{RR_TERM_TYPE}\t\t\trr:{object_type} .\n\n").as_str());
     }
     
+    /// Genera la consulta SQL que se utiliza en la definición de la base de datos y los Source en RML
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `expression` - El Option con la Expression del acceso de una Shape
+    /// * `rml_generation` - El código RML generado hasta ahora
     fn generate_rest_of_rml(&mut self, expression: Option<ExpressionASTNode>, rml_generation: &mut String) {
         let mut sources_visited = Vec::new();
         let mut access_node = None;
@@ -162,6 +217,13 @@ impl Generator {
         check_query_iterator(rml_generation, &mut access_node.unwrap().get_iterator().unwrap());
     }
 
+    /// Genera un predicateObjectMap de RML
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// 
+    /// # Retorna
+    /// El predicateObjectMap de RML generado
     fn generate_predicate_object_map(&mut self) -> String {
         let mut predicate_object_map_generation = String::new();
         let flag = true;
@@ -185,6 +247,13 @@ impl Generator {
         predicate_object_map_generation
     }
 
+    /// Genera una triplesMap de RML
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// 
+    /// # Retorna
+    /// Una triplesMap de RML generada
     fn generate_triples_map(&mut self) -> String {
         let mut predicate_object_map_generation = String::new();
         let ident = self.generate_next_identifier(TRIPLES_MAP);
@@ -226,6 +295,7 @@ impl Generator {
     }
 }
 
+// Constantes de los prefijos
 const LOGICAL_SOURCE: &str = "l";
 const DATABASE: &str = "db";
 const SUBJECT_MAP: &str = "s";
@@ -234,11 +304,13 @@ const OBJECT_MAP: &str = "o";
 const PREDICATE_OBJECT_MAP: &str = "po";
 const TRIPLES_MAP: &str = "m";
 
+// Constantes de los prefijos de RML
 const RML_LOGICAL_SOURCE: &str = "rml:logicalSource";
 const RML_REFERENCE_FORMULATION: &str = "rml:referenceFormulation";
 const RML_SOURCE: &str = "rml:source";
 const RML_QUERY: &str = "rml:query";
 
+// Constantes de los prefijos de RR
 const RR_SQL_VERSION: &str = "rr:sqlVersion";
 const RR_PREDICATE_MAP: &str = "rr:predicateMap";
 const RR_SUBJECT_MAP: &str = "rr:subjectMap";
@@ -249,6 +321,7 @@ const RR_TEMPLATE: &str = "rr:template";
 const RR_TERM_TYPE: &str = "rr:termType";
 const RR_CONSTANT: &str = "rr:constant";
 
+// Constantes de los prefijos de D2RQ
 const D2RQ_JDBC_DSN: &str = "d2rq:jdbcDSN";
 const D2RQ_JDBC_DRIVER: &str = "d2rq:jdbcDriver";
 const D2RQ_PASSWORD: &str = "d2rq:password";
@@ -256,11 +329,11 @@ const D2RQ_USERNAME: &str = "d2rq:username";
 
 // No se utiliza &str porque no se podria devolver el valor al tener la propiedad
 impl Visitor<String> for Generator {
-    /// Visita el nodo File
+    /// Visita el AST para generar el código RML equivalente
     ///
     /// # Parámetros
-    /// * `self` - El propio generador
-    /// * `file_node` - El nodo File del AST
+    /// * `self` - El propio Generador
+    /// * `ast` - El AST decorado
     ///
     /// # Retorna
     /// Una cadena con el contenido del fichero RML
@@ -278,10 +351,10 @@ impl Visitor<String> for Generator {
         file_generation
     }
 
-    /// Visita el nodo Prefix
+    /// Visita el nodo Prefix para generar el código RML equivalente
     ///
     /// # Parámetros
-    /// * `self` - El propio generador
+    /// * `self` - El propio Generador
     /// * `prefix_node` - El nodo Prefix del AST
     ///
     /// # Retorna
@@ -295,6 +368,14 @@ impl Visitor<String> for Generator {
         prefix_generation
     }
 
+    /// Visita el nodo Source para generar el código RML equivalente
+    ///
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `source_node` - El nodo Source del AST
+    ///
+    /// # Retorna
+    /// Una cadena con el formato RML equivalente del source de ShExML
     fn visit_source(&mut self, source_node: &mut SourceASTNode) -> String {
         let mut source_generation = String::new();
         source_generation.push_str(format!("map:{}", self.generate_next_identifier(LOGICAL_SOURCE)).as_str());
@@ -309,22 +390,62 @@ impl Visitor<String> for Generator {
         source_generation
     }
 
+    /// Visita el nodo Query para generar el código RML equivalente
+    ///
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `query_node` - El nodo Query del AST
+    ///
+    /// # Retorna
+    /// Una cadena vacía; de momento no es necesario
     fn visit_query(&mut self, _query_node: &mut QueryASTNode) -> String {
         String::new()
     }
 
+    /// Visita el nodo Iterator para generar el código RML equivalente
+    ///
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `iterator_node` - El nodo Query del AST
+    ///
+    /// # Retorna
+    /// Una cadena vacía; de momento no es necesario
     fn visit_iterator(&mut self, _iterator_node: &mut IteratorASTNode) -> String {
         String::new()
     }
 
+    /// Visita el nodo Field para generar el código RML equivalente
+    ///
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `field_node` - El nodo Field del AST
+    ///
+    /// # Retorna
+    /// Una cadena vacía; de momento no es necesario
     fn visit_field(&mut self, _field_node: &mut FieldASTNode) -> String {
         String::new()
     }
 
+    /// Visita el nodo Expression para generar el código RML equivalente
+    ///
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `expression_node` - El nodo Expression del AST
+    ///
+    /// # Retorna
+    /// Una cadena vacía; de momento no es necesario
     fn visit_expression(&mut self, _expression_node: &mut ExpressionASTNode) -> String {
         todo!()
     }
 
+    /// Visita el nodo Shape para generar el código RML equivalente
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `shape_node` - El nodo Shape del AST
+    /// 
+    /// # Retorna
+    /// Una cadena con la mayor parte del código RML generado, dado que unicamente se genera el código que se utilizan en las Shape
     fn visit_shape(&mut self, shape_node: &mut ShapeASTNode) -> String {
         let mut shape_generation = String::new();
         let mut expression = None;
@@ -366,6 +487,14 @@ impl Visitor<String> for Generator {
         shape_generation
     }
 
+    /// Visita el nodo ShapeTuple para generar el código RML equivalente
+    /// 
+    /// # Parámetros
+    /// * `self` - El propio Generador
+    /// * `shape_tuple_node` - El nodo ShapeTuple del AST
+    /// 
+    /// # Retorna
+    /// Una cadena con el código RML equivalente de la ShapeTuple
     fn visit_shape_tuple(&mut self, shape_tuple_node: &mut ShapeTupleASTNode) -> String {
         let mut shape_tuple_generation = String::new();
         self.predicate_map_generation(shape_tuple_node, &mut shape_tuple_generation);
@@ -373,11 +502,26 @@ impl Visitor<String> for Generator {
         shape_tuple_generation
     }
 
+    /// Visita el nodo Access para generar el código RML equivalente
+    ///
+    /// # Parámetros
+    /// * `self` - El propio Access
+    /// * `access_node` - El nodo Access del AST
+    ///
+    /// # Retorna
+    /// Una cadena vacía; de momento no es necesario
     fn visit_access(&mut self, _access_node: &mut AccessASTNode) -> String {
         todo!()
     }
 }
 
+/// Genera el código RML de un logicalSource de CSV
+/// 
+/// # Parámetros
+/// * `source_node` - El nodo Source del AST con el CSV
+/// 
+/// # Retorna
+/// El código RML del logicalSource con el CSV
 fn generate_csv_logical_source(source_node: &mut SourceASTNode) -> String {
     let mut source_generation = String::new();
     source_generation.push_str(format!("\t{RML_REFERENCE_FORMULATION}\t").as_str());
@@ -388,6 +532,13 @@ fn generate_csv_logical_source(source_node: &mut SourceASTNode) -> String {
     source_generation
 }
 
+/// Genera el driver de la base de datos utilizadas
+/// 
+/// # Parámetros
+/// * `source_node` - El nodo Source del AST con la base de datos
+/// 
+/// # Retorna
+/// El driver de la base de datos
 fn generate_database_driver(source_node: &mut SourceASTNode) -> String {
     let mut database_driver_generation = String::new();
     let source_definition = source_node.get_source_definition().to_string();
@@ -405,6 +556,12 @@ fn generate_database_driver(source_node: &mut SourceASTNode) -> String {
     database_driver_generation
 }
 
+/// Comprueba que el Iterator tiene una Query asociada, o una consulta SQL en su acceso y, si es así, 
+/// genera la consulta SQL y la asocia con el logicalSource de RML correspondiente
+/// 
+/// # Parámetros
+/// * `file_generation` - El código RMl generado hasta ahora
+/// * `iterator` - El nodo Iterator que puede contener la consulta SQL
 fn check_query_iterator(file_generation: &mut String, iterator: &mut IteratorASTNode) {
     let possible_query = iterator.get_query();
     if possible_query.is_some() {
@@ -419,9 +576,14 @@ fn check_query_iterator(file_generation: &mut String, iterator: &mut IteratorAST
     }
 }
 
+/// Añade la consulta SQL generada en el lugar correspondiente del logicalSource de RML correspondiente
+/// 
+/// # Parámetros
+/// * `file_generation` - El código RML generado hasta ahora
+/// * `query` - La consulta SQL
 fn set_query_in_logical_source(file_generation: &mut String, query: String) {
     if let Some(pos) = file_generation.find(RML_QUERY) {
-        let insert_pos = pos + "rml:query".len();
+        let insert_pos = pos + RML_QUERY.len();
         file_generation.insert_str(insert_pos, format!("\t\t\t\"{}\"", query).as_str());
     }
 }

@@ -93,6 +93,7 @@ pub enum Type {
     Database,
 }
 
+/// Trait de manejo de tipos
 pub trait ManageType {
     fn get_type(&self) -> Option<Type>;
     fn set_type(&mut self, node_type: Type);
@@ -300,7 +301,7 @@ pub mod nodes {
         ///
         /// # Parámetros
         /// * `self` - El propio nodo Source del AST
-        /// * `source_type` - El tipo del Source
+        /// * `node_type` - El tipo del Source
         fn set_type(&mut self, node_type: Type) {
             self.source_type = Some(node_type);
         }
@@ -534,7 +535,7 @@ pub mod nodes {
         ///
         /// # Parámetros
         /// * `self` - El propio nodo Source del AST
-        /// * `source_type` - El tipo del Source
+        /// * `node_type` - El tipo del Source
         fn set_type(&mut self, node_type: Type) {
             self.iterator_type = Some(node_type);
         }
@@ -928,10 +929,22 @@ pub mod nodes {
     }
 
     impl ManageType for AccessASTNode {
+        /// Devuelve el tipo del acceso
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Access del AST
+        ///
+        /// # Retorna
+        /// El tipo del Access
         fn get_type(&self) -> Option<Type> {
             self.access_type.clone()
         }
     
+        /// Asocia el tipo del Access a este
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Access del AST
+        /// * `node_type` - El tipo del Access
         fn set_type(&mut self, node_type: Type) {
             self.access_type = Some(node_type);
         }
