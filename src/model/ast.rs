@@ -39,7 +39,6 @@ impl SourceDefinition {
 pub enum ExpressionType {
     BASIC,
     UNION,
-    JOIN,
 }
 
 impl ExpressionType {
@@ -52,7 +51,6 @@ impl ExpressionType {
     pub fn from(token: Token) -> ExpressionType {
         match token.get_token_type() {
             TokenType::Union => ExpressionType::UNION,
-            TokenType::Join => ExpressionType::JOIN,
             _ => ExpressionType::BASIC,
         }
     }
