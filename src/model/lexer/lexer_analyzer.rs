@@ -452,7 +452,7 @@ fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let mut path = take_while(1.., |c: char| c != '>').parse_next(input)?;
+    let path = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_path = Regex::new(
         r"(?ix)                    
             ^(
@@ -475,10 +475,6 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
             StrContext::Label("Ruta absoluta o relativa incorrecta"),
         );
         return Err(ErrMode::Backtrack(error.clone()));
-    }
-
-    if path.starts_with("file://") {
-        path = path.strip_prefix("file://").unwrap_or(path);
     }
 
     Ok(Token::new(path, TokenType::Path))

@@ -33,3 +33,15 @@ cargo run -- -g [-G] [-graphics] [-Graphics]
 ```
 
 Al utilizar esta interfaz se utilizan diálogos para indicar los ficheros de entrada y salida; todos los mensajes se muestran en diálogos.
+
+En la carpeta examples se encuentran algunos ejemplos de ficheros ShExML correctos que se pueden utilizar para comprobar el correcto funcionamiento del programa.
+
+### Limitaciones
+El compilador no acepta todas las características de ShExML. A continuación, se detallan aquellas que están aceptadas:
+
+* Todos los prefijos (PREFIX), incluido el por defecto (`:`).
+* Las fuentes (SOURCE) que apunten a un fichero CSV, en remoto (URI) o local (path), o a una base de datos (JDBC URL).
+* Declaración explícita de consultas SQL (QUERY)
+* Iteradores sobre CSV o bases de datos, sin anidamientos
+* Expresiones básicas o con UNION
+* Shapes sin anidamientos
