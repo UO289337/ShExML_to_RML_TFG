@@ -10,7 +10,6 @@ use crate::model::visitor::Visitor;
 
 use super::super::ast::AST;
 
-const RML_FILE_NAME: &str = "generated.rml";
 const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";
 
 /// Genera el fichero RML
@@ -19,9 +18,9 @@ const ERR_MESSAGE: &str = "Error durante la escritura del archivo RML";
 ///
 /// # Parámetros
 /// * `ast` - El AST
-pub fn rml_generator(ast: &mut AST) {
+pub fn rml_generator(ast: &mut AST, file_output: String) {
     let mut generator = Generator::new();
-    let mut rml_file = fs::File::create(RML_FILE_NAME).unwrap();
+    let mut rml_file = fs::File::create(file_output).unwrap();
 
     // Contenido general
     writeln!(
