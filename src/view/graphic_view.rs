@@ -1,13 +1,22 @@
+//! Módulo de la vista gráfica
+
 use std::{io::{Error, ErrorKind}, path::Path};
 
 use tinyfiledialogs::message_box_ok;
 
 use crate::{compiler_error::CompilerError, view::main_view::*};
 
-
+/// Struct para la vista gráfica
 pub struct GraphicView;
 
 impl View for GraphicView {
+    /// Permite seleccionar un fichero ShExML y devuelve su contenido
+    /// 
+    /// # Parámetros
+    /// * `self` - La propia vista gráfica
+    /// 
+    /// # Retorna
+    /// Un Option que puede contener el contenido del fichero de entrada ShExML
     fn input(&self) -> Option<String> {
         let file_content = match self.input_shexml_file() {
             Ok(content) => Some(content),
@@ -21,13 +30,13 @@ impl View for GraphicView {
         file_content
     }
 
-    /// Abre un diálogo del sistema para que el usuario indique el fichero ShExML de entrada
-    ///
+    /// Permite seleccionar un fichero ShExML mediante CLI
+    /// 
+    /// # Parámetros
+    /// * `self` - La propia vista gráfica
+    /// 
     /// # Retorna
-    /// El contenido del fichero
-    ///
-    /// # Errores
-    /// Devuelve un `[Error]` en el caso de que no se seleccione ningún fichero
+    /// Un Result que puede contener el String con el contenido del fichero o un Error
     fn input_shexml_file(&self) -> Result<String, Error> {
         if let Some(file) =
             tinyfiledialogs::open_file_dialog("Selecciona un fichero ShExML", "document.shexml", None)
@@ -41,6 +50,10 @@ impl View for GraphicView {
         }
     }
 
+    /// Muestra, en un diálogo, que se ha generado correctamente el fichero RML
+    /// 
+    /// # Parámetros
+    /// * `self` - La propia vista gráfica
     fn show_correct_generation(&self) {
         message_box_ok(
             "Información",
@@ -49,6 +62,11 @@ impl View for GraphicView {
         );
     }
 
+    /// Muestra, en un diálogo, los errores encontrados durante la compilación
+    /// 
+    /// # Parámetros
+    /// * `self` - La propia vista gráfica
+    /// * `errors` - El vector con los errores de compilación
     fn show_errors(&self, errors: Vec<CompilerError>) {
         message_box_ok(
             "Errores encontrados",
@@ -57,6 +75,13 @@ impl View for GraphicView {
         );
     }
     
+    /// Selecciona un fichero de salida RML
+    /// 
+    /// # Parámetros
+    /// * `self` - La propia vista gráfica
+    /// 
+    /// # Retorna
+    /// Un Result con el nombre del fichero de salida RML o con un Error
     fn select_output_file(&self) -> Result<String, Error> {
         let title = "Guardar archivo como...";
         let default_name = "generated.rml";

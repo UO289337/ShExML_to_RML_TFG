@@ -15,6 +15,7 @@ use crate::model::lexer::token::Token;
 use crate::view::main_view::ViewOption;
 use crate::view;
 
+/// Ejecuta el compilador
 pub fn run() {
     let args: Vec<String> = env::args().collect();
 
@@ -29,6 +30,10 @@ pub fn run() {
 }
 
 /// Ejecuta el analizador léxico del compilador
+/// 
+/// # Parámetros
+/// * `view` - La vista utilizada
+/// * `file_content` - El contenido del fichero ShExML de entrada
 pub fn run_lexer_analyzer(view: ViewOption, file_content: String) {
     match model::lexer::lexer_analyzer::lexer(&mut file_content.as_str()) {
         Ok(tokens) => {
@@ -43,6 +48,7 @@ pub fn run_lexer_analyzer(view: ViewOption, file_content: String) {
 /// Ejecuta el analizador sintáctico del compilador
 ///
 /// # Parámetros
+/// * `view` - La vista utilizada
 /// * `tokens` - El vector de tokens resultado del analizador léxico
 fn run_sintax_analyzer(view: ViewOption, tokens: Vec<Token>) {
     match model::syntax::syntax_analyzer::parser(tokens) {
@@ -69,6 +75,11 @@ fn run_semantic_analyzer(view: ViewOption, ast: &mut AST) {
     }
 }
 
+/// Ejecuta el generador de RML
+/// 
+/// # Parámetros
+/// * `view` - La vista utilizada
+/// * `astg` - El AST decorado resultado del análisis semántico
 fn run_rml_generator(view: ViewOption, ast: &mut AST) {
     let output_file = view.select_output_file();
 
@@ -81,6 +92,13 @@ fn run_rml_generator(view: ViewOption, ast: &mut AST) {
     }
 }
 
+/// Transforma errores Simple de chumsky en errores del compilador
+/// 
+/// # Parámetros
+/// * `sintax_errors` - Errores del analizador sintáctico de chumsky
+/// 
+/// # Retorna
+/// Un vector con los errores del compilador
 fn trasnform_to_compiler_error(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) -> Vec<CompilerError> {
     let mut errors = Vec::new();
 
