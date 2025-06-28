@@ -2,7 +2,7 @@
 
 use std::{env, io::{Error, ErrorKind}};
 
-use crate::{model::compiler_error::CompilerError, view::main_view::*};
+use crate::{compiler_error::CompilerError, view::main_view::*};
 
 
 pub struct CliView;

@@ -9,8 +9,8 @@ use std::env;
 use chumsky::error::SimpleReason;
 
 use crate::model;
+use crate::compiler_error::CompilerError;
 use crate::model::ast::AST;
-use crate::model::compiler_error::CompilerError;
 use crate::model::lexer::token::Token;
 use crate::view::main_view::ViewOption;
 use crate::view;
@@ -35,7 +35,7 @@ pub fn run_lexer_analyzer(view: ViewOption, file_content: String) {
             run_sintax_analyzer(view, tokens);
         }
         Err(parser_errors) => {
-            show_errors(parser_errors);
+            view.show_errors(parser_errors);
         }
     };
 }
@@ -50,7 +50,7 @@ fn run_sintax_analyzer(view: ViewOption, tokens: Vec<Token>) {
             run_semantic_analyzer(view, &mut ast);
         }
         Err(e) => {
-            show_sintax_errors(e);
+            view.show_errors(trasnform_to_compiler_error(e));
         }
     }
 }
@@ -65,7 +65,7 @@ fn run_semantic_analyzer(view: ViewOption, ast: &mut AST) {
     if semantic_errors.is_empty() {
         run_rml_generator(view, ast);
     } else {
-        show_errors(semantic_errors);
+        view.show_errors(semantic_errors);
     }
 }
 
@@ -81,26 +81,15 @@ fn run_rml_generator(view: ViewOption, ast: &mut AST) {
     }
 }
 
-/// Muestra los errores encontrados al realizar los distintos análisis
-///
-/// # Parámetros
-/// * `errors` - Un vector de CompilerError que contiene los errores encontrados
-fn show_errors(errors: Vec<CompilerError>) {
-    errors.into_iter().for_each(|error| {
-        println!("Error: {}", error.get_message());
-    });
-}
+fn trasnform_to_compiler_error(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) -> Vec<CompilerError> {
+    let mut errors = Vec::new();
 
-/// Muestra los errores sintácticos encontrados al realizar el análisis sintáctico
-///
-/// # Parámetros
-/// * `sintax_errors` - Un vector de Simple<Token>, de la biblioteca chumsky, que contiene los errores sintácticos encontrados
-fn show_sintax_errors(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) {
     for error in sintax_errors {
-        let err_message = match error.reason() {
-            SimpleReason::Custom(msg) => msg,
-            _ => "Error desconocido",
+        match error.reason() {
+            SimpleReason::Custom(msg) => errors.push(CompilerError::new(msg.clone())),
+            _ => errors.push(CompilerError::new(String::from("Error desconocido"))),
         };
-        eprintln!("Error durante el análisis sintáctico: {}", err_message);
     }
+
+    errors
 }

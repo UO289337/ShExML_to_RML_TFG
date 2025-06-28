@@ -2,7 +2,7 @@ use std::{io::{Error, ErrorKind}, path::Path};
 
 use tinyfiledialogs::message_box_ok;
 
-use crate::{model::compiler_error::CompilerError, view::main_view::*};
+use crate::{compiler_error::CompilerError, view::main_view::*};
 
 
 pub struct GraphicView;
@@ -50,14 +50,9 @@ impl View for GraphicView {
     }
 
     fn show_errors(&self, errors: Vec<CompilerError>) {
-        let mut errors_message = String::new();
-        errors.clone().into_iter().for_each(|error| {
-            errors_message.push_str(format!("Error: {}", error.get_message()).as_str());
-        });
-
         message_box_ok(
             "Errores encontrados",
-            &get_errors_message(errors),
+            get_errors_message(errors).as_str(),
             tinyfiledialogs::MessageBoxIcon::Error,
         );
     }

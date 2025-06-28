@@ -6,7 +6,7 @@ use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
 
-use crate::model::compiler_error::CompilerError;
+use crate::compiler_error::CompilerError;
 use crate::view::cli_view::CliView;
 use crate::view::graphic_view::GraphicView;
 
@@ -37,6 +37,10 @@ impl ViewOption {
 
     pub fn select_output_file(&self) -> Result<String, Error> {
         self.view_option.select_output_file()
+    }
+
+    pub fn show_errors(&self, errors: Vec<CompilerError>) {
+        self.view_option.show_errors(errors);
     }
 }
 
@@ -76,7 +80,8 @@ pub fn check_file_extension(file: &String) -> Result<String, Error> {
 pub fn get_errors_message(errors: Vec<CompilerError>) -> String {
     let mut errors_message = String::new();
     errors.into_iter().for_each(|error| {
-        errors_message.push_str(format!("Error: {}\n", error.get_message()).as_str());
+        let normalized = error.get_message().replace("'", "");
+        errors_message.push_str(format!("Error: {normalized}\n").as_str());
     });
     errors_message
 }

@@ -5,9 +5,9 @@
 
 use std::collections::HashSet;
 
+use crate::compiler_error::CompilerError;
 use crate::model::{
     ast::*,
-    compiler_error::CompilerError,
     semantic::{identification_visitor::Identification, type_checking::TypeChecking},
     visitor::Visitor,
 };

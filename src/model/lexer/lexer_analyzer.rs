@@ -8,7 +8,7 @@ use winnow::error::{AddContext, ContextError, ErrMode, StrContext};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
 
-use super::super::compiler_error::CompilerError;
+use crate::compiler_error::CompilerError;
 use super::token::*;
 
 use regex::Regex;

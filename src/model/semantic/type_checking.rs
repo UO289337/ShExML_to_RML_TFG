@@ -5,9 +5,9 @@
 
 use std::collections::HashMap;
 
+use crate::compiler_error::CompilerError;
 use crate::model::{
     ast::{nodes::*, IdentOrAccess, SourceOrExpression, Type, ManageType},
-    compiler_error::CompilerError,
     visitor::Visitor,
 };
 
