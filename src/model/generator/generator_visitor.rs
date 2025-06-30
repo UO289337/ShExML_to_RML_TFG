@@ -149,7 +149,7 @@ impl Generator {
         let prefix_ident;
     
         if possible_prefix_ident.is_some() {
-            prefix_ident = possible_prefix_ident.unwrap();
+            prefix_ident = possible_prefix_ident.unwrap() + ":";
         } else {
             prefix_ident = String::from(":");
         }

@@ -7,14 +7,21 @@
 @prefix dbr:	<http://dbpedia.org/resource/> .
 
 map:l_1  a				rml:logicalSource ;
-	rml:referenceFormulation	ql:CSV ; 
-	rml:source			"file://example/films.csv" .
+	rml:query			"SELECT * FROM tabla;" ; 
+	rml:source			map:db_1 ;
+	rr:sqlVersion		rr:SQL2008 .
+
+map:db_1  a				"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database" ;
+	d2rq:jdbcDSN		"jdbc:mysql://localhost:3306/mydb" ;
+	d2rq:jdbcDriver		"com.mysql.cj.jdbc.Driver" ;
+	d2rq:password		"" ;
+	d2rq:username		"" .
 
 map:s_1  a				rr:subjectMap ;
 	rr:template			"http://example.com/{@id}" .
 
 map:r_1  a				rr:predicateMap ;
-	rr:constant			:name .
+	rr:constant			dbr:name .
 
 map:o_1  a				rr:objectMap ;
 	rr:template			"{name}" ;

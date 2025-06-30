@@ -10,7 +10,7 @@ ITERATOR films_da <sql: SELECT * FROM tabla;> {
 }
 EXPRESSION films <films_database.films_da>
 :Films :[films.id] {
-  :name [films.name] ;
+  dbr:name [films.name] ;
   :year [films.year] ;
   :country dbr:[films.country] ;
   :director dbr:[films.director] ;
