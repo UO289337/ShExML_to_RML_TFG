@@ -1,6 +1,6 @@
 PREFIX : <http://example.com/>
 PREFIX dbr: <http://dbpedia.org/resource/>
-SOURCE films_csv_file <films.csv>
+SOURCE films_csv_file <file://films.csv>
 SOURCE films_database <jdbc:mysql://localhost:3306/mydb>
 ITERATOR films_csv <csvperrow> {
   FIELD id <@id>

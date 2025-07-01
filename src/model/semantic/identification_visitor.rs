@@ -528,17 +528,19 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             IdentOrAccess::Access(access) => {
                 error_vec.extend(self.visit_access(access));
             }
-            IdentOrAccess::Ident(iterator_ident) => {
-                // No se puede extraer a una función externa debido a &mut
-                let possible_iterator = self.find(iterator_ident.to_string());
+            IdentOrAccess::Ident(expression_ident) => {
+                // No se puede extraer a una función externa debido a que shape_node es &mut
+                let possible_expression = self.find(expression_ident.to_string());
 
-                if possible_iterator.is_some() {
-                    match possible_iterator.unwrap() {
-                        ASTNodeSymbolTable::Iterator(iterator_node, _) => shape_node.set_object_iterator(Some(iterator_node.clone())),
-                        _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la Shape de la línea {}", shape_node.get_position().get_num_line())))),
+                if possible_expression.is_some() {
+                    if let ASTNodeSymbolTable::Expression(mut expression_node, _) = possible_expression.unwrap() {
+                        error_vec.extend(self.visit_expression(&mut expression_node));
+                        shape_node.set_expression(Some(expression_node.clone()));
+                    } else {
+                        error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con una expresión en el campo de la Shape de la línea {}", shape_node.get_position().get_num_line()))));
                     }
                 } else {
-                    error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la Shape de la línea {}", shape_node.get_position().get_num_line()))));
+                    error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con una expresión en el campo de la Shape de la línea {}", shape_node.get_position().get_num_line()))));
                 }
             }
         }
@@ -582,17 +584,19 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
             IdentOrAccess::Access(access) => {
                 error_vec.extend(self.visit_access(access));
             }
-            IdentOrAccess::Ident(iterator_ident) => {
-                // No se puede extraer a una función externa debido a &mut
-                let possible_iterator = self.find(iterator_ident.to_string());
+            IdentOrAccess::Ident(expression_ident) => {
+                // No se puede extraer a una función externa debido a que shape_tuple_node es &mut
+                let possible_expression = self.find(expression_ident.to_string());
 
-                if possible_iterator.is_some() {
-                    match possible_iterator.unwrap() {
-                        ASTNodeSymbolTable::Iterator(iterator_node, _) => shape_tuple_node.set_object_iterator(Some(iterator_node.clone())),
-                        _ => error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_tuple_node.get_position().get_num_line())))),
+                if possible_expression.is_some() {
+                    if let ASTNodeSymbolTable::Expression(mut expression_node, _) = possible_expression.unwrap() {
+                        error_vec.extend(self.visit_expression(&mut expression_node));
+                        shape_tuple_node.set_expression(Some(expression_node.clone()));
+                    } else {
+                        error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con una expresión en el campo de la Shape de la línea {}", shape_tuple_node.get_position().get_num_line()))));
                     }
                 } else {
-                    error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con un iterador en el campo de la línea {}", shape_tuple_node.get_position().get_num_line()))));
+                    error_vec.push(Some(CompilerError::new(format!("Encontrado un identificador que no se corresponde con una expresión en el campo de la Shape de la línea {}", shape_tuple_node.get_position().get_num_line()))));
                 }
             }
         }

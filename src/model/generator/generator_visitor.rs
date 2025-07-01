@@ -82,7 +82,7 @@ impl Generator {
         }
     }
 
-    /// Encuentra el último identificador no utilizado de RML a partir del prefijo
+    /// Encuentra el último identificador no utilizado de RML a partir del prefijo y lo elimina del vector de prefijos
     /// 
     /// # Parámetros
     /// * `self` - El propio Generador
@@ -183,7 +183,9 @@ impl Generator {
             IdentOrAccess::Access(access_node) => {
                 object = access_node.get_field().unwrap().get_access_field_identifier();
             },
-            IdentOrAccess::Ident(_) => todo!(),
+            IdentOrAccess::Ident(_) => {
+                object = shape_tuple_node.get_expression().unwrap().get_accesses().get(0).unwrap().get_field().unwrap().get_identifier();
+            },
         }
 
         template.push_str(format!("{{{}}}", object).as_str());
@@ -206,10 +208,8 @@ impl Generator {
             access_node = Some(access.clone());
             match access.get_source_or_expression().unwrap() {
                 SourceOrExpression::Source(mut source_node) => {
-                    if !sources_visited.contains(&source_node.get_identifier()) {
-                        rml_generation.push_str(self.visit_source(&mut source_node).as_str());
-                        sources_visited.push(source_node.get_identifier());
-                    }
+                    rml_generation.push_str(self.visit_source(&mut source_node).as_str());
+                    sources_visited.push(source_node.get_identifier());
                 },
                 SourceOrExpression::Expression(_) => (),
             }
@@ -459,13 +459,20 @@ impl Visitor<String> for Generator {
                     SourceOrExpression::Source(_) => (),
                 }
             },
-            IdentOrAccess::Ident(_) => ()
+            IdentOrAccess::Ident(_) => {
+                expression = shape_node.get_expression();
+            }
         }
 
         self.generate_rest_of_rml(expression.clone(), &mut shape_generation);
 
-        // Se generan tantos predicates, subjects y objects como iteradores (es decir, accesos) haya en la expresion
-        for _ in 0..expression.clone().unwrap().get_accesses().len() {
+        let accesses = expression.clone().unwrap().get_accesses();
+
+        // Se generan tantos predicates, subjects y objects como accesos haya en la expresion
+        for i in 0..accesses.len() {
+            if access.is_none() {
+                access = accesses.get(i).cloned();
+            }
             shape_generation.push_str(format!("map:{}", self.generate_next_identifier(SUBJECT_MAP)).as_str());
             shape_generation.push_str("  a");
             shape_generation.push_str(format!("\t\t\t\t{RR_SUBJECT_MAP} ;\n").as_str());
@@ -473,7 +480,14 @@ impl Visitor<String> for Generator {
             shape_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t").as_str());
 
             let field_prefix = shape_node.get_field_prefix().unwrap().get_uri();
-            let field_identifier = access.as_ref().unwrap().get_field().unwrap().get_access_field_identifier();
+            let field_identifier;
+
+            if access.as_ref().unwrap().get_field().is_some() {
+                field_identifier = access.as_ref().unwrap().get_field().unwrap().get_access_field_identifier();
+            } else {
+                field_identifier = access.as_ref().unwrap().get_iterator().unwrap().get_identifier();
+            }
+           
             shape_generation.push_str(format!("\"{field_prefix}{{{field_identifier}}}\" .\n\n").as_str());
 
             shape_node.get_mut_tuples().iter_mut().for_each(|tuple| {

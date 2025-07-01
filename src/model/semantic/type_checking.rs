@@ -6,6 +6,7 @@
 use std::collections::HashMap;
 
 use crate::compiler_error::CompilerError;
+use crate::model::ast::ExpressionType;
 use crate::model::{
     ast::{nodes::*, IdentOrAccess, SourceOrExpression, Type, ManageType},
     visitor::Visitor,
@@ -228,14 +229,12 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
         expression_node: &mut ExpressionASTNode,
     ) -> Vec<Option<CompilerError>> {
         let mut error_vec: Vec<Option<CompilerError>> = Vec::new();
-        let mut types: Vec<Option<Type>> = Vec::new();
 
         expression_node
             .get_mut_accesses()
             .iter_mut()
             .for_each(|access| {
                 error_vec.extend(self.visit_access(access));
-                types.push(access.get_type());
             });
 
         error_vec
@@ -260,7 +259,9 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
             IdentOrAccess::Access(access) => {
                 error_vec.extend(self.visit_access(access));
             }
-            IdentOrAccess::Ident(_) => (),
+            IdentOrAccess::Ident(_) => {
+                error_vec.extend(self.visit_expression(shape_node.get_mut_expression().as_mut().unwrap()));
+            },
         }
 
         error_vec
@@ -328,6 +329,8 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                     .get_fields()
                     .unwrap()
                     .contains(&field_access)
+                    || (expression_node.get_expression_expr_type() == ExpressionType::BASIC
+                        && expression_node.get_accesses().get(0).unwrap().get_field().is_some())
                 {
                     error_vec.push(Some(CompilerError::new(format!(
                         "No se puede acceder al campo '{}' en el acceso de la tupla de la línea {}",

@@ -1,0 +1,28 @@
+PREFIX : <http://example.com/>
+PREFIX dbr: <http://dbpedia.org/resource/>
+SOURCE films_csv_file <films.csv>
+ITERATOR films_csv <csvperrow> {
+  FIELD id <@id>
+  FIELD name <name>
+  FIELD year <year>
+  FIELD country <country>
+  FIELD director <director>
+}
+ITERATOR films2_csv <csvperrow> {
+  FIELD id <@id>
+  FIELD name <name>
+  FIELD year <year>
+  FIELD country <country>
+  FIELD director <director>
+}
+EXPRESSION films_id <films_csv_file.films_csv.id UNION films_csv_file.films2_csv.id>
+EXPRESSION films_name <films_csv_file.films_csv.name UNION films_csv_file.films2_csv.name>
+EXPRESSION films_year <films_csv_file.films_csv.year UNION films_csv_file.films2_csv.year>
+EXPRESSION films_country <films_csv_file.films_csv.country UNION films_csv_file.films2_csv.country>
+EXPRESSION films_director <films_csv_file.films_csv.director UNION films_csv_file.films2_csv.director>
+:Films :[films_id] {
+  :name [films_name] ;
+  :year [films_year] ;
+  :country dbr:[films_country] ;
+  :director dbr:[films_director] ;
+}

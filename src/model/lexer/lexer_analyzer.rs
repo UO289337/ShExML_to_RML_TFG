@@ -1210,7 +1210,7 @@ mod lexer_tests {
             0,
             TokenType::Path,
         );
-        let actual = path(&mut "file://C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
+        let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_ok(expected, actual);
     }
 
