@@ -17,10 +17,10 @@ pub enum SourceDefinition {
 
 impl SourceDefinition {
     /// Obtiene el String que se encuentra en el Source Definition
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio Source Definition
-    /// 
+    ///
     /// # Retorna
     /// El String que se encuentra en el Source Definition
     pub fn to_string(&self) -> String {
@@ -101,10 +101,10 @@ pub trait ManageType {
 
 impl Type {
     /// Pasa el tipo a un String
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio tipo
-    /// 
+    ///
     /// # Retorna
     /// La representación, en String del tipo
     pub fn to_string(&self) -> String {
@@ -521,7 +521,7 @@ pub mod nodes {
         /// * `query` - El Option que contiene el nodo Query del AST que se quiere asociar al iterador
         pub fn set_query(&mut self, query: Option<QueryASTNode>) {
             self.query = query.clone();
-        } 
+        }
     }
 
     impl ManageType for IteratorASTNode {
@@ -855,7 +855,6 @@ pub mod nodes {
         /// El nodo Source o Expression del acceso
         pub fn get_source_or_expression(&self) -> Option<SourceOrExpression> {
             self.source_or_expression.clone()
-
         }
 
         /// Devuelve el nodo Source o Expression mutable del acceso
@@ -944,7 +943,7 @@ pub mod nodes {
         fn get_type(&self) -> Option<Type> {
             self.access_type.clone()
         }
-    
+
         /// Asocia el tipo del Access a este
         ///
         /// # Parámetros
@@ -1117,7 +1116,7 @@ pub mod nodes {
         ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El nodo Expression que se quiere asociar con la Shape
         pub fn get_expression(&self) -> Option<ExpressionASTNode> {
@@ -1128,7 +1127,7 @@ pub mod nodes {
         ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El nodo Expression mutable que se quiere asociar con la Shape
         pub fn get_mut_expression(&mut self) -> &mut Option<ExpressionASTNode> {
@@ -1314,7 +1313,7 @@ pub mod nodes {
         ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El nodo Expression que se quiere asociar con la Shape
         pub fn get_expression(&self) -> Option<ExpressionASTNode> {
@@ -1325,7 +1324,7 @@ pub mod nodes {
         ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape
-        /// 
+        ///
         /// # Retorna
         /// El nodo Expression mutable que se quiere asociar con la Shape
         pub fn get_mut_expression(&mut self) -> &mut Option<ExpressionASTNode> {

@@ -6,5 +6,5 @@ pub mod controller;
 pub mod model;
 pub mod view;
 
-pub mod test_utils;
 pub mod compiler_error;
+pub mod test_utils;

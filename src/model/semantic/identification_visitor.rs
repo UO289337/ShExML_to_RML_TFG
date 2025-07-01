@@ -194,7 +194,7 @@ impl Identification {
     /// * `prefix` - El prefijo que se quiere asociar al nodo AST
     /// * `error_vec` - El vector de errores de la fase de identificación
     /// * `object_prefix` - Un booleano que indica si es el prefix del objeto o campo (true) o si no (false)
-    fn asociate_prefix_to_shape<T> (
+    fn asociate_prefix_to_shape<T>(
         &mut self,
         node: &mut T,
         prefix: Option<String>,
@@ -239,11 +239,7 @@ impl Identification {
     ///
     /// # Retorna
     /// true si el nodo pasa el chequeo o false en caso contrario
-    fn previous_checking<T> (
-        &mut self,
-        error_vec: &mut Vec<Option<CompilerError>>,
-        node: &T,
-    ) -> bool
+    fn previous_checking<T>(&mut self, error_vec: &mut Vec<Option<CompilerError>>, node: &T) -> bool
     where
         T: ManagePosition + Identifiable,
     {
@@ -262,10 +258,7 @@ impl Identification {
     ///
     /// # Retorna
     /// Un Option con el posible error creado al detectar que el identificador ya existe en la tabla de símbolos
-    fn check_duplicate_identifier<T> (
-        &mut self,
-        node: &T,
-    ) -> Option<CompilerError>
+    fn check_duplicate_identifier<T>(&mut self, node: &T) -> Option<CompilerError>
     where
         T: Identifiable + ManagePosition,
     {
@@ -533,7 +526,9 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                 let possible_expression = self.find(expression_ident.to_string());
 
                 if possible_expression.is_some() {
-                    if let ASTNodeSymbolTable::Expression(mut expression_node, _) = possible_expression.unwrap() {
+                    if let ASTNodeSymbolTable::Expression(mut expression_node, _) =
+                        possible_expression.unwrap()
+                    {
                         error_vec.extend(self.visit_expression(&mut expression_node));
                         shape_node.set_expression(Some(expression_node.clone()));
                     } else {
@@ -589,7 +584,9 @@ impl Visitor<Vec<Option<CompilerError>>> for Identification {
                 let possible_expression = self.find(expression_ident.to_string());
 
                 if possible_expression.is_some() {
-                    if let ASTNodeSymbolTable::Expression(mut expression_node, _) = possible_expression.unwrap() {
+                    if let ASTNodeSymbolTable::Expression(mut expression_node, _) =
+                        possible_expression.unwrap()
+                    {
                         error_vec.extend(self.visit_expression(&mut expression_node));
                         shape_tuple_node.set_expression(Some(expression_node.clone()));
                     } else {
@@ -696,10 +693,10 @@ fn create_error(
 }
 
 /// Obtiene la lista de fields que pueden ser accedidos desde una Expression
-/// 
+///
 /// # Parámetros
 /// * `expression_node` - El nodo Expression del AST al cual se quieren asociar los fields
-/// 
+///
 /// # Retorna
 /// Un vector con los nodos Field que pueden ser accedidos desde la Expression
 fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNode> {
@@ -752,11 +749,11 @@ fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNod
 }
 
 /// Obtiene la intersección de 2 vectores de nodos Field, es decir, los nodos Field que se encuentran en ambos vectores
-/// 
+///
 /// # Parámetros
 /// * `vec1` - El primer vector de nodos Field
 /// * `vec2` - El segundo vector de nodos Field
-/// 
+///
 /// # Retorna
 /// Un vector de nodos Field que contiene la intersección de los 2 vectores pasados como parámetros
 fn get_fields_intersection(vec1: Vec<FieldASTNode>, vec2: Vec<FieldASTNode>) -> Vec<FieldASTNode> {

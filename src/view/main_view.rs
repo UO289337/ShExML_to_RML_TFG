@@ -20,27 +20,29 @@ pub trait View {
 }
 
 /// Struct que contiene la opción de vista seleccionada por el usuario
-pub struct ViewOption{
+pub struct ViewOption {
     view_option: Box<dyn View>,
 }
 
 impl ViewOption {
     /// Crea una nuevo struct de opción de vista con una opción
-    /// 
+    ///
     /// # Parámetros
     /// * `option` - La opción de vista escogida
-    /// 
+    ///
     /// # Retorna
     /// Un struct ViewOption
     pub fn new(option: Box<dyn View>) -> Self {
-        Self { view_option: option }
+        Self {
+            view_option: option,
+        }
     }
 
     /// Permite seleccionar un fichero ShExML y devuelve su contenido
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct ViewOption
-    /// 
+    ///
     /// # Retorna
     /// Un Option que puede contener el contenido del fichero de entrada ShExML
     pub fn input(&self) -> Option<String> {
@@ -48,7 +50,7 @@ impl ViewOption {
     }
 
     /// Muestra que se ha generado correctamente el fichero RML
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct ViewOption
     pub fn show_correct_generation(&self) {
@@ -56,10 +58,10 @@ impl ViewOption {
     }
 
     /// Selecciona un fichero de salida RML
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct ViewOption
-    /// 
+    ///
     /// # Retorna
     /// Un Result con el nombre del fichero de salida RML o con un Error
     pub fn select_output_file(&self) -> Result<String, Error> {
@@ -67,7 +69,7 @@ impl ViewOption {
     }
 
     /// Muestra los errores encontrados durante la compilación
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio struct ViewOption
     /// * `errors` - El vector con los errores de compilación
@@ -77,14 +79,19 @@ impl ViewOption {
 }
 
 /// Selecciona una opción de vista dependiendo de la entrada del usuario
-/// 
+///
 /// # Parámetros
 /// * `arg` - Los argumentos pasados por línea de comandos por el usuario
-/// 
+///
 /// # Retorna
 /// La opción de vista seleccionada
 pub fn select_view(arg: &String) -> ViewOption {
-    let graphic_options = vec![String::from("-g"), String::from("-G"), String::from("-graphic"), String::from("--Graphic")];
+    let graphic_options = vec![
+        String::from("-g"),
+        String::from("-G"),
+        String::from("-graphic"),
+        String::from("--Graphic"),
+    ];
 
     if graphic_options.contains(arg) {
         ViewOption::new(Box::new(GraphicView))
@@ -117,10 +124,10 @@ pub fn check_file_extension(file: &String) -> Result<String, Error> {
 }
 
 /// Concatena todos los errores de compilación detectados en una cadena
-/// 
+///
 /// # Parámetros
 /// * `errors` - Vector con los errores de compilación
-/// 
+///
 /// # Retorna
 /// Una cadena con todos los errores de compilación
 pub fn get_errors_message(errors: Vec<CompilerError>) -> String {

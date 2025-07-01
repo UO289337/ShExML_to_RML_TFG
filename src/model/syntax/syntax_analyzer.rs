@@ -682,10 +682,7 @@ fn single_expression_parser() -> impl Parser<Token, ExpressionASTNode, Error = S
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn union_access_parser() -> impl Parser<
-    Token, AccessASTNode,
-    Error = Simple<Token>,
-> {
+fn union_access_parser() -> impl Parser<Token, AccessASTNode, Error = Simple<Token>> {
     union_parser()
         .ignore_then(access_parser(UNION))
         .map(|access| access)
@@ -1743,7 +1740,11 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_union() {
-        let actual = union_parser().parse(vec![Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon)]);
+        let actual = union_parser().parse(vec![Token::create_test_token(
+            SEMICOLON,
+            1,
+            TokenType::SemiColon,
+        )]);
         check_error(actual);
     }
 

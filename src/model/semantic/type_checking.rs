@@ -8,10 +8,9 @@ use std::collections::HashMap;
 use crate::compiler_error::CompilerError;
 use crate::model::ast::ExpressionType;
 use crate::model::{
-    ast::{nodes::*, IdentOrAccess, SourceOrExpression, Type, ManageType},
+    ast::{nodes::*, IdentOrAccess, ManageType, SourceOrExpression, Type},
     visitor::Visitor,
 };
-
 
 #[derive(Debug, PartialEq, Clone, Eq)]
 enum ASTNodeTypeChecking {
@@ -152,7 +151,10 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
             }
         }
 
-        self.insert(source_node.get_identifier(), ASTNodeTypeChecking::Source(source_node.clone()));
+        self.insert(
+            source_node.get_identifier(),
+            ASTNodeTypeChecking::Source(source_node.clone()),
+        );
 
         error_vec
     }
@@ -188,18 +190,17 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
         });
 
         match iterator_node.get_iterator_access() {
-            crate::model::ast::IteratorAccess::Ident(_) => {
-                iterator_node.set_type(Type::Database)
-            }
+            crate::model::ast::IteratorAccess::Ident(_) => iterator_node.set_type(Type::Database),
             crate::model::ast::IteratorAccess::SqlQuery(_) => {
                 iterator_node.set_type(Type::Database)
             }
-            crate::model::ast::IteratorAccess::CsvPerRow(_) => {
-                iterator_node.set_type(Type::CSV)
-            }
+            crate::model::ast::IteratorAccess::CsvPerRow(_) => iterator_node.set_type(Type::CSV),
         }
 
-        self.insert(iterator_node.get_identifier(), ASTNodeTypeChecking::Iterator(iterator_node.clone()));
+        self.insert(
+            iterator_node.get_identifier(),
+            ASTNodeTypeChecking::Iterator(iterator_node.clone()),
+        );
 
         error_vec
     }
@@ -237,6 +238,17 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                 error_vec.extend(self.visit_access(access));
             });
 
+        if expression_node.get_expression_expr_type() == ExpressionType::UNION {
+            let first_access = expression_node.get_accesses().get(0).unwrap().clone();
+            let second_access = expression_node.get_accesses().get(1).unwrap().clone();
+
+            if (first_access.get_field().is_none() && second_access.get_field().is_some())
+                || (first_access.get_field().is_some() && second_access.get_field().is_none())
+            {
+                error_vec.push(Some(CompilerError::new(format!("No se puede hacer la UNION de un iterador y un campo en la expresión de la línea {}", expression_node.get_position().get_num_line()))));
+            }
+        }
+
         error_vec
     }
 
@@ -260,13 +272,14 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                 error_vec.extend(self.visit_access(access));
             }
             IdentOrAccess::Ident(_) => {
-                error_vec.extend(self.visit_expression(shape_node.get_mut_expression().as_mut().unwrap()));
-            },
+                error_vec.extend(
+                    self.visit_expression(shape_node.get_mut_expression().as_mut().unwrap()),
+                );
+            }
         }
 
         error_vec
     }
-
 
     /// Realiza la visita a un nodo tupla de la Shape del AST
     ///
@@ -319,7 +332,9 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                         access_node.set_type(source.get_type().unwrap());
                     }
                     // Hay que cambiar el Source que hay por el nuevo, que tiene el tipo
-                    access_node.set_source_or_expression(Some(SourceOrExpression::Source(source.get_source().unwrap())));
+                    access_node.set_source_or_expression(Some(SourceOrExpression::Source(
+                        source.get_source().unwrap(),
+                    )));
                 }
             }
             SourceOrExpression::Expression(mut expression_node) => {
@@ -330,7 +345,12 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                     .unwrap()
                     .contains(&field_access)
                     || (expression_node.get_expression_expr_type() == ExpressionType::BASIC
-                        && expression_node.get_accesses().get(0).unwrap().get_field().is_some())
+                        && expression_node
+                            .get_accesses()
+                            .get(0)
+                            .unwrap()
+                            .get_field()
+                            .is_some())
                 {
                     error_vec.push(Some(CompilerError::new(format!(
                         "No se puede acceder al campo '{}' en el acceso de la tupla de la línea {}",
@@ -338,11 +358,16 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                         access_node.get_position().get_num_line()
                     ))));
                 }
-                expression_node.get_accesses().iter_mut().for_each(|access| {
-                    error_vec.extend(self.visit_access(access));
-                });
+                expression_node
+                    .get_accesses()
+                    .iter_mut()
+                    .for_each(|access| {
+                        error_vec.extend(self.visit_access(access));
+                    });
                 // Hay que cambiar el Expression que hay por el nuevo, que tiene el tipo
-                access_node.set_source_or_expression(Some(SourceOrExpression::Expression(expression_node)));
+                access_node.set_source_or_expression(Some(SourceOrExpression::Expression(
+                    expression_node,
+                )));
             }
         }
 
@@ -351,13 +376,13 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
 }
 
 /// Comprueba que la extensión del fichero utilizado sea CSV
-/// 
+///
 /// # Parámetros
 /// * `source_node` - El nodo Source en el que se encuentra la URI o Path al fichero
 /// * `file` - El fichero
 /// * `source_definition_type` - El tipo de Source Definition (URI o Path); se utiliza para personalizar el mensaje de error
 /// * `error_vec` - El vector de errores de la fase de Type Checking
-/// 
+///
 /// # Retorna
 /// true si el tipo del fichero es CSV o false en caso contrario
 fn check_csv_file_extension(
@@ -377,12 +402,12 @@ fn check_csv_file_extension(
 }
 
 /// Comprueba que la base de datos de la JDBC URL está dentro de los permitidos: PostgreSQL, MySQL, SQLite, SQLServer y Oracle
-/// 
+///
 /// # Parámetros
 /// * `source_node` - El nodo Source en el que se encuentra la JDBC URL
 /// * `jdbc_url` - La URL JDBC del Source
 /// * `error_vec` - El vector de errores de la fase de Type Checking
-/// 
+///
 /// # Retorna
 /// true si la base de datos está dentro de las permitidas o false en caso contrario
 fn check_database(

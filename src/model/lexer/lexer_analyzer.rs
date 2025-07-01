@@ -8,8 +8,8 @@ use winnow::error::{AddContext, ContextError, ErrMode, StrContext};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
 
-use crate::compiler_error::CompilerError;
 use super::token::*;
+use crate::compiler_error::CompilerError;
 
 use regex::Regex;
 
@@ -953,7 +953,6 @@ mod lexer_tests {
         let actual = union(&mut "FIELD");
         check_error(actual);
     }
- 
 
     /// Comprueba que se detecta el token SqlType
     #[doc(hidden)]

@@ -1,6 +1,9 @@
 //! Módulo de la vista gráfica
 
-use std::{io::{Error, ErrorKind}, path::Path};
+use std::{
+    io::{Error, ErrorKind},
+    path::Path,
+};
 
 use tinyfiledialogs::message_box_ok;
 
@@ -11,10 +14,10 @@ pub struct GraphicView;
 
 impl View for GraphicView {
     /// Permite seleccionar un fichero ShExML y devuelve su contenido
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - La propia vista gráfica
-    /// 
+    ///
     /// # Retorna
     /// Un Option que puede contener el contenido del fichero de entrada ShExML
     fn input(&self) -> Option<String> {
@@ -31,16 +34,18 @@ impl View for GraphicView {
     }
 
     /// Permite seleccionar un fichero ShExML mediante CLI
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - La propia vista gráfica
-    /// 
+    ///
     /// # Retorna
     /// Un Result que puede contener el String con el contenido del fichero o un Error
     fn input_shexml_file(&self) -> Result<String, Error> {
-        if let Some(file) =
-            tinyfiledialogs::open_file_dialog("Selecciona un fichero ShExML", "document.shexml", None)
-        {
+        if let Some(file) = tinyfiledialogs::open_file_dialog(
+            "Selecciona un fichero ShExML",
+            "document.shexml",
+            None,
+        ) {
             check_file_extension(&file)
         } else {
             Err(Error::new(
@@ -51,7 +56,7 @@ impl View for GraphicView {
     }
 
     /// Muestra, en un diálogo, que se ha generado correctamente el fichero RML
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - La propia vista gráfica
     fn show_correct_generation(&self) {
@@ -63,7 +68,7 @@ impl View for GraphicView {
     }
 
     /// Muestra, en un diálogo, los errores encontrados durante la compilación
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - La propia vista gráfica
     /// * `errors` - El vector con los errores de compilación
@@ -74,12 +79,12 @@ impl View for GraphicView {
             tinyfiledialogs::MessageBoxIcon::Error,
         );
     }
-    
+
     /// Selecciona un fichero de salida RML
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - La propia vista gráfica
-    /// 
+    ///
     /// # Retorna
     /// Un Result con el nombre del fichero de salida RML o con un Error
     fn select_output_file(&self) -> Result<String, Error> {
@@ -93,14 +98,14 @@ impl View for GraphicView {
                 return Ok(file_name.to_string_lossy().to_string());
             } else {
                 Err(Error::new(
-                ErrorKind::Other,
-                "Nombre del fichero RML incorrecto",
+                    ErrorKind::Other,
+                    "Nombre del fichero RML incorrecto",
                 ))
             }
         } else {
             Err(Error::new(
-            ErrorKind::Other,
-            "Error al crear el fichero RML",
+                ErrorKind::Other,
+                "Error al crear el fichero RML",
             ))
         }
     }

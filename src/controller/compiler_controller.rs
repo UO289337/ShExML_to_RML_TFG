@@ -8,12 +8,12 @@ use std::env;
 
 use chumsky::error::SimpleReason;
 
-use crate::model;
 use crate::compiler_error::CompilerError;
+use crate::model;
 use crate::model::ast::AST;
 use crate::model::lexer::token::Token;
-use crate::view::main_view::ViewOption;
 use crate::view;
+use crate::view::main_view::ViewOption;
 
 /// Ejecuta el compilador
 pub fn run() {
@@ -30,7 +30,7 @@ pub fn run() {
 }
 
 /// Ejecuta el analizador léxico del compilador
-/// 
+///
 /// # Parámetros
 /// * `view` - La vista utilizada
 /// * `file_content` - El contenido del fichero ShExML de entrada
@@ -76,7 +76,7 @@ fn run_semantic_analyzer(view: ViewOption, ast: &mut AST) {
 }
 
 /// Ejecuta el generador de RML
-/// 
+///
 /// # Parámetros
 /// * `view` - La vista utilizada
 /// * `astg` - El AST decorado resultado del análisis semántico
@@ -87,19 +87,21 @@ fn run_rml_generator(view: ViewOption, ast: &mut AST) {
         Ok(output_file) => {
             model::generator::rml_generator::rml_generator(ast, output_file);
             view.show_correct_generation();
-        },
+        }
         Err(error) => panic!("Error: {}", error),
     }
 }
 
 /// Transforma errores Simple de chumsky en errores del compilador
-/// 
+///
 /// # Parámetros
 /// * `sintax_errors` - Errores del analizador sintáctico de chumsky
-/// 
+///
 /// # Retorna
 /// Un vector con los errores del compilador
-fn trasnform_to_compiler_error(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) -> Vec<CompilerError> {
+fn trasnform_to_compiler_error(
+    sintax_errors: Vec<chumsky::prelude::Simple<Token>>,
+) -> Vec<CompilerError> {
     let mut errors = Vec::new();
 
     for error in sintax_errors {

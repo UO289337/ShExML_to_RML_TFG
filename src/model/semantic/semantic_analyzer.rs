@@ -58,7 +58,7 @@ fn type_checking_phase(ast: &mut AST) -> Vec<Option<CompilerError>> {
 }
 
 /// Elimina errores duplicados de un vector de errores
-/// 
+///
 /// # Parámetros
 /// * `error_vec` - La referencia mutable al vector de Options con los errores
 fn eliminate_duplicate_errors(error_vec: &mut Vec<Option<CompilerError>>) {
@@ -70,10 +70,10 @@ fn eliminate_duplicate_errors(error_vec: &mut Vec<Option<CompilerError>>) {
 }
 
 /// Comprueba que todos los errores de un vector de errores sean None
-/// 
+///
 /// # Parámetros
 /// * `error_vec` - El vector con los Options de los errores
-/// 
+///
 /// # Retorna
 /// true si no hay errores y false en caso contrario
 fn all_errors_none(error_vec: &Vec<Option<CompilerError>>) -> bool {
@@ -265,14 +265,12 @@ mod identification_tests {
         let identifier = Token::create_test_token("films_csv_file", 13, TokenType::Ident);
         let first_access = Token::create_test_token("films_csv", 13, TokenType::Ident);
         let second_access = Token::create_test_token("id", 13, TokenType::Ident);
-        let accesses1 = vec![
-            AccessASTNode::new(
-                identifier.clone(),
-                first_access,
-                Some(second_access.clone()),
-                Position::new(identifier.get_num_line()),
-            )
-        ];
+        let accesses1 = vec![AccessASTNode::new(
+            identifier.clone(),
+            first_access,
+            Some(second_access.clone()),
+            Position::new(identifier.get_num_line()),
+        )];
 
         let identifier = Token::create_test_token("films_ids", 13, TokenType::Ident);
 
@@ -282,7 +280,6 @@ mod identification_tests {
             accesses1,
             Position::new(identifier.get_num_line()),
         )];
-
 
         let identifier = Token::create_test_token("films_csv_file", 14, TokenType::Ident);
         let first_access1 = Token::create_test_token("films_csv", 14, TokenType::Ident);
