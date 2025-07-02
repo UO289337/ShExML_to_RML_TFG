@@ -573,7 +573,7 @@ impl Visitor<String> for Generator {
             shape_generation.push_str(format!("\t{RR_TEMPLATE}\t\t\t").as_str());
 
             let field_prefix = shape_node.get_field_prefix().unwrap().get_uri();
-            let field_identifier;
+            let mut field_identifier;
 
             if access.as_ref().unwrap().get_field().is_some() {
                 field_identifier = access
@@ -589,6 +589,10 @@ impl Visitor<String> for Generator {
                     .get_iterator()
                     .unwrap()
                     .get_identifier();
+            }
+
+            if field_identifier.starts_with('@') {
+                field_identifier.remove(0);
             }
 
             shape_generation
