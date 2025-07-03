@@ -21,7 +21,7 @@ pub trait View {
 
 /// Struct que contiene la opción de vista seleccionada por el usuario
 pub struct ViewOption {
-    view_option: Box<dyn View>,
+    option: Box<dyn View>,
 }
 
 impl ViewOption {
@@ -34,47 +34,19 @@ impl ViewOption {
     /// Un struct ViewOption
     pub fn new(option: Box<dyn View>) -> Self {
         Self {
-            view_option: option,
+            option,
         }
     }
 
-    /// Permite seleccionar un fichero ShExML y devuelve su contenido
+    /// Devuelve la opción de la vista escogida por el usuario
     ///
     /// # Parámetros
     /// * `self` - El propio struct ViewOption
     ///
     /// # Retorna
-    /// Un Option que puede contener el contenido del fichero de entrada ShExML
-    pub fn input(&self) -> Option<String> {
-        self.view_option.input()
-    }
-
-    /// Muestra que se ha generado correctamente el fichero RML
-    ///
-    /// # Parámetros
-    /// * `self` - El propio struct ViewOption
-    pub fn show_correct_generation(&self) {
-        self.view_option.show_correct_generation();
-    }
-
-    /// Selecciona un fichero de salida RML
-    ///
-    /// # Parámetros
-    /// * `self` - El propio struct ViewOption
-    ///
-    /// # Retorna
-    /// Un Result con el nombre del fichero de salida RML o con un Error
-    pub fn select_output_file(&self) -> Result<String, Error> {
-        self.view_option.select_output_file()
-    }
-
-    /// Muestra los errores encontrados durante la compilación
-    ///
-    /// # Parámetros
-    /// * `self` - El propio struct ViewOption
-    /// * `errors` - El vector con los errores de compilación
-    pub fn show_errors(&self, errors: Vec<CompilerError>) {
-        self.view_option.show_errors(errors);
+    /// La vista seleccionada por el usuario
+    pub fn get_option(&self) -> &dyn View {
+        self.option.as_ref()
     }
 }
 

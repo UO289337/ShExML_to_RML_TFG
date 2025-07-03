@@ -4,7 +4,7 @@ use shexml_to_rml_tfg::model;
 
 /// Módulo con los tests de integración del analizador léxico, del analizador sintáctico y del analizador semántico
 #[cfg(test)]
-mod integration_lexer_syntax_analyzers_tests {
+mod integration_test {
 
     use super::*;
 

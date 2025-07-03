@@ -20,7 +20,7 @@ pub fn run() {
     let args: Vec<String> = env::args().collect();
 
     let view = view::main_view::select_view(&args[1]);
-    let file_content = view.input();
+    let file_content = view.get_option().input();
 
     if file_content.is_some() {
         run_lexer_analyzer(view, file_content.unwrap());
@@ -40,7 +40,7 @@ pub fn run_lexer_analyzer(view: ViewOption, file_content: String) {
             run_sintax_analyzer(view, tokens);
         }
         Err(parser_errors) => {
-            view.show_errors(parser_errors);
+            view.get_option().show_errors(parser_errors);
         }
     };
 }
@@ -56,7 +56,7 @@ fn run_sintax_analyzer(view: ViewOption, tokens: Vec<Token>) {
             run_semantic_analyzer(view, &mut ast);
         }
         Err(e) => {
-            view.show_errors(trasnform_to_compiler_error(e));
+            view.get_option().show_errors(transform_to_compiler_error(e));
         }
     }
 }
@@ -71,7 +71,7 @@ fn run_semantic_analyzer(view: ViewOption, ast: &mut AST) {
     if semantic_errors.is_empty() {
         run_rml_generator(view, ast);
     } else {
-        view.show_errors(semantic_errors);
+        view.get_option().show_errors(semantic_errors);
     }
 }
 
@@ -81,12 +81,12 @@ fn run_semantic_analyzer(view: ViewOption, ast: &mut AST) {
 /// * `view` - La vista utilizada
 /// * `astg` - El AST decorado resultado del análisis semántico
 fn run_rml_generator(view: ViewOption, ast: &mut AST) {
-    let output_file = view.select_output_file();
+    let output_file = view.get_option().select_output_file();
 
     match output_file {
         Ok(output_file) => {
             model::generator::rml_generator::rml_generator(ast, output_file);
-            view.show_correct_generation();
+            view.get_option().show_correct_generation();
         }
         Err(error) => panic!("Error: {}", error),
     }
@@ -99,7 +99,7 @@ fn run_rml_generator(view: ViewOption, ast: &mut AST) {
 ///
 /// # Retorna
 /// Un vector con los errores del compilador
-fn trasnform_to_compiler_error(
+fn transform_to_compiler_error(
     sintax_errors: Vec<chumsky::prelude::Simple<Token>>,
 ) -> Vec<CompilerError> {
     let mut errors = Vec::new();

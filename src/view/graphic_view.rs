@@ -42,7 +42,7 @@ impl View for GraphicView {
     /// Un Result que puede contener el String con el contenido del fichero o un Error
     fn input_shexml_file(&self) -> Result<String, Error> {
         if let Some(file) = tinyfiledialogs::open_file_dialog(
-            "Selecciona un fichero ShExML",
+            "Seleccione un fichero ShExML",
             "document.shexml",
             None,
         ) {
