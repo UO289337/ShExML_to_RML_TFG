@@ -17,7 +17,7 @@ mod integration_test {
             SOURCE films_csv_ast <https://shexml.herminiogarcia.com/asts/films.csv>
             QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
-                FIELD id <@id>
+                FIELD id <id>
                 FIELD name <name>
                 FIELD year <year>
                 FIELD country <country>
@@ -66,7 +66,7 @@ mod integration_test {
             SOURCE films_csv_ast <https://shexml.herminiogarcia.com/asts/films.csv>
             QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
-                FIELD id <@id>
+                FIELD id <id>
                 FIELD name <name>
                 FIELD year <year>
                 FIELD country <country>
@@ -92,7 +92,7 @@ mod integration_test {
             SOURCE <https://shexml.herminiogarcia.com/asts/films.csv>
             QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
-                FIELD id <@id>
+                FIELD id <id>
                 FIELD name <name>
                 FIELD year <year>
                 FIELD country <country>
@@ -125,7 +125,7 @@ mod integration_test {
             SOURCE films_csv <https://shexml.herminiogarcia.com/asts/films.csv>
             QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
-                FIELD id <@id>
+                FIELD id <id>
                 FIELD name <name>
                 FIELD year <year>
                 FIELD country <country>

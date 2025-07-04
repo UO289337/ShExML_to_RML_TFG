@@ -4,7 +4,7 @@ PREFIX dbr: <http://dbpedia.org/resource/>
 SOURCE films_csv <films.csv>
 
 ITERATOR film_data <csvperrow> {
-  FIELD id <@id>
+  FIELD id <id>
   FIELD name <name>
   FIELD year <year>
   FIELD country <country>

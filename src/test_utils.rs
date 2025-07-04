@@ -109,7 +109,7 @@ impl TestUtilities {
         iterator
     }
 
-    /// Crea los tokens necesarios para tener un Field con un KeyIdentifier correcto desde el punto de vista sintáctico
+    /// Crea los tokens necesarios para tener un Field con un Ident correcto desde el punto de vista sintáctico
     ///
     /// # Parámetros
     /// * `num_line` - El número de línea donde está el Field
@@ -121,7 +121,7 @@ impl TestUtilities {
             Token::create_test_token(FIELD, num_line, TokenType::Field),
             Token::create_test_token("id", num_line, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
-            Token::create_test_token("@id", num_line, TokenType::KeyIdentifier),
+            Token::create_test_token("id", num_line, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, num_line, TokenType::RightAngleBracket),
         ]
     }
@@ -140,7 +140,7 @@ impl TestUtilities {
                 Token::create_test_token(FIELD, num_line, TokenType::Field),
                 Token::create_test_token(ident, num_line, TokenType::Ident),
                 Token::create_test_token(LEFT_ANGLE_BRACKET, num_line, TokenType::LeftAngleBracket),
-                Token::create_test_token(ident, num_line, TokenType::KeyIdentifier),
+                Token::create_test_token(ident, num_line, TokenType::Ident),
                 Token::create_test_token(
                     RIGHT_ANGLE_BRACKET,
                     num_line,
@@ -312,7 +312,7 @@ impl TestUtilities {
         let fields = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", num_line + 1, TokenType::Ident),
-                Token::create_test_token("@id", num_line + 1, TokenType::KeyIdentifier),
+                Token::create_test_token("id", num_line + 1, TokenType::Ident),
                 Position::new(num_line + 1),
             ),
             FieldASTNode::new(

@@ -212,7 +212,7 @@ mod identification_tests {
         let fields1 = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 6, TokenType::Ident),
-                Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+                Token::create_test_token("id", 6, TokenType::Ident),
                 Position::new(6),
             ),
             FieldASTNode::new(
@@ -229,7 +229,7 @@ mod identification_tests {
         let fields2 = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 10, TokenType::Ident),
-                Token::create_test_token("@id", 10, TokenType::KeyIdentifier),
+                Token::create_test_token("id", 10, TokenType::Ident),
                 Position::new(10),
             ),
             FieldASTNode::new(
@@ -403,7 +403,7 @@ mod identification_tests {
         let fields = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 6, TokenType::Ident),
-                Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+                Token::create_test_token("id", 6, TokenType::Ident),
                 Position::new(6),
             ),
             FieldASTNode::new(
@@ -534,7 +534,7 @@ mod identification_tests {
         let fields = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 6, TokenType::Ident),
-                Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+                Token::create_test_token("id", 6, TokenType::Ident),
                 Position::new(6),
             ),
             FieldASTNode::new(
@@ -793,7 +793,7 @@ mod type_checking_tests {
         let fields = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 5, TokenType::Ident),
-                Token::create_test_token("@id", 5, TokenType::KeyIdentifier),
+                Token::create_test_token("id", 5, TokenType::Ident),
                 Position::new(5),
             ),
             FieldASTNode::new(
@@ -863,7 +863,7 @@ mod type_checking_tests {
         let fields1 = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 6, TokenType::Ident),
-                Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+                Token::create_test_token("id", 6, TokenType::Ident),
                 Position::new(6),
             ),
             FieldASTNode::new(
@@ -880,7 +880,7 @@ mod type_checking_tests {
         let fields2 = vec![
             FieldASTNode::new(
                 Token::create_test_token("id", 10, TokenType::Ident),
-                Token::create_test_token("@id", 10, TokenType::KeyIdentifier),
+                Token::create_test_token("id", 10, TokenType::Ident),
                 Position::new(10),
             ),
             FieldASTNode::new(

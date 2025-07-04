@@ -27,26 +27,6 @@ map:o_2  a				rr:objectMap ;
 	rr:template			"{year}" ;
 	rr:termType			rr:Literal .
 
-map:po_1 a				rr:predicateObjectMap ;
-	rr:objectMap		map:o_1 ;
-	rr:predicateMap		map:r_1 .
-
-map:po_2 a				rr:predicateObjectMap ;
-	rr:objectMap		map:o_2 ;
-	rr:predicateMap		map:r_2 .
-
-map:m_1	 a					rr:TriplesMap ;
-	rml:logicalSource		map:l_1 ;
-	rr:predicateObjectMap	map:po_1, map:po_2 ;
-	rr:subjectMap			map:s_1 .
-
-map:l_2  a				rml:logicalSource ;
-	rml:referenceFormulation	ql:CSV ; 
-	rml:source			"films.csv" .
-
-map:s_2  a				rr:subjectMap ;
-	rr:template			"http://example.com/{id}" .
-
 map:r_3  a				rr:predicateMap ;
 	rr:constant			:country .
 
@@ -61,6 +41,14 @@ map:o_4  a				rr:objectMap ;
 	rr:template			"http://dbpedia.org/resource/{director}" ;
 	rr:termType			rr:IRI .
 
+map:po_1 a				rr:predicateObjectMap ;
+	rr:objectMap		map:o_1 ;
+	rr:predicateMap		map:r_1 .
+
+map:po_2 a				rr:predicateObjectMap ;
+	rr:objectMap		map:o_2 ;
+	rr:predicateMap		map:r_2 .
+
 map:po_3 a				rr:predicateObjectMap ;
 	rr:objectMap		map:o_3 ;
 	rr:predicateMap		map:r_3 .
@@ -69,9 +57,9 @@ map:po_4 a				rr:predicateObjectMap ;
 	rr:objectMap		map:o_4 ;
 	rr:predicateMap		map:r_4 .
 
-map:m_2	 a					rr:TriplesMap ;
-	rml:logicalSource		map:l_2 ;
-	rr:predicateObjectMap	map:po_3, map:po_4 ;
-	rr:subjectMap			map:s_2 .
+map:m_1	 a					rr:TriplesMap ;
+	rml:logicalSource		map:l_1 ;
+	rr:predicateObjectMap	map:po_1, map:po_2, map:po_3, map:po_4 ;
+	rr:subjectMap			map:s_1 .
 
 
