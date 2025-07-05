@@ -1,8 +1,6 @@
 PREFIX : <http://example.com/>
 PREFIX dbr: <http://dbpedia.org/resource/>
-
 SOURCE films_csv <films.csv>
-
 ITERATOR film_data <csvperrow> {
   FIELD id <id>
   FIELD name <name>
@@ -10,14 +8,11 @@ ITERATOR film_data <csvperrow> {
   FIELD country <country>
   FIELD director <director>
 }
-
 EXPRESSION films <films_csv.film_data>
-
 :Film :[films.id] {
   :name [films.name] ;
   :year [films.year] ;
 }
-
 :Metadata :[films.id] {
   :country dbr:[films.country] ;
   :director dbr:[films.director] ;
