@@ -10,6 +10,17 @@ map:l_1  a				rml:logicalSource ;
 	rml:referenceFormulation	ql:CSV ; 
 	rml:source			"films.csv" .
 
+map:l_2  a				rml:logicalSource ;
+	rml:query			"SELECT * FROM example;" ; 
+	rml:source			map:db_1 ;
+	rr:sqlVersion		rr:SQL2008 .
+
+map:db_1  a				"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database" ;
+	d2rq:jdbcDSN		"jdbc:mysql://localhost:3306/mydb" ;
+	d2rq:jdbcDriver		"com.mysql.cj.jdbc.Driver" ;
+	d2rq:password		"" ;
+	d2rq:username		"" .
+
 map:s_1  a				rr:subjectMap ;
 	rr:template			"http://example.com/{id}" .
 
@@ -61,5 +72,57 @@ map:m_1	 a					rr:TriplesMap ;
 	rml:logicalSource		map:l_1 ;
 	rr:predicateObjectMap	map:po_1, map:po_2, map:po_3, map:po_4 ;
 	rr:subjectMap			map:s_1 .
+
+map:s_2  a				rr:subjectMap ;
+	rr:template			"http://example.com/{id}" .
+
+map:r_5  a				rr:predicateMap ;
+	rr:constant			:name .
+
+map:o_5  a				rr:objectMap ;
+	rr:template			"{name}" ;
+	rr:termType			rr:Literal .
+
+map:r_6  a				rr:predicateMap ;
+	rr:constant			:year .
+
+map:o_6  a				rr:objectMap ;
+	rr:template			"{year}" ;
+	rr:termType			rr:Literal .
+
+map:r_7  a				rr:predicateMap ;
+	rr:constant			:country .
+
+map:o_7  a				rr:objectMap ;
+	rr:template			"http://dbpedia.org/resource/{country}" ;
+	rr:termType			rr:IRI .
+
+map:r_8  a				rr:predicateMap ;
+	rr:constant			:director .
+
+map:o_8  a				rr:objectMap ;
+	rr:template			"http://dbpedia.org/resource/{director}" ;
+	rr:termType			rr:IRI .
+
+map:po_5 a				rr:predicateObjectMap ;
+	rr:objectMap		map:o_5 ;
+	rr:predicateMap		map:r_5 .
+
+map:po_6 a				rr:predicateObjectMap ;
+	rr:objectMap		map:o_6 ;
+	rr:predicateMap		map:r_6 .
+
+map:po_7 a				rr:predicateObjectMap ;
+	rr:objectMap		map:o_7 ;
+	rr:predicateMap		map:r_7 .
+
+map:po_8 a				rr:predicateObjectMap ;
+	rr:objectMap		map:o_8 ;
+	rr:predicateMap		map:r_8 .
+
+map:m_2	 a					rr:TriplesMap ;
+	rml:logicalSource		map:l_2 ;
+	rr:predicateObjectMap	map:po_5, map:po_6, map:po_7, map:po_8 ;
+	rr:subjectMap			map:s_2 .
 
 

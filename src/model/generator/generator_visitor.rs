@@ -651,10 +651,16 @@ fn generate_csv_logical_source(source_node: &mut SourceASTNode) -> String {
         .push_str(format!("ql:{} ; \n", source_node.get_type().unwrap().to_string()).as_str());
 
     source_generation.push_str(format!("\t{RML_SOURCE}\t\t\t").as_str());
+    let mut source_definition = source_node.get_source_definition().to_string();
+
+    if source_definition.starts_with("file://") {
+        source_definition = source_definition.strip_prefix("file://").unwrap().to_string();
+    }
+
     source_generation.push_str(
         format!(
             "\"{}\" .\n\n",
-            source_node.get_source_definition().to_string()
+            source_definition
         )
         .as_str(),
     );
