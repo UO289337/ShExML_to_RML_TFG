@@ -45,3 +45,6 @@ El compilador no acepta todas las características de ShExML. A continuación, s
 * Iteradores sobre CSV o bases de datos, sin anidamientos
 * Expresiones básicas o con UNION
 * Shapes sin anidamientos
+
+### Notas
+El fichero CSV que se incluye es de ejemplo para que se vea como sería un fichero real en el caso de que se mapeara directamente a datos RDF
