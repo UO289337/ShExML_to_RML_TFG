@@ -15,7 +15,6 @@ pub enum TokenType {
     SqlType,
     CsvPerRow,
     Ident,
-    KeyIdentifier,
     Uri,
     JdbcUrl,
     Path,

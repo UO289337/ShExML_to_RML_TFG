@@ -22,7 +22,7 @@ map:db_1  a				"http://www.wiwiss.fu-berlin.de/suhl/bizer/D2RQ/0.1#Database" ;
 	d2rq:username		"" .
 
 map:s_1  a				rr:subjectMap ;
-	rr:template			"http://example.com/{@id}" .
+	rr:template			"http://example.com/{id}" .
 
 map:r_1  a				rr:predicateMap ;
 	rr:constant			:name .
@@ -74,7 +74,7 @@ map:m_1	 a					rr:TriplesMap ;
 	rr:subjectMap			map:s_1 .
 
 map:s_2  a				rr:subjectMap ;
-	rr:template			"http://example.com/{@id}" .
+	rr:template			"http://example.com/{id}" .
 
 map:r_5  a				rr:predicateMap ;
 	rr:constant			:name .

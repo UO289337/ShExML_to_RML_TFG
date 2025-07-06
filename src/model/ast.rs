@@ -17,10 +17,10 @@ pub enum SourceDefinition {
 
 impl SourceDefinition {
     /// Obtiene el String que se encuentra en el Source Definition
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio Source Definition
-    /// 
+    ///
     /// # Retorna
     /// El String que se encuentra en el Source Definition
     pub fn to_string(&self) -> String {
@@ -101,10 +101,10 @@ pub trait ManageType {
 
 impl Type {
     /// Pasa el tipo a un String
-    /// 
+    ///
     /// # Parámetros
     /// * `self` - El propio tipo
-    /// 
+    ///
     /// # Retorna
     /// La representación, en String del tipo
     pub fn to_string(&self) -> String {
@@ -159,6 +159,11 @@ pub mod nodes {
     /// Trait para la fase de identificación
     pub trait Identifiable {
         fn get_identifier(&self) -> String;
+    }
+
+    pub trait ManageExpression {
+        fn get_expression(&self) -> Option<ExpressionASTNode>;
+        fn set_expression(&mut self, expression: Option<ExpressionASTNode>);
     }
 
     /// Trait para el manejo de prefijos
@@ -516,7 +521,7 @@ pub mod nodes {
         /// * `query` - El Option que contiene el nodo Query del AST que se quiere asociar al iterador
         pub fn set_query(&mut self, query: Option<QueryASTNode>) {
             self.query = query.clone();
-        } 
+        }
     }
 
     impl ManageType for IteratorASTNode {
@@ -850,7 +855,6 @@ pub mod nodes {
         /// El nodo Source o Expression del acceso
         pub fn get_source_or_expression(&self) -> Option<SourceOrExpression> {
             self.source_or_expression.clone()
-
         }
 
         /// Devuelve el nodo Source o Expression mutable del acceso
@@ -939,7 +943,7 @@ pub mod nodes {
         fn get_type(&self) -> Option<Type> {
             self.access_type.clone()
         }
-    
+
         /// Asocia el tipo del Access a este
         ///
         /// # Parámetros
@@ -979,7 +983,7 @@ pub mod nodes {
         // Fase Identificación
         prefix: Option<PrefixASTNode>,
         field_prefix: Option<PrefixASTNode>,
-        iterator: Option<IteratorASTNode>,
+        expression: Option<ExpressionASTNode>,
     }
 
     impl ShapeASTNode {
@@ -1015,7 +1019,7 @@ pub mod nodes {
                 tuples,
                 prefix: None,
                 field_prefix: None,
-                iterator: None,
+                expression: None,
                 position,
             }
         }
@@ -1108,13 +1112,35 @@ pub mod nodes {
             self.field_prefix.clone()
         }
 
-        /// Asocia un nodo Iterator del AST (el del campo) con la Shape
+        /// Devuelve el nodo Expression del campo de la Shape
         ///
         /// # Parámetros
         /// * `self` - El propio nodo Shape
-        /// * `iterator` - El nodo Iterator que se quiere asociar con la Shape
-        pub fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
-            self.iterator = iterator;
+        ///
+        /// # Retorna
+        /// El nodo Expression que se quiere asociar con la Shape
+        pub fn get_expression(&self) -> Option<ExpressionASTNode> {
+            self.expression.clone()
+        }
+
+        /// Devuelve el nodo Expression mutable del campo de la Shape
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Shape
+        ///
+        /// # Retorna
+        /// El nodo Expression mutable que se quiere asociar con la Shape
+        pub fn get_mut_expression(&mut self) -> &mut Option<ExpressionASTNode> {
+            &mut self.expression
+        }
+
+        /// Asocia un nodo Expression del AST (el del campo) con la Shape
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Shape
+        /// * `expression` - El nodo Expression que se quiere asociar con la Shape
+        pub fn set_expression(&mut self, expression: Option<ExpressionASTNode>) {
+            self.expression = expression;
         }
     }
 
@@ -1179,7 +1205,7 @@ pub mod nodes {
         // Fase Identificación
         prefix: Option<PrefixASTNode>,
         object_prefix: Option<PrefixASTNode>,
-        iterator: Option<IteratorASTNode>,
+        expression: Option<ExpressionASTNode>,
     }
 
     impl ShapeTupleASTNode {
@@ -1212,7 +1238,7 @@ pub mod nodes {
                 object,
                 prefix: None,
                 object_prefix: None,
-                iterator: None,
+                expression: None,
                 position,
             }
         }
@@ -1283,24 +1309,35 @@ pub mod nodes {
             self.object_prefix.clone()
         }
 
-        /// Devuelve el Option del nodo Iterator asociado con el objeto de la tupla de la Shape
+        /// Devuelve el nodo Expression del campo de la Shape
         ///
         /// # Parámetros
-        /// * `self` - El propio nodo ShapeTuple
+        /// * `self` - El propio nodo Shape
         ///
         /// # Retorna
-        /// El Option del nodo Iterator asociado con el objeto de la tupla de la Shape
-        pub fn get_iterator(&self) -> Option<IteratorASTNode> {
-            self.iterator.clone()
+        /// El nodo Expression que se quiere asociar con la Shape
+        pub fn get_expression(&self) -> Option<ExpressionASTNode> {
+            self.expression.clone()
         }
 
-        /// Asocia un nodo Iterator del AST (el del objeto) con la tupla de la Shape
+        /// Devuelve el nodo Expression mutable del campo de la Shape
         ///
         /// # Parámetros
-        /// * `self` - El propio nodo ShapeTuple
-        /// * `iterator` - El nodo Iterator que se quiere asociar con la tupla de la Shape
-        pub fn set_object_iterator(&mut self, iterator: Option<IteratorASTNode>) {
-            self.iterator = iterator;
+        /// * `self` - El propio nodo Shape
+        ///
+        /// # Retorna
+        /// El nodo Expression mutable que se quiere asociar con la Shape
+        pub fn get_mut_expression(&mut self) -> &mut Option<ExpressionASTNode> {
+            &mut self.expression
+        }
+
+        /// Asocia un nodo Expression del AST (el del campo) con la Shape
+        ///
+        /// # Parámetros
+        /// * `self` - El propio nodo Shape
+        /// * `expression` - El nodo Expression que se quiere asociar con la Shape
+        pub fn set_expression(&mut self, expression: Option<ExpressionASTNode>) {
+            self.expression = expression;
         }
     }
 

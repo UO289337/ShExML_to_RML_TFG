@@ -5,39 +5,70 @@
 use std::fs;
 use std::io::{Error, ErrorKind};
 use std::path::Path;
-use tinyfiledialogs::{self, message_box_ok};
 
-/// Permite al usuario indicar el fichero ShExML de entrada
-pub fn input() -> Option<String> {
-    let file_content = match input_shexml_file() {
-        Ok(content) => Some(content),
-        Err(error) => match error.kind() {
-            ErrorKind::InvalidInput => panic!("{}", error.to_string()),
-            ErrorKind::Interrupted => None,
-            _ => panic!("Error: {}", error.to_string()),
-        },
-    };
+use crate::compiler_error::CompilerError;
+use crate::view::cli_view::CliView;
+use crate::view::graphic_view::GraphicView;
 
-    check_input(file_content)
+/// Trait de la vista; patrón Strategy
+pub trait View {
+    fn input(&self) -> Option<String>;
+    fn input_shexml_file(&self) -> Result<String, Error>;
+    fn show_correct_generation(&self);
+    fn show_errors(&self, errors: Vec<CompilerError>);
+    fn select_output_file(&self) -> Result<String, Error>;
 }
 
-/// Abre un diálogo del sistema para que el usuario indique el fichero ShExML de entrada
+/// Struct que contiene la opción de vista seleccionada por el usuario
+pub struct ViewOption {
+    option: Box<dyn View>,
+}
+
+impl ViewOption {
+    /// Crea una nuevo struct de opción de vista con una opción
+    ///
+    /// # Parámetros
+    /// * `option` - La opción de vista escogida
+    ///
+    /// # Retorna
+    /// Un struct ViewOption
+    pub fn new(option: Box<dyn View>) -> Self {
+        Self {
+            option,
+        }
+    }
+
+    /// Devuelve la opción de la vista escogida por el usuario
+    ///
+    /// # Parámetros
+    /// * `self` - El propio struct ViewOption
+    ///
+    /// # Retorna
+    /// La vista seleccionada por el usuario
+    pub fn get_option(&self) -> &dyn View {
+        self.option.as_ref()
+    }
+}
+
+/// Selecciona una opción de vista dependiendo de la entrada del usuario
+///
+/// # Parámetros
+/// * `arg` - Los argumentos pasados por línea de comandos por el usuario
 ///
 /// # Retorna
-/// El contenido del fichero
-///
-/// # Errores
-/// Devuelve un `[Error]` en el caso de que no se seleccione ningún fichero
-fn input_shexml_file() -> Result<String, Error> {
-    if let Some(file) =
-        tinyfiledialogs::open_file_dialog("Selecciona un fichero ShExML", "document.shexml", None)
-    {
-        check_file_extension(&file)
+/// La opción de vista seleccionada
+pub fn select_view(arg: &String) -> ViewOption {
+    let graphic_options = vec![
+        String::from("-g"),
+        String::from("-G"),
+        String::from("-graphic"),
+        String::from("--Graphic"),
+    ];
+
+    if graphic_options.contains(arg) {
+        ViewOption::new(Box::new(GraphicView))
     } else {
-        Err(Error::new(
-            ErrorKind::Interrupted,
-            "Ningún fichero seleccionado, saliendo...",
-        ))
+        ViewOption::new(Box::new(CliView))
     }
 }
 
@@ -51,7 +82,7 @@ fn input_shexml_file() -> Result<String, Error> {
 ///
 /// # Errores
 /// Devuelve un `[Error]` en el caso de que la extensión del fichero seleccionado no sea .shexml
-fn check_file_extension(file: &String) -> Result<String, Error> {
+pub fn check_file_extension(file: &String) -> Result<String, Error> {
     let path = Path::new(&file);
 
     if path.extension().and_then(|ext| ext.to_str()) == Some("shexml") {
@@ -64,26 +95,18 @@ fn check_file_extension(file: &String) -> Result<String, Error> {
     }
 }
 
-/// Comprueba que el fichero ShExML no esté vacío
+/// Concatena todos los errores de compilación detectados en una cadena
 ///
 /// # Parámetros
-/// * `file_content` - El contenido del fichero ShExML de entrada seleccionado por el usuario
+/// * `errors` - Vector con los errores de compilación
 ///
 /// # Retorna
-/// Un `[Option<String>]` con el contenido del fichero
-fn check_input(file_content: Option<String>) -> Option<String> {
-    if file_content.is_some() {
-        file_content
-    } else {
-        None
-    }
-}
-
-/// Muestra un mensaje de Ok por pantalla cuando se genera el fichero RML
-pub fn show_correct_generation() {
-    message_box_ok(
-        "Información",
-        "Fichero RML generado con éxito",
-        tinyfiledialogs::MessageBoxIcon::Info,
-    );
+/// Una cadena con todos los errores de compilación
+pub fn get_errors_message(errors: Vec<CompilerError>) -> String {
+    let mut errors_message = String::new();
+    errors.into_iter().for_each(|error| {
+        let normalized = error.get_message().replace("'", "");
+        errors_message.push_str(format!("Error: {normalized}\n").as_str());
+    });
+    errors_message
 }

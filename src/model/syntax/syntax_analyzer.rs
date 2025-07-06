@@ -569,72 +569,11 @@ fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_field_parser() -> Map<
-    Then<
-        Then<
-            Map<
-                Then<
-                    Then<
-                        MapErr<
-                            Map<
-                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                                impl Fn(Token) -> Token,
-                                Token,
-                            >,
-                            impl Fn(Simple<Token>) -> Simple<Token>,
-                        >,
-                        MapErr<
-                            Map<
-                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                                impl Fn(Token) -> Token,
-                                Token,
-                            >,
-                            impl Fn(Simple<Token>) -> Simple<Token>,
-                        >,
-                    >,
-                    MapErr<
-                        Map<
-                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                            impl Fn(Token) -> Token,
-                            Token,
-                        >,
-                        impl Fn(Simple<Token>) -> Simple<Token>,
-                    >,
-                >,
-                fn(((Token, Token), Token)) -> (Token, Token),
-                ((Token, Token), Token),
-            >,
-            Or<
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-                MapErr<
-                    Map<
-                        Filter<impl Fn(&Token) -> bool, Simple<Token>>,
-                        impl Fn(Token) -> Token,
-                        Token,
-                    >,
-                    impl Fn(Simple<Token>) -> Simple<Token>,
-                >,
-            >,
-        >,
-        MapErr<
-            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-            impl Fn(Simple<Token>) -> Simple<Token>,
-        >,
-    >,
-    fn((((Token, Token), Token), Token)) -> ((Token, Token), Token),
-    (((Token, Token), Token), Token),
-> {
+fn single_field_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
     field_token_parser()
         .then(identifier_parser(FIELD))
         .then_ignore(left_angle_bracket_parser("el identificador"))
-        .then(identifier_parser(LEFT_ANGLE_BRACKET).or(key_identifier_parser()))
+        .then(identifier_parser(LEFT_ANGLE_BRACKET))
         .then_ignore(right_angle_bracket_parser("el identificador"))
 }
 
@@ -682,10 +621,7 @@ fn single_expression_parser() -> impl Parser<Token, ExpressionASTNode, Error = S
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn union_access_parser() -> impl Parser<
-    Token, AccessASTNode,
-    Error = Simple<Token>,
-> {
+fn union_access_parser() -> impl Parser<Token, AccessASTNode, Error = Simple<Token>> {
     union_parser()
         .ignore_then(access_parser(UNION))
         .map(|access| access)
@@ -1285,23 +1221,6 @@ fn identifier_parser(
     )
 }
 
-/// Parsea el token KeyIdentifier en los tokens
-///
-/// # Retorna
-/// Un token de tipo KeyIdentifier si el token actual es de dicho tipo
-///
-/// # Errores
-/// Devuelve un `[Simple<Token>]` en el caso de que el token actual no sea de tipo Ident
-fn key_identifier_parser() -> MapErr<
-    Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
-    impl Fn(Simple<Token>) -> Simple<Token>,
-> {
-    general_parser(
-        TokenType::KeyIdentifier,
-        format!("Se esperaba un identificador clave después de '<' en la línea"),
-    )
-}
-
 /// Parsea el token URI en los tokens
 ///
 /// # Retorna
@@ -1743,7 +1662,11 @@ mod sintax_parsers_tests {
     #[doc(hidden)]
     #[test]
     fn not_parse_invalid_union() {
-        let actual = union_parser().parse(vec![Token::create_test_token(SEMICOLON, 1, TokenType::SemiColon)]);
+        let actual = union_parser().parse(vec![Token::create_test_token(
+            SEMICOLON,
+            1,
+            TokenType::SemiColon,
+        )]);
         check_error(actual);
     }
 
@@ -1803,27 +1726,6 @@ mod sintax_parsers_tests {
             COLON,
             1,
             TokenType::Colon,
-        )]);
-        check_error(actual);
-    }
-
-    /// Comprueba que se parsean los tokens KeyIdentifier
-    #[doc(hidden)]
-    #[test]
-    fn parse_valid_key_identifier() {
-        let expected_token = Token::create_test_token("@ident", 1, TokenType::KeyIdentifier);
-        let actual = key_identifier_parser().parse(vec![expected_token.clone()]);
-        check_ok(expected_token, actual);
-    }
-
-    /// Comprueba que no se parsean como tokens KeyIdentifier aquellos que lo son
-    #[doc(hidden)]
-    #[test]
-    fn not_parse_invalid_key_identifier() {
-        let actual = key_identifier_parser().parse(vec![Token::create_test_token(
-            "invalid",
-            1,
-            TokenType::Ident,
         )]);
         check_error(actual);
     }
@@ -2969,7 +2871,7 @@ mod sintax_tests {
     #[test]
     fn valid_field_sintax() {
         let field = Token::create_test_token("field", 1, TokenType::Ident);
-        let access_field = Token::create_test_token("@field", 1, TokenType::KeyIdentifier);
+        let access_field = Token::create_test_token("field", 1, TokenType::Ident);
 
         let tokens_vector = vec![
             Token::create_test_token(FIELD, 1, TokenType::Field),
@@ -2996,7 +2898,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
@@ -3015,7 +2917,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             Token::create_test_token(FIELD, 1, TokenType::Field),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
@@ -3034,7 +2936,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             Token::create_test_token(FIELD, 1, TokenType::Field),
             Token::create_test_token("field", 1, TokenType::Ident),
-            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 1, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
@@ -3073,7 +2975,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 1, TokenType::Field),
             Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 1, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
@@ -3091,7 +2993,7 @@ mod sintax_tests {
         let fail_tokens_vector = vec![
             Token::create_test_token(FIELD, 1, TokenType::Field),
             Token::create_test_token("field", 1, TokenType::Ident),
-            Token::create_test_token("@field", 1, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 1, TokenType::Ident),
             Token::create_test_token(EOF, 1, TokenType::EOF),
         ];
 
@@ -3110,7 +3012,7 @@ mod sintax_tests {
         let ident = Token::create_test_token("ident", 1, TokenType::Ident);
         let sql_query = Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery);
         let field_ident = Token::create_test_token("field", 2, TokenType::Ident);
-        let field_access = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+        let field_access = Token::create_test_token("field", 2, TokenType::Ident);
 
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
@@ -3154,7 +3056,7 @@ mod sintax_tests {
         let ident = Token::create_test_token("ident", 1, TokenType::Ident);
         let sql_query = Token::create_test_token("SELECT * FROM example;", 1, TokenType::SqlQuery);
         let field_ident1 = Token::create_test_token("field", 2, TokenType::Ident);
-        let field_access1 = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+        let field_access1 = Token::create_test_token("field", 2, TokenType::Ident);
         let field_ident2 = Token::create_test_token("field2", 3, TokenType::Ident);
         let field_access2 = Token::create_test_token("field", 3, TokenType::Ident);
 
@@ -3211,7 +3113,7 @@ mod sintax_tests {
         let ident = Token::create_test_token("ident", 1, TokenType::Ident);
         let access_ident = Token::create_test_token("inline_query", 1, TokenType::Ident);
         let field_ident = Token::create_test_token("field", 2, TokenType::Ident);
-        let field_access = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+        let field_access = Token::create_test_token("field", 2, TokenType::Ident);
 
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
@@ -3252,7 +3154,7 @@ mod sintax_tests {
         let ident = Token::create_test_token("ident", 1, TokenType::Ident);
         let csvperrow = Token::create_test_token(CSV_PER_ROW, 1, TokenType::CsvPerRow);
         let field_ident = Token::create_test_token("field", 2, TokenType::Ident);
-        let field_access = Token::create_test_token("@field", 2, TokenType::KeyIdentifier);
+        let field_access = Token::create_test_token("field", 2, TokenType::Ident);
 
         let tokens_vector = vec![
             Token::create_test_token(ITERATOR, 1, TokenType::Iterator),
@@ -3300,7 +3202,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
@@ -3328,7 +3230,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
@@ -3356,7 +3258,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
@@ -3383,7 +3285,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
@@ -3411,7 +3313,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
@@ -3435,7 +3337,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
@@ -3488,7 +3390,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 3, TokenType::EOF),
         ];
@@ -3514,7 +3416,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(CLOSING_CURLY_BRACE, 3, TokenType::ClosingCurlyBrace),
             Token::create_test_token(EOF, 3, TokenType::EOF),
@@ -3542,7 +3444,7 @@ mod sintax_tests {
             Token::create_test_token(FIELD, 2, TokenType::Field),
             Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 2, TokenType::LeftAngleBracket),
-            Token::create_test_token("@field", 2, TokenType::KeyIdentifier),
+            Token::create_test_token("field", 2, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 2, TokenType::RightAngleBracket),
             Token::create_test_token(EOF, 3, TokenType::EOF),
         ];

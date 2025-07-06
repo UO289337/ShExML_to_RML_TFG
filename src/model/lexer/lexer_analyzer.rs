@@ -8,8 +8,8 @@ use winnow::error::{AddContext, ContextError, ErrMode, StrContext};
 use winnow::prelude::*;
 use winnow::token::{literal, take_while};
 
-use super::super::compiler_error::CompilerError;
 use super::token::*;
+use crate::compiler_error::CompilerError;
 
 use regex::Regex;
 
@@ -354,35 +354,6 @@ fn identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
     Ok(Token::new(ident, TokenType::Ident))
 }
 
-/// Encuentra un token identificador clave en la entrada
-///
-/// Acepta como entrada cualquier cadena de caracteres alfanuméricos; también acepta '@' al principio
-///
-/// # Parámetros
-/// * `input` - Parte del fichero que se está analizando
-///
-/// # Retorna
-/// Un token KeyIdentifier
-///
-/// # Errores
-/// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
-fn key_identifier(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let key_ident =
-        take_while(1.., |c: char| c.is_alphanumeric() || c == '_' || c == '@').parse_next(input)?;
-    let re_ident = Regex::new(r"^@[a-zA-Z_][a-zA-Z0-9_]*$").unwrap();
-
-    if !re_ident.is_match(key_ident) {
-        let error = &ContextError::new().add_context(
-            &"Formato incorrecto",
-            &key_ident.checkpoint(),
-            StrContext::Label("Identificador clave incorrecto"),
-        );
-        return Err(ErrMode::Backtrack(error.clone()));
-    }
-
-    Ok(Token::new(key_ident, TokenType::KeyIdentifier))
-}
-
 /// Encuentra un token URI en la entrada
 ///
 /// Acepta como entrada cualquier cadena de caracteres que cumpla con la expresión regular de URIs
@@ -452,7 +423,7 @@ fn jdbc_url(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
 /// # Errores
 /// Devuelve un `[ErrMode<ContextError>]` en el caso de que ocurra algún fallo durante el análisis de la entrada
 fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
-    let mut path = take_while(1.., |c: char| c != '>').parse_next(input)?;
+    let path = take_while(1.., |c: char| c != '>').parse_next(input)?;
     let re_path = Regex::new(
         r"(?ix)                    
             ^(
@@ -475,10 +446,6 @@ fn path(input: &mut &str) -> Result<Token, ErrMode<ContextError>> {
             StrContext::Label("Ruta absoluta o relativa incorrecta"),
         );
         return Err(ErrMode::Backtrack(error.clone()));
-    }
-
-    if path.starts_with("file://") {
-        path = path.strip_prefix("file://").unwrap_or(path);
     }
 
     Ok(Token::new(path, TokenType::Path))
@@ -645,7 +612,7 @@ fn match_alternatives(
             csv_per_row,
         )),
         // Elementos variables; no tienen un valor fijo
-        alt((sql_query, path, jdbc_url, uri, key_identifier, identifier)),
+        alt((sql_query, path, jdbc_url, uri, identifier)),
     ))
     .parse_next(input)
     {
@@ -957,7 +924,6 @@ mod lexer_tests {
         let actual = union(&mut "FIELD");
         check_error(actual);
     }
- 
 
     /// Comprueba que se detecta el token SqlType
     #[doc(hidden)]
@@ -1063,76 +1029,6 @@ mod lexer_tests {
         check_error(actual);
     }
 
-    /// Comprueba que se detecta el token KeyIdentifier sin que tenga un '_'
-    #[doc(hidden)]
-    #[test]
-    fn valid_key_identifier_withouth_underscore() {
-        let expected = Token::create_test_token("@ident", 0, TokenType::KeyIdentifier);
-        let actual = key_identifier(&mut "@ident");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token KeyIdentifier con un '_' en medio
-    #[doc(hidden)]
-    #[test]
-    fn valid_key_identifier_with_underscore_inside() {
-        let expected = Token::create_test_token("@Ident_valid", 0, TokenType::KeyIdentifier);
-        let actual = key_identifier(&mut "@Ident_valid");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token KeyIdentifier con un '_ ' al comienzo
-    #[doc(hidden)]
-    #[test]
-    fn valid_key_identifier_with_underscore_at_the_begining() {
-        let expected = Token::create_test_token("@_ident_valid", 0, TokenType::KeyIdentifier);
-        let actual = key_identifier(&mut "@_ident_valid");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token KeyIdentifier con un '_' al final
-    #[doc(hidden)]
-    #[test]
-    fn valid_key_identifier_with_underscore_at_the_end() {
-        let expected = Token::create_test_token("@ident_valid_", 0, TokenType::KeyIdentifier);
-        let actual = key_identifier(&mut "@ident_valid_");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token KeyIdentifier con un '_' al comienzo y final
-    #[doc(hidden)]
-    #[test]
-    fn valid_key_identifier_with_underscore_at_the_begining_and_end() {
-        let expected = Token::create_test_token("@_ident_valid_", 0, TokenType::KeyIdentifier);
-        let actual = key_identifier(&mut "@_ident_valid_");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que se detecta el token KeyIdentifier con números no al comienzo
-    #[doc(hidden)]
-    #[test]
-    fn valid_key_identifier_with_numbers() {
-        let expected = Token::create_test_token("@ident1_2valid", 0, TokenType::KeyIdentifier);
-        let actual = key_identifier(&mut "@ident1_2valid");
-        check_ok(expected, actual);
-    }
-
-    /// Comprueba que no se detecta como token KeyIdentifier aquellas cadenas que empiezan por números
-    #[doc(hidden)]
-    #[test]
-    fn invalid_key_identifier_with_numbers_at_the_begining() {
-        let actual = key_identifier(&mut "@1invalid_identifier");
-        check_error(actual);
-    }
-
-    /// Comprueba que no se detecta como token KeyIdentifier aquellas cadenas que no comienzan por '@'
-    #[doc(hidden)]
-    #[test]
-    fn invalid_key_identifier_withouth_at_the_begining() {
-        let actual = key_identifier(&mut "ident_invalid");
-        check_error(actual);
-    }
-
     /// Comprueba que se detecta el token URI con el protocolo HTTPS
     #[doc(hidden)]
     #[test]
@@ -1214,7 +1110,7 @@ mod lexer_tests {
             0,
             TokenType::Path,
         );
-        let actual = path(&mut "file://C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
+        let actual = path(&mut "C:\\ejemplo\\path\\a\\fichero\\fichero.csv");
         check_ok(expected, actual);
     }
 
@@ -1269,7 +1165,7 @@ mod lexer_tests {
             SOURCE films_csv_file <https://shexml.herminiogarcia.com/files/films.csv>
             QUERY inline_query <sql: SELECT * FROM example;>
             ITERATOR films_csv <csvperrow> {
-                FIELD id <@id>
+                FIELD id <id>
                 FIELD name <name>
                 FIELD year <year>
                 FIELD country <country>
@@ -1325,7 +1221,7 @@ mod lexer_tests {
             Token::create_test_token(FIELD, 6, TokenType::Field),
             Token::create_test_token("id", 6, TokenType::Ident),
             Token::create_test_token(LEFT_ANGLE_BRACKET, 6, TokenType::LeftAngleBracket),
-            Token::create_test_token("@id", 6, TokenType::KeyIdentifier),
+            Token::create_test_token("id", 6, TokenType::Ident),
             Token::create_test_token(RIGHT_ANGLE_BRACKET, 6, TokenType::RightAngleBracket),
             // Field
             Token::create_test_token(FIELD, 7, TokenType::Field),

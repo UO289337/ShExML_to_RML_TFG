@@ -4,24 +4,43 @@
 //! Su función principal radica en enviar la entrada del usuario de la vista al modelo y de coordinar las distintas fases del compilador: analizador léxico,
 //! sintáctico y generación.
 
+use std::env;
+
 use chumsky::error::SimpleReason;
 
+use crate::compiler_error::CompilerError;
 use crate::model;
 use crate::model::ast::AST;
-use crate::model::compiler_error::CompilerError;
 use crate::model::lexer::token::Token;
 use crate::view;
+use crate::view::main_view::ViewOption;
+
+/// Ejecuta el compilador
+pub fn run() {
+    let args: Vec<String> = env::args().collect();
+
+    let view = view::main_view::select_view(&args[1]);
+    let file_content = view.get_option().input();
+
+    if file_content.is_some() {
+        run_lexer_analyzer(view, file_content.unwrap());
+    } else {
+        panic!("Ha ocurrido un error al procesar la entrada");
+    }
+}
 
 /// Ejecuta el analizador léxico del compilador
-pub fn run_lexer_analyzer() {
-    let file_content = view::main_view::input();
-
-    match model::lexer::lexer_analyzer::lexer(&mut file_content.unwrap().as_str()) {
+///
+/// # Parámetros
+/// * `view` - La vista utilizada
+/// * `file_content` - El contenido del fichero ShExML de entrada
+pub fn run_lexer_analyzer(view: ViewOption, file_content: String) {
+    match model::lexer::lexer_analyzer::lexer(&mut file_content.as_str()) {
         Ok(tokens) => {
-            run_sintax_analyzer(tokens);
+            run_sintax_analyzer(view, tokens);
         }
         Err(parser_errors) => {
-            show_errors(parser_errors);
+            view.get_option().show_errors(parser_errors);
         }
     };
 }
@@ -29,14 +48,15 @@ pub fn run_lexer_analyzer() {
 /// Ejecuta el analizador sintáctico del compilador
 ///
 /// # Parámetros
+/// * `view` - La vista utilizada
 /// * `tokens` - El vector de tokens resultado del analizador léxico
-fn run_sintax_analyzer(tokens: Vec<Token>) {
+fn run_sintax_analyzer(view: ViewOption, tokens: Vec<Token>) {
     match model::syntax::syntax_analyzer::parser(tokens) {
         Ok(mut ast) => {
-            run_semantic_analyzer(&mut ast);
+            run_semantic_analyzer(view, &mut ast);
         }
         Err(e) => {
-            show_sintax_errors(e);
+            view.get_option().show_errors(transform_to_compiler_error(e));
         }
     }
 }
@@ -45,37 +65,51 @@ fn run_sintax_analyzer(tokens: Vec<Token>) {
 ///
 /// # Parámetros
 /// * `node` - El nodo raíz del AST resultado del analizador sintáctico
-fn run_semantic_analyzer(ast: &mut AST) {
+fn run_semantic_analyzer(view: ViewOption, ast: &mut AST) {
     let semantic_errors = model::semantic::semantic_analyzer::semantic_analysis(ast);
 
     if semantic_errors.is_empty() {
-        model::generator::rml_generator::rml_generator(ast);
-        view::main_view::show_correct_generation()
+        run_rml_generator(view, ast);
     } else {
-        show_errors(semantic_errors);
+        view.get_option().show_errors(semantic_errors);
     }
 }
 
-/// Muestra los errores encontrados al realizar los distintos análisis
+/// Ejecuta el generador de RML
 ///
 /// # Parámetros
-/// * `errors` - Un vector de CompilerError que contiene los errores encontrados
-fn show_errors(errors: Vec<CompilerError>) {
-    errors.into_iter().for_each(|error| {
-        println!("Error: {}", error.get_message());
-    });
+/// * `view` - La vista utilizada
+/// * `astg` - El AST decorado resultado del análisis semántico
+fn run_rml_generator(view: ViewOption, ast: &mut AST) {
+    let output_file = view.get_option().select_output_file();
+
+    match output_file {
+        Ok(output_file) => {
+            model::generator::rml_generator::rml_generator(ast, output_file);
+            view.get_option().show_correct_generation();
+        }
+        Err(error) => panic!("Error: {}", error),
+    }
 }
 
-/// Muestra los errores sintácticos encontrados al realizar el análisis sintáctico
+/// Transforma errores Simple de chumsky en errores del compilador
 ///
 /// # Parámetros
-/// * `sintax_errors` - Un vector de Simple<Token>, de la biblioteca chumsky, que contiene los errores sintácticos encontrados
-fn show_sintax_errors(sintax_errors: Vec<chumsky::prelude::Simple<Token>>) {
+/// * `sintax_errors` - Errores del analizador sintáctico de chumsky
+///
+/// # Retorna
+/// Un vector con los errores del compilador
+fn transform_to_compiler_error(
+    sintax_errors: Vec<chumsky::prelude::Simple<Token>>,
+) -> Vec<CompilerError> {
+    let mut errors = Vec::new();
+
     for error in sintax_errors {
-        let err_message = match error.reason() {
-            SimpleReason::Custom(msg) => msg,
-            _ => "Error desconocido",
+        match error.reason() {
+            SimpleReason::Custom(msg) => errors.push(CompilerError::new(msg.clone())),
+            _ => errors.push(CompilerError::new(String::from("Error desconocido"))),
         };
-        eprintln!("Error durante el análisis sintáctico: {}", err_message);
     }
+
+    errors
 }
