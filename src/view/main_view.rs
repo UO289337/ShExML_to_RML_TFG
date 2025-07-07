@@ -33,9 +33,7 @@ impl ViewOption {
     /// # Retorna
     /// Un struct ViewOption
     pub fn new(option: Box<dyn View>) -> Self {
-        Self {
-            option,
-        }
+        Self { option }
     }
 
     /// Devuelve la opción de la vista escogida por el usuario

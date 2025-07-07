@@ -707,42 +707,56 @@ fn get_expression_fields(expression_node: &ExpressionASTNode) -> Vec<FieldASTNod
         .get(0)
         .unwrap()
         .get_iterator();
-    let first_iterator;
+    let first_possible_field = expression_node.get_accesses().get(0).unwrap().get_field();
 
-    if first_possible_iterator.is_none() {
-        // No se muestra un error porque ya se comprueba antes que sea un iterator
-        return Vec::new();
+    if first_possible_field.is_some() {
+        expression_fields.push(first_possible_field.unwrap());
+
+        if expression_node.get_expression_expr_type() == ExpressionType::UNION {
+            let second_possible_field = expression_node.get_accesses().get(1).unwrap().get_field();
+
+            if second_possible_field.is_some() {
+                expression_fields.push(second_possible_field.unwrap());
+            }
+        }
     } else {
-        first_iterator = first_possible_iterator.unwrap();
-    }
+        let first_iterator;
 
-    let first_fields_of_iterator = first_iterator.get_fields();
+        if first_possible_iterator.is_none() {
+            // No se muestra un error porque ya se comprueba antes que sea un iterator
+            return Vec::new();
+        } else {
+            first_iterator = first_possible_iterator.unwrap();
+        }
 
-    if expression_node.get_accesses().len() >= 2 {
-        let second_iterator = expression_node
-            .get_accesses()
-            .get(1)
-            .unwrap()
-            .get_iterator()
-            .unwrap();
-        let second_fields_of_iterator = second_iterator.get_fields();
+        let first_fields_of_iterator = first_iterator.get_fields();
 
-        let mut first_fields = Vec::new();
-        let mut second_fields = Vec::new();
+        if expression_node.get_accesses().len() >= 2 {
+            let second_iterator = expression_node
+                .get_accesses()
+                .get(1)
+                .unwrap()
+                .get_iterator()
+                .unwrap();
+            let second_fields_of_iterator = second_iterator.get_fields();
 
-        first_fields_of_iterator.into_iter().for_each(|field| {
-            first_fields.push(field);
-        });
+            let mut first_fields = Vec::new();
+            let mut second_fields = Vec::new();
 
-        second_fields_of_iterator.into_iter().for_each(|field| {
-            second_fields.push(field);
-        });
+            first_fields_of_iterator.into_iter().for_each(|field| {
+                first_fields.push(field);
+            });
 
-        expression_fields.extend(get_fields_intersection(first_fields, second_fields));
-    } else {
-        first_fields_of_iterator.into_iter().for_each(|field| {
-            expression_fields.push(field);
-        });
+            second_fields_of_iterator.into_iter().for_each(|field| {
+                second_fields.push(field);
+            });
+
+            expression_fields.extend(get_fields_intersection(first_fields, second_fields));
+        } else {
+            first_fields_of_iterator.into_iter().for_each(|field| {
+                expression_fields.push(field);
+            });
+        }
     }
 
     expression_fields

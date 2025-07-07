@@ -654,16 +654,13 @@ fn generate_csv_logical_source(source_node: &mut SourceASTNode) -> String {
     let mut source_definition = source_node.get_source_definition().to_string();
 
     if source_definition.starts_with("file://") {
-        source_definition = source_definition.strip_prefix("file://").unwrap().to_string();
+        source_definition = source_definition
+            .strip_prefix("file://")
+            .unwrap()
+            .to_string();
     }
 
-    source_generation.push_str(
-        format!(
-            "\"{}\" .\n\n",
-            source_definition
-        )
-        .as_str(),
-    );
+    source_generation.push_str(format!("\"{}\" .\n\n", source_definition).as_str());
     source_generation
 }
 
