@@ -56,7 +56,8 @@ fn run_sintax_analyzer(view: ViewOption, tokens: Vec<Token>) {
             run_semantic_analyzer(view, &mut ast);
         }
         Err(e) => {
-            view.get_option().show_errors(transform_to_compiler_error(e));
+            view.get_option()
+                .show_errors(transform_to_compiler_error(e));
         }
     }
 }

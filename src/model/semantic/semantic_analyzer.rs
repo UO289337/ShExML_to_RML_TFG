@@ -304,7 +304,7 @@ mod identification_tests {
 
         let mut expressions = vec![ExpressionASTNode::new(
             identifier.clone(),
-            ExpressionType::BASIC,
+            ExpressionType::UNION,
             accesses,
             Position::new(identifier.get_num_line()),
         )];
@@ -1007,6 +1007,6 @@ mod type_checking_tests {
                 cont_errors += 1;
             }
         });
-        assert_eq!(cont_errors, 1);
+        assert_eq!(cont_errors, 2);
     }
 }

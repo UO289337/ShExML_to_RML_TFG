@@ -569,7 +569,54 @@ fn field_parser() -> impl Parser<Token, Vec<FieldASTNode>, Error = Simple<Token>
 ///
 /// # Errores
 /// Devuelve un `Simple<Token>` si ocurre un error durante el parseo de los tokens
-fn single_field_parser() -> Map<Then<Then<Map<Then<Then<MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn(((Token, Token), Token)) -> (Token, Token), ((Token, Token), Token)>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, MapErr<Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>, impl Fn(Simple<Token>) -> Simple<Token>>>, fn((((Token, Token), Token), Token)) -> ((Token, Token), Token), (((Token, Token), Token), Token)> {
+fn single_field_parser() -> Map<
+    Then<
+        Then<
+            Map<
+                Then<
+                    Then<
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                        MapErr<
+                            Map<
+                                Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                                impl Fn(Token) -> Token,
+                                Token,
+                            >,
+                            impl Fn(Simple<Token>) -> Simple<Token>,
+                        >,
+                    >,
+                    MapErr<
+                        Map<
+                            Filter<impl Fn(&Token) -> bool, Simple<Token>>,
+                            impl Fn(Token) -> Token,
+                            Token,
+                        >,
+                        impl Fn(Simple<Token>) -> Simple<Token>,
+                    >,
+                >,
+                fn(((Token, Token), Token)) -> (Token, Token),
+                ((Token, Token), Token),
+            >,
+            MapErr<
+                Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+                impl Fn(Simple<Token>) -> Simple<Token>,
+            >,
+        >,
+        MapErr<
+            Map<Filter<impl Fn(&Token) -> bool, Simple<Token>>, impl Fn(Token) -> Token, Token>,
+            impl Fn(Simple<Token>) -> Simple<Token>,
+        >,
+    >,
+    fn((((Token, Token), Token), Token)) -> ((Token, Token), Token),
+    (((Token, Token), Token), Token),
+> {
     field_token_parser()
         .then(identifier_parser(FIELD))
         .then_ignore(left_angle_bracket_parser("el identificador"))

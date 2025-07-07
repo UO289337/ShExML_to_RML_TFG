@@ -344,13 +344,15 @@ impl Visitor<Vec<Option<CompilerError>>> for TypeChecking {
                     .get_fields()
                     .unwrap()
                     .contains(&field_access)
-                    || (expression_node.get_expression_expr_type() == ExpressionType::BASIC
-                        && expression_node
-                            .get_accesses()
-                            .get(0)
-                            .unwrap()
-                            .get_field()
-                            .is_some())
+                /*
+                || (expression_node.get_expression_expr_type() == ExpressionType::BASIC
+                    && expression_node
+                        .get_accesses()
+                        .get(0)
+                        .unwrap()
+                        .get_field()
+                        .is_some())
+                        */
                 {
                     error_vec.push(Some(CompilerError::new(format!(
                         "No se puede acceder al campo '{}' en el acceso de la tupla de la línea {}",
